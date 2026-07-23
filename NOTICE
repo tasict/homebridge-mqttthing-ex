@@ -1,0 +1,12 @@
+homebridge-mqttthing-ex
+Copyright 2026 tasict
+
+This product is a ground-up TypeScript rewrite of homebridge-mqttthing
+(https://github.com/arachnetech/homebridge-mqttthing),
+Copyright David Miller and contributors, licensed under the Apache License 2.0.
+The configuration format, MQTT behavior, codec API, and the bundled codec files
+are derived from that project.
+
+The Eve custom characteristic and service definitions in src/hap/eve.ts are
+derived from homebridge-lib (https://github.com/ebaauw/homebridge-lib),
+Copyright Erik Baauw, licensed under the Apache License 2.0.
