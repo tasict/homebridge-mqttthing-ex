@@ -2,7 +2,7 @@
 // a responsive card grid (one accessory per card, opened via a single Edit
 // button). Duplicate and delete live in the editor; the raw config order is
 // preserved as the default sort.
-import { Pencil } from 'lucide-preact';
+import { ListFilter, Pencil } from 'lucide-preact';
 import { useState } from 'preact/hooks';
 
 import type { ThingConfig } from '../../../src/config.js';
@@ -31,6 +31,7 @@ function typeLabel(type: string | undefined): string {
 export function ListView({ configs, onEdit, onAdd }: Props) {
   const [query, setQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
+  const [filterOpen, setFilterOpen] = useState(false);
   const [sortMode, setSortMode] = useState<SortMode>('config');
   const [showJson, setShowJson] = useState(false);
 
@@ -74,18 +75,56 @@ export function ListView({ configs, onEdit, onAdd }: Props) {
           value={query}
           onInput={(e) => setQuery((e.currentTarget as HTMLInputElement).value)}
         />
-        <select
-          class="form-select w-auto"
-          value={typeFilter}
-          onChange={(e) => setTypeFilter((e.currentTarget as HTMLSelectElement).value)}
-        >
-          <option value="">All types</option>
-          {presentTypes.map((id) => (
-            <option key={id} value={id}>
-              {typeLabel(id)}
-            </option>
-          ))}
-        </select>
+        {/* custom dropdown instead of a native select so each type entry can
+            show its icon (native <option> cannot contain SVG) */}
+        <div class="mqx-type-select w-auto">
+          <button
+            type="button"
+            class="form-select text-start d-flex align-items-center gap-2 mqx-filter-btn"
+            onClick={() => setFilterOpen(!filterOpen)}
+          >
+            {typeFilter === '' ? (
+              <ListFilter size={16} class="flex-shrink-0" />
+            ) : (
+              <TypeIcon type={typeFilter} size={16} class="flex-shrink-0" />
+            )}
+            <span class="text-truncate">{typeFilter === '' ? 'All types' : typeLabel(typeFilter)}</span>
+          </button>
+          {filterOpen && (
+            <>
+              <div class="mqx-backdrop" onClick={() => setFilterOpen(false)} />
+              <div class="mqx-type-menu card">
+                <div class="list-group list-group-flush">
+                  <button
+                    type="button"
+                    class={`list-group-item list-group-item-action d-flex align-items-center gap-2${typeFilter === '' ? ' fw-bold' : ''}`}
+                    onClick={() => {
+                      setTypeFilter('');
+                      setFilterOpen(false);
+                    }}
+                  >
+                    <ListFilter size={16} class="flex-shrink-0" />
+                    <span>All types</span>
+                  </button>
+                  {presentTypes.map((id) => (
+                    <button
+                      key={id}
+                      type="button"
+                      class={`list-group-item list-group-item-action d-flex align-items-center gap-2${typeFilter === id ? ' fw-bold' : ''}`}
+                      onClick={() => {
+                        setTypeFilter(id);
+                        setFilterOpen(false);
+                      }}
+                    >
+                      <TypeIcon type={id} size={16} class="flex-shrink-0" />
+                      <span>{typeLabel(id)}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
         <select
           class="form-select w-auto"
           value={sortMode}

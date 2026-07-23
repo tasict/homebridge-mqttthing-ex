@@ -119,6 +119,11 @@
   background-color: rgba(128, 128, 128, 0.14);
 }
 
+#mqttthing-ui .mqx-filter-btn {
+  width: auto;
+  max-width: 13rem;
+}
+
 #mqttthing-ui .mqx-edit-btn {
   display: grid;
   place-items: center;
