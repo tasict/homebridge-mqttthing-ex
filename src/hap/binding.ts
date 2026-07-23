@@ -144,7 +144,14 @@ export function makeThingContext(params: MakeThingContextParams): ThingContext {
       }
     },
     supportAdaptiveLighting() {
-      return config.adaptiveLighting !== false && !!versionGreaterOrEqual && versionGreaterOrEqual('1.3.0-beta.27');
+      // the string 'false' also disables (upstream #436: config-ui-x users
+      // ended up with string booleans that were silently ignored)
+      return (
+        config.adaptiveLighting !== false &&
+        (config.adaptiveLighting as unknown) !== 'false' &&
+        !!versionGreaterOrEqual &&
+        versionGreaterOrEqual('1.3.0-beta.27')
+      );
     },
     addAdaptiveLightingController(service) {
       if (adaptiveLightingController) {
