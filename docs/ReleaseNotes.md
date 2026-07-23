@@ -1,5 +1,17 @@
 # Homebridge MQTT-Thing EX: Release Notes
 
+### Version 1.0.1
++ Fixed: changes applied through the accessory "Edit as JSON" editor could
+  be lost when clicking Save right afterwards — click-driven edits (Apply
+  JSON, delete, duplicate) are now staged to the Homebridge UI immediately
++ "Apply JSON" now validates its input before applying: the text must be a
+  non-empty, valid JSON object with a non-empty `name` and `type`, and the
+  accessory alias is always restored to `mqttthing`; errors are shown
+  inline and as a toast notification
++ Added the plugin icon and README version badges
++ CI: tests no longer depend on a local upstream reference checkout;
+  workflow actions updated to current versions
+
 ### Version 1.0.0
 
 Ground-up TypeScript rewrite of homebridge-mqttthing. Existing
