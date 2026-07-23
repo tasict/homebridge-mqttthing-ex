@@ -6,5 +6,11 @@ import './buttons.js';
 import './doors.js';
 import './security.js';
 import './valve.js';
+import './climate.js';
+import './fans.js';
+import './airquality.js';
+import './weather.js';
+import './media.js';
+import './irrigation.js';
 
 export { buildServicesForConfig } from './registry.js';
