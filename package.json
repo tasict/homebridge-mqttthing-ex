@@ -1,7 +1,7 @@
 {
   "name": "homebridge-mqttthing-ex",
   "displayName": "MQTT Thing EX",
-  "version": "2.0.0-beta.1",
+  "version": "1.0.0",
   "description": "Homebridge plugin supporting various HomeKit services over MQTT. A modern TypeScript rewrite of homebridge-mqttthing with a fully compatible configuration format.",
   "type": "module",
   "main": "dist/index.js",
@@ -22,6 +22,10 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/tasict/homebridge-mqttthing-ex.git"
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://PayPal.Me/tasict"
   },
   "keywords": [
     "homebridge-plugin",

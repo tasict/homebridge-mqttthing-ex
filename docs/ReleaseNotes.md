@@ -1,6 +1,6 @@
 # Homebridge MQTT-Thing EX: Release Notes
 
-### Version 2.0.0-beta.1
+### Version 1.0.0
 
 Ground-up TypeScript rewrite of homebridge-mqttthing. Existing
 configurations work unchanged (`"accessory": "mqttthing"`).
