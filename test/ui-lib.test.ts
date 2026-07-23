@@ -14,6 +14,7 @@ import {
   duplicateName,
   matchesSearch,
   mostCommonBroker,
+  parseAccessoryJson,
   probeTopicFor,
   replaceConfigContents,
   setOption,
@@ -121,6 +122,46 @@ describe('ui-lib: non-destructive round-trip', () => {
     replaceConfigContents(config, { accessory: 'mqttthing', type: 'switch', name: 'New' });
     expect(reference).toBe(config);
     expect(Object.keys(config).sort()).toEqual(['accessory', 'name', 'type']);
+  });
+});
+
+describe('ui-lib: parseAccessoryJson', () => {
+  it('rejects empty and whitespace-only text', () => {
+    expect(parseAccessoryJson('').error).toBe('The configuration must not be empty.');
+    expect(parseAccessoryJson('  \n\t ').error).toBe('The configuration must not be empty.');
+  });
+
+  it('rejects syntactically invalid JSON with the parser message', () => {
+    const result = parseAccessoryJson('{ "name": ');
+    expect(result.config).toBeUndefined();
+    expect(result.error).toMatch(/^Invalid JSON: /);
+  });
+
+  it('rejects non-object documents', () => {
+    expect(parseAccessoryJson('42').error).toBe('The configuration must be a single JSON object.');
+    expect(parseAccessoryJson('"switch"').error).toBe('The configuration must be a single JSON object.');
+    expect(parseAccessoryJson('null').error).toBe('The configuration must be a single JSON object.');
+    expect(parseAccessoryJson('[{"name":"x"}]').error).toBe('The configuration must be a single JSON object.');
+  });
+
+  it('requires a non-empty name and type', () => {
+    expect(parseAccessoryJson('{"type":"switch"}').error).toBe('The configuration must have a non-empty "name" property.');
+    expect(parseAccessoryJson('{"name":" ","type":"switch"}').error).toBe('The configuration must have a non-empty "name" property.');
+    expect(parseAccessoryJson('{"name":"x"}').error).toBe('The configuration must have a non-empty "type" property.');
+    expect(parseAccessoryJson('{"name":"x","type":""}').error).toBe('The configuration must have a non-empty "type" property.');
+  });
+
+  it('accepts a valid object, forcing the accessory alias back to mqttthing', () => {
+    const result = parseAccessoryJson('{"name":"Light","type":"switch","topics":{"setOn":"a/set"}}');
+    expect(result.error).toBeUndefined();
+    expect(result.config).toEqual({
+      accessory: 'mqttthing',
+      name: 'Light',
+      type: 'switch',
+      topics: { setOn: 'a/set' },
+    });
+    const overridden = parseAccessoryJson('{"accessory":"other","name":"x","type":"switch"}');
+    expect(overridden.config?.accessory).toBe('mqttthing');
   });
 });
 

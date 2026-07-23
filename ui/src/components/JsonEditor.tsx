@@ -5,7 +5,7 @@ import { useState } from 'preact/hooks';
 
 import type { ThingConfig } from '../../../src/config.js';
 import { hb } from '../homebridge.js';
-import { replaceConfigContents } from '../lib/config-ops.js';
+import { parseAccessoryJson, replaceConfigContents } from '../lib/config-ops.js';
 
 interface Props {
   config: ThingConfig;
@@ -17,19 +17,17 @@ export function JsonEditor({ config, touch }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   const apply = () => {
-    try {
-      const parsed: unknown = JSON.parse(draft);
-      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-        setError('The configuration must be a JSON object.');
-        return;
-      }
-      replaceConfigContents(config, parsed as Record<string, unknown>);
-      setError(null);
-      touch();
-      hb().toast.success('JSON applied to the working copy');
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+    const result = parseAccessoryJson(draft);
+    if (result.error !== undefined) {
+      setError(result.error);
+      hb().toast.error(result.error, 'JSON not applied');
+      return;
     }
+    replaceConfigContents(config, result.config);
+    setDraft(JSON.stringify(config, null, 2));
+    setError(null);
+    touch();
+    hb().toast.success('JSON applied to the working copy');
   };
 
   return (

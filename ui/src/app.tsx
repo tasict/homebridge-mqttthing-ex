@@ -1,9 +1,13 @@
 // Top-level state container: owns the working copy (the actual config
 // objects returned by getPluginConfig), the current view and the save
 // lifecycle. Every mutation goes through touch(), which re-renders and
-// pushes the full array to updatePluginConfig() after a 300 ms debounce;
-// the native Save button of config-ui-x always persists the latest pushed
-// state. savePluginConfig() is never called automatically.
+// pushes the full array to updatePluginConfig(). The push is throttled on
+// the leading edge: a click-driven change (Apply JSON, delete, ...) is
+// staged immediately — so the native Save button always persists it even
+// when clicked right away — while typing bursts coalesce into a trailing
+// push at most 300 ms later (the array is mutated in place, so a scheduled
+// push always sends the latest contents). savePluginConfig() is never
+// called automatically.
 import { useEffect, useRef, useState } from 'preact/hooks';
 
 import type { ThingConfig } from '../../src/config.js';
@@ -55,18 +59,22 @@ export function App() {
     return <div class="text-center my-4">Loading configuration&hellip;</div>;
   }
 
+  const pushNow = () => {
+    hb()
+      .updatePluginConfig(configs)
+      .catch((e) => hb().toast.error(e instanceof Error ? e.message : String(e), 'Failed to stage config changes'));
+  };
+
   const touch = () => {
     setDirty(true);
     setRevision((r) => r + 1);
-    if (pushTimer.current !== null) {
-      clearTimeout(pushTimer.current);
+    if (pushTimer.current === null) {
+      pushNow();
+      pushTimer.current = setTimeout(() => {
+        pushTimer.current = null;
+        pushNow();
+      }, PUSH_DEBOUNCE_MS);
     }
-    pushTimer.current = setTimeout(() => {
-      pushTimer.current = null;
-      hb()
-        .updatePluginConfig(configs)
-        .catch((e) => hb().toast.error(e instanceof Error ? e.message : String(e), 'Failed to stage config changes'));
-    }, PUSH_DEBOUNCE_MS);
   };
 
   return (

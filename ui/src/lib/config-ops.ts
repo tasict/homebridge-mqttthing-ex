@@ -278,6 +278,40 @@ export function mostCommonBroker(configs: ThingConfig[]): BrokerSettings | undef
   return best?.broker;
 }
 
+export type ParsedAccessoryJson =
+  | { config: Record<string, unknown>; error?: undefined }
+  | { config?: undefined; error: string };
+
+/**
+ * Parse and validate the text of the "Edit as JSON" editor. Accepts only a
+ * non-empty, syntactically valid JSON object with a non-empty name and
+ * type; the accessory alias is forced back to "mqttthing" so a pasted
+ * fragment cannot detach the block from the plugin on save.
+ */
+export function parseAccessoryJson(text: string): ParsedAccessoryJson {
+  if (text.trim() === '') {
+    return { error: 'The configuration must not be empty.' };
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch (e) {
+    return { error: `Invalid JSON: ${e instanceof Error ? e.message : String(e)}` };
+  }
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    return { error: 'The configuration must be a single JSON object.' };
+  }
+  const config = parsed as Record<string, unknown>;
+  if (typeof config.name !== 'string' || config.name.trim() === '') {
+    return { error: 'The configuration must have a non-empty "name" property.' };
+  }
+  if (typeof config.type !== 'string' || config.type.trim() === '') {
+    return { error: 'The configuration must have a non-empty "type" property.' };
+  }
+  config.accessory = 'mqttthing';
+  return { config };
+}
+
 /**
  * Replace the contents of a config object in place with the given
  * replacement keys, keeping the object identity (used by the per-accessory
