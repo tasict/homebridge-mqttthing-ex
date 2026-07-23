@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="branding/icon.png" width="100" alt="homebridge-mqttthing-ex icon">
+</p>
+
 # homebridge-mqttthing-ex
 
 A [Homebridge](https://homebridge.io) plugin supporting a wide range of HomeKit
