@@ -1,0 +1,130 @@
+/* Custom config UI - minimal styling on top of the Bootstrap 5 theme that
+   homebridge-config-ui-x injects (which also handles dark mode). Avoid
+   hardcoded colors: only inherited colors, opacity and layout here. */
+
+#mqttthing-ui {
+  font-size: 0.9rem;
+}
+
+#mqttthing-ui .mqx-mono {
+  font-family: SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+  font-size: 0.85em;
+}
+
+#mqttthing-ui .mqx-topic-table th,
+#mqttthing-ui .mqx-topic-table td {
+  vertical-align: top;
+  border-color: rgba(128, 128, 128, 0.25);
+}
+
+#mqttthing-ui .mqx-topic-table th {
+  font-weight: 500;
+  width: 30%;
+}
+
+#mqttthing-ui .mqx-key {
+  opacity: 0.65;
+  font-size: 0.78em;
+}
+
+#mqttthing-ui .mqx-desc {
+  opacity: 0.7;
+  font-size: 0.8em;
+}
+
+#mqttthing-ui .mqx-probe-log {
+  max-height: 8em;
+  overflow: auto;
+  border: 1px solid rgba(128, 128, 128, 0.35);
+  border-radius: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  margin-top: 0.25rem;
+  font-size: 0.78em;
+}
+
+#mqttthing-ui .mqx-apply-editor textarea {
+  min-height: 5.5em;
+}
+
+#mqttthing-ui .mqx-type-select {
+  position: relative;
+}
+
+#mqttthing-ui .mqx-type-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 1050;
+  width: 100%;
+  min-width: 18rem;
+  max-height: 22rem;
+  overflow-y: auto;
+  border: 1px solid rgba(128, 128, 128, 0.4);
+  border-radius: 0.375rem;
+  background-color: inherit;
+  backdrop-filter: blur(2px);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.35);
+}
+
+#mqttthing-ui .mqx-type-menu .list-group-item {
+  background-color: transparent;
+  color: inherit;
+  cursor: pointer;
+  border: 0;
+  padding: 0.3rem 0.75rem;
+}
+
+#mqttthing-ui .mqx-type-menu .list-group-item:hover {
+  background-color: rgba(128, 128, 128, 0.2);
+}
+
+#mqttthing-ui .mqx-type-menu .mqx-type-category {
+  opacity: 0.6;
+  font-size: 0.78em;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.5rem 0.75rem 0.15rem;
+}
+
+#mqttthing-ui .mqx-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1040;
+}
+
+#mqttthing-ui .card {
+  background-color: transparent;
+}
+
+#mqttthing-ui .card-header {
+  background-color: rgba(128, 128, 128, 0.08);
+}
+
+#mqttthing-ui .mqx-row-actions .btn {
+  padding: 0.1rem 0.4rem;
+  font-size: 0.8em;
+}
+
+#mqttthing-ui .mqx-list-row {
+  cursor: pointer;
+}
+
+#mqttthing-ui .mqx-list-row:hover {
+  background-color: rgba(128, 128, 128, 0.12);
+}
+
+#mqttthing-ui .mqx-json-view {
+  font-family: SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+  font-size: 0.78em;
+  white-space: pre;
+}
+
+#mqttthing-ui .mqx-wizard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 0.5rem;
+}
+
+#mqttthing-ui .form-control::placeholder {
+  opacity: 0.4;
+}

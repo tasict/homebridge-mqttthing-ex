@@ -3,8 +3,9 @@
 // schema: the full custom UI supersedes it, but config-ui-x falls back to
 // this schema form when the custom UI is unavailable.
 //
-// This generator does NOT write config.schema.json; it will be wired in when
-// the custom UI lands.
+// config.schema.json is generated from this module (plus the customUi
+// switches) by scripts/generate-schema.mjs, wired into prepublishOnly as
+// `npm run generate:schema`.
 import { ACCESSORY_TYPES } from './types.js';
 
 interface TypeChoice {
