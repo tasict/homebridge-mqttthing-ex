@@ -3,12 +3,12 @@
 // 3159-3165).
 import type { Service } from 'homebridge';
 
+import { history_ContactSensorState, makeHistoryService } from '../features/history.js';
 import { booleanCharacteristic, integerCharacteristic, type ThingContext } from '../hap/binding.js';
 import { registerServiceType } from './registry.js';
 import {
   addSensorOptionalCharacteristics,
   characteristic_LeakDetected,
-  historyNotYetAvailable,
 } from './shared.js';
 
 // Characteristic.ContactSensorState (upstream index.js:1768)
@@ -58,11 +58,17 @@ registerServiceType('contactSensor', (thing) => {
   characteristic_ContactSensorState(thing, service);
   addSensorOptionalCharacteristics(thing, service);
   const services = [service];
-  // TODO(M5): history - upstream index.js:3030-3036 ('door' history service;
-  // history_ContactSensorState at index.js:1776-1838 adds LastActivation,
-  // TimesOpened/ResetTotal counter persistence and Open/ClosedDuration -
-  // all created only inside the history block, so nothing else to port here)
-  historyNotYetAvailable(thing);
+  // 'door' history (upstream index.js:3030-3036); history_ContactSensorState
+  // adds LastActivation, TimesOpened/ResetTotal counter persistence and
+  // Open/ClosedDuration
+  if (config.history) {
+    const historySvc = makeHistoryService(thing, 'door', true);
+    if (historySvc) {
+      history_ContactSensorState(thing, historySvc, service);
+      // return history service too
+      services.push(historySvc);
+    }
+  }
   return { service, services };
 });
 

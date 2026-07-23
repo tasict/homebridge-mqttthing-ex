@@ -1,5 +1,14 @@
 // Basic accessory types: switch, outlet, simple sensors, battery.
 // Ported from upstream index.js dispatch branches (2859-2951, 3509-3511).
+import {
+  history_AirPressure,
+  history_CurrentRelativeHumidity,
+  history_CurrentTemperature,
+  history_MotionDetected,
+  history_On,
+  history_PowerConsumption,
+  makeHistoryService,
+} from '../features/history.js';
 import { registerServiceType } from './registry.js';
 import {
   addSensorOptionalCharacteristics,
@@ -16,7 +25,6 @@ import {
   characteristic_OutletInUse,
   characteristic_TotalConsumption,
   characteristic_Voltage,
-  historyNotYetAvailable,
 } from './shared.js';
 
 registerServiceType('switch', (thing) => {
@@ -24,7 +32,15 @@ registerServiceType('switch', (thing) => {
   const service = new hap.Service.Switch(config.name, config.subtype);
   characteristic_On(thing, service);
   const services = [service];
-  historyNotYetAvailable(thing);
+  // 'switch' history (upstream index.js:2863-2869)
+  if (config.history) {
+    const historySvc = makeHistoryService(thing, 'switch');
+    if (historySvc) {
+      history_On(thing, historySvc, service);
+      // return history service too
+      services.push(historySvc);
+    }
+  }
   return { service, services };
 });
 
@@ -48,7 +64,15 @@ registerServiceType('outlet', (thing) => {
     characteristic_TotalConsumption(thing, service);
   }
   const services = [service];
-  historyNotYetAvailable(thing);
+  // 'energy' history (upstream index.js:2889-2895)
+  if (config.history) {
+    const historySvc = makeHistoryService(thing, 'energy');
+    if (historySvc) {
+      history_PowerConsumption(thing, historySvc, service);
+      // return history service too
+      services.push(historySvc);
+    }
+  }
   return { service, services };
 });
 
@@ -57,7 +81,15 @@ registerServiceType('motionSensor', (thing) => {
   const service = new hap.Service.MotionSensor(config.name, config.subtype);
   characteristic_MotionDetected(thing, service);
   const services = [service];
-  historyNotYetAvailable(thing);
+  // 'motion' history (upstream index.js:2900-2906)
+  if (config.history) {
+    const historySvc = makeHistoryService(thing, 'motion', true);
+    if (historySvc) {
+      history_MotionDetected(thing, historySvc, service);
+      // return history service too
+      services.push(historySvc);
+    }
+  }
   addSensorOptionalCharacteristics(thing, service);
   return { service, services };
 });
@@ -84,7 +116,15 @@ registerServiceType('temperatureSensor', (thing) => {
   characteristic_CurrentTemperature(thing, service);
   addSensorOptionalCharacteristics(thing, service);
   const services = [service];
-  historyNotYetAvailable(thing);
+  // 'weather' history (upstream index.js:2921-2927)
+  if (config.history) {
+    const historySvc = makeHistoryService(thing, 'weather');
+    if (historySvc) {
+      history_CurrentTemperature(thing, historySvc);
+      // return history service too
+      services.push(historySvc);
+    }
+  }
   return { service, services };
 });
 
@@ -94,7 +134,15 @@ registerServiceType('humiditySensor', (thing) => {
   characteristic_CurrentRelativeHumidity(thing, service);
   addSensorOptionalCharacteristics(thing, service);
   const services = [service];
-  historyNotYetAvailable(thing);
+  // 'weather' history (upstream index.js:2933-2939)
+  if (config.history) {
+    const historySvc = makeHistoryService(thing, 'weather');
+    if (historySvc) {
+      history_CurrentRelativeHumidity(thing, historySvc);
+      // return history service too
+      services.push(historySvc);
+    }
+  }
   return { service, services };
 });
 
@@ -104,7 +152,15 @@ registerServiceType('airPressureSensor', (thing) => {
   characteristic_AirPressure(thing, service);
   addSensorOptionalCharacteristics(thing, service);
   const services = [service];
-  historyNotYetAvailable(thing);
+  // 'weather' history (upstream index.js:2945-2951)
+  if (config.history) {
+    const historySvc = makeHistoryService(thing, 'weather');
+    if (historySvc) {
+      history_AirPressure(thing, historySvc);
+      // return history service too
+      services.push(historySvc);
+    }
+  }
   return { service, services };
 });
 

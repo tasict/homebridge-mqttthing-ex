@@ -2,6 +2,12 @@
 // Ported from upstream index.js dispatch branch (2952-3024).
 import type { Service } from 'homebridge';
 
+import {
+  history_AirPressure,
+  history_CurrentRelativeHumidity,
+  history_CurrentTemperature,
+  makeHistoryService,
+} from '../features/history.js';
 import { WEATHER_SERVICE_UUID } from '../hap/eve.js';
 import {
   floatCharacteristic,
@@ -16,7 +22,6 @@ import {
   characteristic_CurrentAmbientLightLevel,
   characteristic_CurrentRelativeHumidity,
   characteristic_CurrentTemperature,
-  historyNotYetAvailable,
 } from './shared.js';
 
 // Characteristic.WeatherCondition (Eve-only) (upstream index.js:1714)
@@ -153,7 +158,15 @@ registerServiceType('weatherStation', (thing) => {
   if (addWeatherSvc) {
     services.push(weatherSvc);
   }
-  // TODO(M5): history - upstream index.js:3017-3024 ('weather' history service)
-  historyNotYetAvailable(thing);
+  // 'weather' history (upstream index.js:3017-3024)
+  if (config.history) {
+    const historySvc = makeHistoryService(thing, 'weather');
+    if (historySvc) {
+      history_CurrentTemperature(thing, historySvc);
+      history_CurrentRelativeHumidity(thing, historySvc);
+      history_AirPressure(thing, historySvc);
+      services.push(historySvc);
+    }
+  }
   return { service, services };
 });

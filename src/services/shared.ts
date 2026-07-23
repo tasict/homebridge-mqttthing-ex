@@ -14,7 +14,8 @@ import {
 } from '../hap/binding.js';
 import { isRecvValueOff, isRecvValueOn } from '../hap/values.js';
 
-// History arrives in a later milestone; warn instead of silently ignoring.
+// Fallback warning for accessory types without history support (real history
+// lives in src/features/history.ts). No longer used by the built-in types.
 export function historyNotYetAvailable(thing: ThingContext): void {
   if (thing.config.history) {
     thing.log.warn('History is not supported by this version yet - continuing without history');

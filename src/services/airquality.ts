@@ -4,6 +4,13 @@
 import type { Service } from 'homebridge';
 
 import {
+  history_AirQualityPPM,
+  history_CurrentRelativeHumidity,
+  history_CurrentTemperature,
+  history_VOCDensity,
+  makeHistoryService,
+} from '../features/history.js';
+import {
   floatCharacteristic,
   multiCharacteristic,
   type ThingContext,
@@ -14,7 +21,6 @@ import {
   addSensorOptionalCharacteristics,
   characteristic_CurrentRelativeHumidity,
   characteristic_CurrentTemperature,
-  historyNotYetAvailable,
 } from './shared.js';
 
 // Characteristic.AirQuality (upstream index.js:2132)
@@ -219,15 +225,29 @@ registerServiceType('airQualitySensor', (thing) => {
     addSensorOptionalCharacteristics(thing, humSvc);
     services.push(humSvc);
   }
-  if (config.history && !config.room2) {
-    // upstream adds the Eve air quality PPM characteristic to the main
-    // service inside its (non-room2) history branch (index.js:3275-3277)
+  if (config.history && config.room2) {
+    // 'room2' history (upstream index.js:3265-3271)
+    const historySvc = makeHistoryService(thing, 'room2');
+    if (historySvc) {
+      history_VOCDensity(thing, historySvc);
+      history_CurrentTemperature(thing, historySvc);
+      history_CurrentRelativeHumidity(thing, historySvc);
+      services.push(historySvc);
+    }
+  } else if (config.history) {
+    // 'room' history (upstream index.js:3272-3282); upstream adds the Eve air
+    // quality PPM characteristic to the main service inside this branch
     if (config.topics?.getAirQualityPPM) {
       characteristic_AirQualityPPM(thing, service);
     }
+    const historySvc = makeHistoryService(thing, 'room');
+    if (historySvc) {
+      history_AirQualityPPM(thing, historySvc);
+      history_CurrentTemperature(thing, historySvc);
+      history_CurrentRelativeHumidity(thing, historySvc);
+      services.push(historySvc);
+    }
   }
-  // TODO(M5): history - upstream index.js:3265-3282 ('room2'/'room' history services)
-  historyNotYetAvailable(thing);
   return { service, services };
 });
 
