@@ -14,7 +14,7 @@
 //   whole accessory.
 import { EventEmitter } from 'node:events';
 
-import type { CharacteristicValue, Controller, HAP, Service } from 'homebridge';
+import type { API, CharacteristicValue, Controller, HAP, Service } from 'homebridge';
 
 import type { ThingConfig, TopicSpec } from '../config.js';
 import type { Log } from '../log.js';
@@ -48,6 +48,8 @@ export interface ThingContext {
   config: ThingConfig;
   log: Log;
   hap: HAP;
+  /** full Homebridge API instance (needed e.g. by fakegato-history) */
+  api: API;
   eve: EveTypes;
   state: Record<string, unknown>;
   events: Record<string, () => void>;
@@ -77,6 +79,7 @@ export interface MakeThingContextParams {
   config: ThingConfig;
   log: Log;
   hap: HAP;
+  api: API;
   controllers: Controller[];
   /** api.versionGreaterOrEqual, used to gate adaptive lighting like upstream */
   versionGreaterOrEqual?: (version: string) => boolean;
@@ -85,7 +88,7 @@ export interface MakeThingContextParams {
 }
 
 export function makeThingContext(params: MakeThingContextParams): ThingContext {
-  const { mqttCtx, config, log, hap, controllers, versionGreaterOrEqual, throttledCallTimers } = params;
+  const { mqttCtx, config, log, hap, api, controllers, versionGreaterOrEqual, throttledCallTimers } = params;
 
   // fresh per-(sub-)service state, shared with the MQTT layer via ctx.state
   // (upstream index.js:185: `var state = ctx.state = {}`)
@@ -100,6 +103,7 @@ export function makeThingContext(params: MakeThingContextParams): ThingContext {
     config,
     log,
     hap,
+    api,
     eve: makeEve(hap),
     state,
     events,

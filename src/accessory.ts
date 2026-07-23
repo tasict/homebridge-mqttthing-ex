@@ -120,6 +120,7 @@ export class MqttThingAccessory implements AccessoryPlugin {
       config,
       log: this.log,
       hap: this.api.hap,
+      api: this.api,
       controllers: this.controllers,
       versionGreaterOrEqual: this.api.versionGreaterOrEqual
         ? this.api.versionGreaterOrEqual.bind(this.api)
