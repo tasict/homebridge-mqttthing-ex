@@ -88,25 +88,29 @@ export interface ThingConfig {
 }
 
 /**
- * Upstream-compatible config normalization (index.js:114-129):
- * - `history` given as an object silently becomes `historyOptions` with
- *   `history` treated as enabled.
- * - legacy `historyOptions.autoTimer === false` -> `noAutoTimer: true`,
- *   `autoRepeat === false` -> `noAutoRepeat: true`.
+ * Upstream-compatible history config migration (index.js:114-131). Runs only
+ * when a `history` key is present:
+ * - `history` given as an object becomes `historyOptions` with `history` set
+ *   to true; otherwise `historyOptions` is created if absent.
+ * - legacy `autoTimer`/`autoRepeat` are migrated to `noAutoTimer` /
+ *   `noAutoRepeat` (set explicitly to a boolean) unless already present.
  * Mutates the config in place, as upstream does.
  */
 export function normalizeHistoryConfig(config: ThingConfig): void {
-  if (config.history && typeof config.history === 'object') {
+  if (!Object.prototype.hasOwnProperty.call(config, 'history')) {
+    return;
+  }
+  if (typeof config.history === 'object' && config.history !== null) {
     config.historyOptions = config.history as HistoryOptionsConfig;
     config.history = true;
+  } else if (!Object.prototype.hasOwnProperty.call(config, 'historyOptions')) {
+    config.historyOptions = {};
   }
-  const opts = config.historyOptions;
-  if (opts) {
-    if (opts.autoTimer === false) {
-      opts.noAutoTimer = true;
-    }
-    if (opts.autoRepeat === false) {
-      opts.noAutoRepeat = true;
-    }
+  const opts = config.historyOptions!;
+  if (!Object.prototype.hasOwnProperty.call(opts, 'noAutoTimer')) {
+    opts.noAutoTimer = opts.autoTimer === false;
+  }
+  if (!Object.prototype.hasOwnProperty.call(opts, 'noAutoRepeat')) {
+    opts.noAutoRepeat = opts.autoRepeat === false;
   }
 }
