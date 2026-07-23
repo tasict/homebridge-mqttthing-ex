@@ -23,6 +23,21 @@ services over MQTT — a modern, actively maintained successor to
 2. Install `homebridge-mqttthing-ex`.
 3. Restart Homebridge. **No configuration changes are required.**
 
+**No HomeKit re-pairing is needed.** Homebridge identifies a bridged
+accessory by the accessory alias plus its configured name
+(`uuid.generate("mqttthing:" + name)`), not by the plugin package name.
+Since this plugin registers the same `mqttthing` alias and your accessory
+names stay the same, every accessory keeps its UUID — room assignments,
+automations, and scenes are all preserved. To make the switch seamless:
+
+- Perform steps 1-3 as one operation with a **single restart**. If
+  Homebridge runs without the plugin in between, the accessories disappear
+  from the bridge and iOS may drop them from automations after syncing.
+- Do not rename accessories during the migration (the `name` is part of the
+  accessory identity, as it always was).
+- If you run mqttthing accessories in a child bridge (`_bridge`), keep the
+  same `_bridge.username` and the pairing is preserved too.
+
 ## What's new compared to homebridge-mqttthing
 
 - **Custom configuration UI** for the Homebridge UI: searchable accessory
