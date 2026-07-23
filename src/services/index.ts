@@ -12,5 +12,6 @@ import './airquality.js';
 import './weather.js';
 import './media.js';
 import './irrigation.js';
+import './lightbulb.js';
 
 export { buildServicesForConfig } from './registry.js';
