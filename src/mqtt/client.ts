@@ -6,7 +6,7 @@ import mqtt from 'mqtt';
 import { loadCodec } from '../codec/loader.js';
 import type { MqttContext } from './context.js';
 import { PublishQueue } from './queue.js';
-import { optimizedPublish, rawSend } from './wiring.js';
+import { optimizedPublish, rawSend, topicFilterMatches } from './wiring.js';
 
 /**
  * Initialise MQTT for an accessory context. Populates ctx.mqttClient,
@@ -116,8 +116,9 @@ export function init(ctx: MqttContext): mqtt.MqttClient {
     };
   }
 
-  // add protocol to url string, if not yet available
-  let brokerUrl = config.url || process.env.MQTTTHING_URL;
+  // add protocol to url string, if not yet available; default to a local
+  // broker instead of passing an empty string to mqtt.connect (issue #606)
+  let brokerUrl = config.url || process.env.MQTTTHING_URL || 'mqtt://localhost:1883';
   if (brokerUrl && !brokerUrl.includes('://')) {
     brokerUrl = 'mqtt://' + brokerUrl;
   }
@@ -140,14 +141,29 @@ export function init(ctx: MqttContext): mqtt.MqttClient {
   const mqttClient = mqtt.connect(brokerUrl as string, options as mqtt.IClientOptions);
   mqttClient.on('error', (err) => {
     log('MQTT Error: ' + err);
+    // unwrap AggregateError (e.g. IPv6+IPv4 connection refusal on modern
+    // Node, issue #670) so the real cause is visible
+    const errors = (err as { errors?: unknown[] }).errors;
+    if (Array.isArray(errors)) {
+      for (const cause of errors) {
+        log('MQTT Error cause: ' + cause);
+      }
+    }
   });
 
   mqttClient.on('message', (topic, message) => {
     if (logmqtt) {
       log('Received MQTT: ' + topic + ' = ' + message);
     }
-    const handlers = mqttDispatch[topic];
-    if (handlers) {
+    // exact-topic handlers, plus wildcard subscriptions matched per the MQTT
+    // spec (issue #500: wildcard subscriptions never dispatched upstream)
+    const handlers = [...(mqttDispatch[topic] ?? [])];
+    for (const filter of Object.keys(mqttDispatch)) {
+      if (filter !== topic && (filter.includes('+') || filter.includes('#')) && topicFilterMatches(filter, topic)) {
+        handlers.push(...mqttDispatch[filter]);
+      }
+    }
+    if (handlers.length > 0) {
       for (let i = 0; i < handlers.length; i++) {
         handlers[i](topic, message);
       }

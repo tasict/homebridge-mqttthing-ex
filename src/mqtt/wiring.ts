@@ -9,6 +9,31 @@ import { getCodecFunction } from '../codec/loader.js';
 import type { TopicSpec, ExtendedTopic } from '../config.js';
 import { getApplyState, type MessageHandler, type MqttContext } from './context.js';
 
+/**
+ * MQTT topic filter matching per spec, so wildcard subscriptions dispatch
+ * (upstream issue #500: subscribing to `a/+/b` worked but incoming messages
+ * were only matched by exact topic key and never delivered).
+ */
+export function topicFilterMatches(filter: string, topic: string): boolean {
+  const f = filter.split('/');
+  const t = topic.split('/');
+  for (let i = 0; i < f.length; i++) {
+    if (f[i] === '#') {
+      return true;
+    }
+    if (i >= t.length) {
+      return false;
+    }
+    if (f[i] === '+') {
+      continue;
+    }
+    if (f[i] !== t[i]) {
+      return false;
+    }
+  }
+  return t.length === f.length;
+}
+
 /** Actually hand a message to the MQTT client (or log it). */
 export function rawSend(ctx: MqttContext, topic: string, messageString: string): void {
   const { config, log, mqttClient } = ctx;
@@ -25,6 +50,11 @@ export function rawSend(ctx: MqttContext, topic: string, messageString: string):
  */
 export function optimizedPublish(topic: string, message: unknown, ctx: MqttContext): void {
   const { config } = ctx;
+  if (message === null || message === undefined) {
+    // never publish literal 'null'/'undefined'; upstream crashed here when a
+    // codec delivered null through output() (upstream issue #438)
+    return;
+  }
   const messageString = String(message);
   if (config.optimizePublishing && ctx.lastPubValues) {
     if (ctx.lastPubValues[topic] === messageString) {
@@ -86,7 +116,9 @@ export function subscribe(ctx: MqttContext, topicSpec: TopicSpec, property: stri
               ' with message ' + message + ' - ' + ex,
           );
         }
-        if (decoded !== undefined) {
+        // null and undefined both suppress the message (upstream issue #458:
+        // apply() returning null crashed instead of ignoring)
+        if (decoded !== undefined && decoded !== null) {
           return previous(intopic, decoded);
         }
       };
@@ -107,7 +139,7 @@ export function subscribe(ctx: MqttContext, topicSpec: TopicSpec, property: stri
       if (config.logMqtt) {
         log('codec decoded message to [' + decoded + ']');
       }
-      if (decoded !== undefined) {
+      if (decoded !== undefined && decoded !== null) {
         return output(decoded);
       }
     };
