@@ -85,7 +85,6 @@ export function App() {
       {view.name === 'list' && (
         <ListView
           configs={configs}
-          touch={touch}
           onEdit={(index) => setView({ name: 'edit', index })}
           onAdd={() => setView({ name: 'add' })}
         />
@@ -96,6 +95,7 @@ export function App() {
           configs={configs}
           touch={touch}
           onBack={() => setView({ name: 'list' })}
+          onOpen={(index) => setView({ name: 'edit', index })}
         />
       )}
       {view.name === 'edit' && (view.index < 0 || view.index >= configs.length) && (

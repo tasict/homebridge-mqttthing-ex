@@ -7,6 +7,7 @@ import type { ThingConfig } from '../../../src/config.js';
 import type { AccessoryCategory } from '../../../src/model/model-types.js';
 import { ACCESSORY_TYPES, getTypeModel } from '../../../src/model/types.js';
 import { mostCommonBroker } from '../lib/config-ops.js';
+import { TypeIcon } from './TypeIcon.js';
 
 interface Props {
   configs: ThingConfig[];
@@ -87,9 +88,17 @@ export function AddWizard({ configs, touch, onCancel, onCreated }: Props) {
                 <h6 class="mqx-type-category p-0">{category}</h6>
                 <div class="mqx-wizard-grid">
                   {types.map((t) => (
-                    <button key={t.id} type="button" class="btn btn-outline-primary btn-sm text-start" onClick={() => setType(t.id)}>
-                      {t.label}
-                      <div class="mqx-key mqx-mono">{t.id}</div>
+                    <button
+                      key={t.id}
+                      type="button"
+                      class="btn btn-outline-primary text-start d-flex align-items-center gap-2"
+                      onClick={() => setType(t.id)}
+                    >
+                      <TypeIcon type={t.id} size={22} class="flex-shrink-0" />
+                      <span class="overflow-hidden">
+                        {t.label}
+                        <div class="mqx-key mqx-mono text-truncate">{t.id}</div>
+                      </span>
                     </button>
                   ))}
                 </div>

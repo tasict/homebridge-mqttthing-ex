@@ -1,19 +1,20 @@
-// View A - the accessory list: search, type filter, sort, add, and per-row
-// actions (edit, duplicate, delete, reorder). Reordering is only available
-// while the list shows the raw config order without filters.
+// View A - the accessory list: search, type filter, sort and add on top of
+// a responsive card grid (one accessory per card, opened via a single Edit
+// button). Duplicate and delete live in the editor; the raw config order is
+// preserved as the default sort.
 import { useState } from 'preact/hooks';
 
 import type { ThingConfig } from '../../../src/config.js';
 import { getTypeModel } from '../../../src/model/types.js';
-import { deepClone, duplicateName, matchesSearch } from '../lib/config-ops.js';
+import { matchesSearch } from '../lib/config-ops.js';
 import { summarizeConfig } from '../lib/validation.js';
 import { hb } from '../homebridge.js';
+import { TypeIcon } from './TypeIcon.js';
 
 type SortMode = 'config' | 'name' | 'type';
 
 interface Props {
   configs: ThingConfig[];
-  touch: () => void;
   onEdit: (index: number) => void;
   onAdd: () => void;
 }
@@ -26,7 +27,7 @@ function typeLabel(type: string | undefined): string {
   return model.id === type ? model.label : `${model.label} (${type})`;
 }
 
-export function ListView({ configs, touch, onEdit, onAdd }: Props) {
+export function ListView({ configs, onEdit, onAdd }: Props) {
   const [query, setQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [sortMode, setSortMode] = useState<SortMode>('config');
@@ -53,35 +54,6 @@ export function ListView({ configs, touch, onEdit, onAdd }: Props) {
     entries = [...entries].sort((a, b) => typeLabel(a.config.type).localeCompare(typeLabel(b.config.type)));
   }
 
-  const canReorder = sortMode === 'config' && query.trim() === '' && typeFilter === '';
-
-  const move = (index: number, delta: number) => {
-    const target = index + delta;
-    if (target < 0 || target >= configs.length) {
-      return;
-    }
-    const [entry] = configs.splice(index, 1);
-    configs.splice(target, 0, entry);
-    touch();
-  };
-
-  const duplicate = (index: number) => {
-    const original = configs[index];
-    const copy = deepClone(original);
-    copy.name = duplicateName(configs.map((c) => String(c.name ?? '')), String(original.name ?? 'accessory'));
-    configs.splice(index + 1, 0, copy);
-    touch();
-    onEdit(index + 1);
-  };
-
-  const remove = (index: number) => {
-    const name = String(configs[index].name ?? `#${index + 1}`);
-    if (window.confirm(`Delete accessory "${name}"? This cannot be undone after saving.`)) {
-      configs.splice(index, 1);
-      touch();
-    }
-  };
-
   const copyJson = async () => {
     try {
       await navigator.clipboard.writeText(JSON.stringify(configs, null, 2));
@@ -96,13 +68,13 @@ export function ListView({ configs, touch, onEdit, onAdd }: Props) {
       <div class="d-flex flex-wrap gap-2 mb-3">
         <input
           type="search"
-          class="form-control form-control-sm w-auto flex-grow-1"
+          class="form-control w-auto flex-grow-1"
           placeholder="Search name, type or topic&hellip;"
           value={query}
           onInput={(e) => setQuery((e.currentTarget as HTMLInputElement).value)}
         />
         <select
-          class="form-select form-select-sm w-auto"
+          class="form-select w-auto"
           value={typeFilter}
           onChange={(e) => setTypeFilter((e.currentTarget as HTMLSelectElement).value)}
         >
@@ -114,7 +86,7 @@ export function ListView({ configs, touch, onEdit, onAdd }: Props) {
           ))}
         </select>
         <select
-          class="form-select form-select-sm w-auto"
+          class="form-select w-auto"
           value={sortMode}
           onChange={(e) => setSortMode((e.currentTarget as HTMLSelectElement).value as SortMode)}
         >
@@ -122,7 +94,7 @@ export function ListView({ configs, touch, onEdit, onAdd }: Props) {
           <option value="name">Sort by name</option>
           <option value="type">Sort by type</option>
         </select>
-        <button class="btn btn-primary btn-sm" onClick={onAdd}>
+        <button class="btn btn-primary" onClick={onAdd}>
           + Add accessory
         </button>
       </div>
@@ -135,62 +107,58 @@ export function ListView({ configs, touch, onEdit, onAdd }: Props) {
       {configs.length > 0 && entries.length === 0 && <div class="alert alert-secondary">No accessories match the current search.</div>}
 
       {entries.length > 0 && (
-        <table class="table table-sm mqx-topic-table align-middle">
-          <tbody>
-            {entries.map(({ config, index }) => {
-              const summary = summarizeConfig(config);
-              const findings = [...summary.errors, ...summary.warnings];
-              const serviceCount = Array.isArray(config.services) ? config.services.length : 0;
-              return (
-                <tr key={index} class="mqx-list-row" onClick={() => onEdit(index)}>
-                  <td>
-                    <strong>{String(config.name ?? '(unnamed)')}</strong>
-                    <div class="mqx-key">{typeLabel(config.type)}</div>
-                  </td>
-                  <td class="text-end" style="width: 1%; white-space: nowrap;">
-                    {serviceCount > 0 && (
-                      <span class="badge text-bg-secondary me-1" title="Grouped services">
-                        {serviceCount} services
-                      </span>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3">
+          {entries.map(({ config, index }) => {
+            const summary = summarizeConfig(config);
+            const findings = [...summary.errors, ...summary.warnings];
+            const serviceCount = Array.isArray(config.services) ? config.services.length : 0;
+            return (
+              <div key={index} class="col">
+                {/* the whole card is a pointer shortcut; the Edit button is the accessible control */}
+                <div class="card h-100 mqx-acc-card" onClick={() => onEdit(index)}>
+                  <div class="card-body d-flex flex-column p-3">
+                    <div class="d-flex align-items-center gap-3">
+                      <div class="mqx-card-icon flex-shrink-0">
+                        <TypeIcon type={config.type} size={26} />
+                      </div>
+                      <div class="flex-grow-1 overflow-hidden">
+                        <div class="fs-5 fw-semibold text-truncate" title={String(config.name ?? '')}>
+                          {String(config.name ?? '(unnamed)')}
+                        </div>
+                        <div class="text-body-secondary small text-truncate">{typeLabel(config.type)}</div>
+                      </div>
+                    </div>
+                    {(serviceCount > 0 || summary.total > 0) && (
+                      <div class="d-flex flex-wrap gap-1 mt-2">
+                        {serviceCount > 0 && (
+                          <span class="badge text-bg-secondary" title="Grouped services">
+                            {serviceCount} services
+                          </span>
+                        )}
+                        {summary.total > 0 && (
+                          <span
+                            class={`badge ${summary.errors.length > 0 ? 'text-bg-danger' : 'text-bg-warning'}`}
+                            title={findings.join('\n')}
+                          >
+                            {summary.total} {summary.total === 1 ? 'issue' : 'issues'}
+                          </span>
+                        )}
+                      </div>
                     )}
-                    {summary.total > 0 && (
-                      <span
-                        class={`badge me-1 ${summary.errors.length > 0 ? 'text-bg-danger' : 'text-bg-warning'}`}
-                        title={findings.join('\n')}
-                      >
-                        {summary.total} {summary.total === 1 ? 'issue' : 'issues'}
-                      </span>
-                    )}
-                  </td>
-                  <td class="text-end mqx-row-actions" style="width: 1%; white-space: nowrap;" onClick={(e) => e.stopPropagation()}>
-                    <div class="btn-group">
-                      <button class="btn btn-outline-secondary" title="Move up" disabled={!canReorder || index === 0} onClick={() => move(index, -1)}>
-                        ↑
-                      </button>
-                      <button
-                        class="btn btn-outline-secondary"
-                        title="Move down"
-                        disabled={!canReorder || index === configs.length - 1}
-                        onClick={() => move(index, 1)}
-                      >
-                        ↓
-                      </button>
-                      <button class="btn btn-outline-secondary" title="Duplicate" onClick={() => duplicate(index)}>
-                        ⧉
-                      </button>
-                      <button class="btn btn-outline-danger" title="Delete" onClick={() => remove(index)}>
-                        ✕
+                    <div class="mt-auto pt-3">
+                      <button class="btn btn-outline-primary w-100" onClick={() => onEdit(index)}>
+                        Edit
                       </button>
                     </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       )}
 
-      <div class="d-flex align-items-center gap-2 mt-2">
+      <div class="d-flex align-items-center gap-2 mt-3">
         <span class="text-body-secondary small">
           {entries.length === configs.length
             ? `${configs.length} ${configs.length === 1 ? 'accessory' : 'accessories'}`

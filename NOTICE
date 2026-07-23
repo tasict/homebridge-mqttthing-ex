@@ -10,3 +10,6 @@ are derived from that project.
 The Eve custom characteristic and service definitions in src/hap/eve.ts are
 derived from homebridge-lib (https://github.com/ebaauw/homebridge-lib),
 Copyright Erik Baauw, licensed under the Apache License 2.0.
+
+The custom config UI bundles icons from Lucide (https://lucide.dev),
+Copyright Lucide Contributors, licensed under the ISC License.

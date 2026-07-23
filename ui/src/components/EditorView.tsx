@@ -1,11 +1,14 @@
 // View B - the accessory editor: collapsible cards for identity, MQTT
 // connection, topics (model-driven table), type-specific options, advanced
 // settings, custom sub-services and a JSON escape hatch. Validation
-// findings are shown but never block saving.
+// findings are shown but never block saving. Duplicate and delete (with a
+// two-click confirm) live in the header here, keeping the list cards clean.
+import { useEffect, useRef, useState } from 'preact/hooks';
+
 import type { ThingConfig } from '../../../src/config.js';
 import { getTypeModel } from '../../../src/model/types.js';
 import { hb } from '../homebridge.js';
-import { changeAccessoryType, setOption } from '../lib/config-ops.js';
+import { changeAccessoryType, deleteAccessory, duplicateAccessory, setOption } from '../lib/config-ops.js';
 import { summarizeConfig } from '../lib/validation.js';
 import { AdvancedSection } from './AdvancedSection.js';
 import { JsonEditor } from './JsonEditor.js';
@@ -21,9 +24,55 @@ interface Props {
   configs: ThingConfig[];
   touch: () => void;
   onBack: () => void;
+  /** Open the editor for another accessory (used after duplicating). */
+  onOpen: (index: number) => void;
 }
 
-export function EditorView({ config, configs, touch, onBack }: Props) {
+export function EditorView({ config, configs, touch, onBack, onOpen }: Props) {
+  // Two-click delete: the first click arms the button, the second deletes.
+  // The armed state falls back to normal after a few seconds, and resets
+  // whenever the editor switches to another accessory (e.g. after Duplicate).
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const confirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    setConfirmDelete(false);
+    return () => {
+      if (confirmTimer.current !== null) {
+        clearTimeout(confirmTimer.current);
+      }
+    };
+  }, [config]);
+
+  const duplicate = () => {
+    const index = configs.indexOf(config);
+    if (index < 0) {
+      return;
+    }
+    const copyIndex = duplicateAccessory(configs, index);
+    touch();
+    onOpen(copyIndex);
+  };
+
+  const remove = () => {
+    if (!confirmDelete) {
+      setConfirmDelete(true);
+      if (confirmTimer.current !== null) {
+        clearTimeout(confirmTimer.current);
+      }
+      confirmTimer.current = setTimeout(() => {
+        confirmTimer.current = null;
+        setConfirmDelete(false);
+      }, 4000);
+      return;
+    }
+    const index = configs.indexOf(config);
+    if (index >= 0) {
+      deleteAccessory(configs, index);
+      touch();
+    }
+    onBack();
+  };
+
   const model = getTypeModel(config.type);
   const isCustom = model?.id === 'custom';
   const summary = summarizeConfig(config);
@@ -37,14 +86,29 @@ export function EditorView({ config, configs, touch, onBack }: Props) {
 
   return (
     <div>
-      <div class="mb-3">
-        <button type="button" class="btn btn-link btn-sm p-0" onClick={onBack}>
-          ← All accessories
-        </button>
-        <h5 class="m-0 mt-1">
-          {String(config.name ?? '(unnamed)')}{' '}
-          <span class="text-body-secondary fw-normal">{model ? model.label : String(config.type ?? '')}</span>
-        </h5>
+      <div class="mb-3 d-flex flex-wrap align-items-end gap-2">
+        <div class="flex-grow-1">
+          <button type="button" class="btn btn-link btn-sm p-0" onClick={onBack}>
+            ← All accessories
+          </button>
+          <h5 class="m-0 mt-1">
+            {String(config.name ?? '(unnamed)')}{' '}
+            <span class="text-body-secondary fw-normal">{model ? model.label : String(config.type ?? '')}</span>
+          </h5>
+        </div>
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-outline-secondary" title="Create a copy of this accessory and edit it" onClick={duplicate}>
+            Duplicate
+          </button>
+          <button
+            type="button"
+            class={`btn ${confirmDelete ? 'btn-danger' : 'btn-outline-danger'}`}
+            title="Removed from the staged config; nothing is written until you save"
+            onClick={remove}
+          >
+            {confirmDelete ? 'Confirm delete?' : 'Delete'}
+          </button>
+        </div>
       </div>
 
       {summary.total > 0 && (

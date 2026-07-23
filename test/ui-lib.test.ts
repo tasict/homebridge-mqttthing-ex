@@ -9,6 +9,8 @@ import { checkApplySyntax } from '../ui/src/lib/apply-check.js';
 import {
   changeAccessoryType,
   deepClone,
+  deleteAccessory,
+  duplicateAccessory,
   duplicateName,
   matchesSearch,
   mostCommonBroker,
@@ -156,6 +158,35 @@ describe('ui-lib: search and list operations', () => {
     expect(mostCommonBroker(configs)).toEqual({ url: 'mqtt://b', username: 'u' });
     expect(mostCommonBroker([])).toBeUndefined();
     expect(mostCommonBroker([{ accessory: 'mqttthing', type: 'switch', name: 'x' }])).toBeUndefined();
+  });
+
+  it('duplicateAccessory inserts an independent deep copy right after the original', () => {
+    const list = deepClone(configs);
+    const copyIndex = duplicateAccessory(list, 0);
+    expect(copyIndex).toBe(1);
+    expect(list).toHaveLength(4);
+    expect(list[1].name).toBe('Kitchen Light copy');
+    expect(list[1].type).toBe('lightbulb-RGB');
+    expect(list[2].name).toBe('Heater'); // the rest shifts down
+    // the copy is independent: editing it never touches the original
+    (list[1].topics as Record<string, unknown>).setRGB = 'changed';
+    expect((list[0].topics as Record<string, unknown>).setRGB).toBe('kitchen/rgb');
+  });
+
+  it('duplicateAccessory avoids name collisions with existing copies', () => {
+    const list = deepClone(configs);
+    duplicateAccessory(list, 0);
+    const secondIndex = duplicateAccessory(list, 0);
+    expect(secondIndex).toBe(1);
+    expect(list[1].name).toBe('Kitchen Light copy 2');
+  });
+
+  it('deleteAccessory removes exactly the given index in place', () => {
+    const list = deepClone(configs);
+    const reference = list;
+    deleteAccessory(list, 1);
+    expect(reference).toBe(list); // same array identity (working copy)
+    expect(list.map((c) => c.name)).toEqual(['Kitchen Light', 'Multi']);
   });
 });
 

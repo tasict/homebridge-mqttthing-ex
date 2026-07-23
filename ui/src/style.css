@@ -100,17 +100,23 @@
   background-color: rgba(128, 128, 128, 0.08);
 }
 
-#mqttthing-ui .mqx-row-actions .btn {
-  padding: 0.1rem 0.4rem;
-  font-size: 0.8em;
-}
-
-#mqttthing-ui .mqx-list-row {
+#mqttthing-ui .mqx-acc-card {
   cursor: pointer;
+  border-color: rgba(128, 128, 128, 0.35);
+  transition: box-shadow 0.12s ease-in-out;
 }
 
-#mqttthing-ui .mqx-list-row:hover {
-  background-color: rgba(128, 128, 128, 0.12);
+#mqttthing-ui .mqx-acc-card:hover {
+  box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.15);
+}
+
+#mqttthing-ui .mqx-card-icon {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.75rem;
+  background-color: rgba(128, 128, 128, 0.14);
 }
 
 #mqttthing-ui .mqx-json-view {
@@ -121,7 +127,7 @@
 
 #mqttthing-ui .mqx-wizard-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
   gap: 0.5rem;
 }
 

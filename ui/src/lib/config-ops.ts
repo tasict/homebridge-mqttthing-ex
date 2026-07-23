@@ -30,6 +30,23 @@ export function duplicateName(existingNames: string[], baseName: string): string
   return candidate;
 }
 
+/**
+ * Insert a deep copy of the accessory at `index` directly after it, with a
+ * collision-free "<name> copy" name. Returns the index of the new copy.
+ */
+export function duplicateAccessory(configs: ThingConfig[], index: number): number {
+  const original = configs[index];
+  const copy = deepClone(original);
+  copy.name = duplicateName(configs.map((c) => String(c.name ?? '')), String(original.name ?? 'accessory'));
+  configs.splice(index + 1, 0, copy);
+  return index + 1;
+}
+
+/** Remove the accessory at `index` from the working copy in place. */
+export function deleteAccessory(configs: ThingConfig[], index: number): void {
+  configs.splice(index, 1);
+}
+
 /** True where a topic spec is the extended { topic, apply } object form. */
 export function isExtendedTopic(spec: TopicSpec | undefined): spec is ExtendedTopic {
   return typeof spec === 'object' && spec !== null;

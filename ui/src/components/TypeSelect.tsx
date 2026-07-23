@@ -4,6 +4,7 @@ import { useMemo, useState } from 'preact/hooks';
 
 import type { AccessoryCategory } from '../../../src/model/model-types.js';
 import { ACCESSORY_TYPES, getTypeModel } from '../../../src/model/types.js';
+import { TypeIcon } from './TypeIcon.js';
 
 interface TypeItem {
   id: string;
@@ -93,10 +94,13 @@ export function TypeSelect({ value, onSelect, excludeCustom }: Props) {
                       <button
                         key={item.id}
                         type="button"
-                        class={`list-group-item list-group-item-action${item.id === value ? ' fw-bold' : ''}`}
+                        class={`list-group-item list-group-item-action d-flex align-items-center gap-2${item.id === value ? ' fw-bold' : ''}`}
                         onClick={() => pick(item.id)}
                       >
-                        {item.label} <span class="mqx-key mqx-mono">{item.id}</span>
+                        <TypeIcon type={item.id} size={16} class="flex-shrink-0" />
+                        <span>
+                          {item.label} <span class="mqx-key mqx-mono">{item.id}</span>
+                        </span>
                       </button>
                     ))}
                 </div>
