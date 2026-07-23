@@ -100,6 +100,39 @@ When MQTTS (MQTT over TLS) is used, the `mqttOptions` object is passed through t
 
 `optimizePublishing` - Whenever publishing a message on any topic, don't republish the previously-published value.
 
+#### Outbound publish queue (mqttthing-ex)
+
+Low-power IoT devices (e.g. ESP8266-based) can be overwhelmed when HomeKit
+sends bursts of commands — a scene touching many characteristics at once, or
+a brightness slider drag producing dozens of set messages. The optional
+outbound publish queue paces MQTT publishing to protect such devices.
+Reads are unaffected: HomeKit reads are always answered from the cached
+state and never generate device traffic.
+
+`publishMinIntervalms` - Minimum interval in milliseconds between MQTT
+publishes for this accessory. Setting this enables the queue. When the queue
+is idle and the interval has elapsed, the next publish is sent immediately,
+so single commands keep their usual latency.
+
+`publishQueueLimit` - Maximum number of queued messages (default 1000). When
+the queue is full, the oldest message is dropped with a warning.
+
+`publishCoalesce` - When `true` (the default while the queue is enabled), a
+newer value for a topic already waiting in the queue replaces the queued
+value ("latest wins"), so a slider drag delivers only the final value. Set
+to `false` to deliver every message. Ordering between different topics is
+always preserved.
+
+```javascript
+{
+    "accessory": "mqttthing",
+    "type": "lightbulb",
+    "name": "Bedroom Strip",
+    "publishMinIntervalms": 100,
+    ...
+}
+```
+
 #### Env var overrides
 In addition to setting the MQTT settings in config, you can also set them using environment variable overrides. Configured values in the config.json will take precedence over any environment variables.
 
@@ -133,6 +166,11 @@ If an MQTT message is not a simple value or does not match the expected syntax, 
 `topic` - Topic string
 
 `apply` - Javascript function to apply (must be a complete function body that `return`s a value). The function is called with one arguments: `message`, holding the original message, and `state` (optional).
+
+Returning `undefined` or `null` from an apply function suppresses the
+message: nothing is forwarded to HomeKit (when receiving) and nothing is
+published (when sending). This makes it easy to filter messages, e.g.
+`"apply": "if( JSON.parse(message).battery ) { return message; }"`.
 
 e.g. Decoding a JSON payload:
 ```javascript
