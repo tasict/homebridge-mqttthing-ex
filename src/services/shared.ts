@@ -63,7 +63,13 @@ export function characteristic_StatusFault(thing: ThingContext, service: Service
 
 // Characteristic.StatusTampered (upstream index.js:1545)
 export function characteristic_StatusTampered(thing: ThingContext, service: Service): void {
-  booleanCharacteristic(thing, service, 'statusTampered', thing.hap.Characteristic.StatusTampered, undefined, thing.config.topics?.getStatusTampered);
+  const { hap } = thing;
+  // F9 (upstream #631): StatusTampered is UINT8 in HAP; emit 0/1 instead of
+  // booleans (truthy MQTT value mappings are unchanged)
+  booleanCharacteristic(thing, service, 'statusTampered', hap.Characteristic.StatusTampered, undefined, thing.config.topics?.getStatusTampered, {
+    mapValueFunc: (val) =>
+      val ? hap.Characteristic.StatusTampered.TAMPERED : hap.Characteristic.StatusTampered.NOT_TAMPERED,
+  });
 }
 
 // Characteristic.AltSensorState (upstream index.js:1550)
@@ -140,11 +146,17 @@ export function characteristic_CurrentTemperature(thing: ThingContext, service: 
   const { config, hap } = thing;
   floatCharacteristic(thing, service, 'currentTemperature', hap.Characteristic.CurrentTemperature, undefined, config.topics?.getCurrentTemperature, 0);
 
-  // configured temperature ranges
-  if (!tempRange(thing, service, hap.Characteristic.CurrentTemperature)) {
-    // or (old behaviour) allow negative temperatures (down to -100)
-    service.getCharacteristic(hap.Characteristic.CurrentTemperature).setProps({ minValue: -100 });
-  }
+  // F3 (upstream #587, #592, #392): minTemperature/maxTemperature describe
+  // the settable Target/Threshold range; upstream also clamped
+  // CurrentTemperature with them, invalidating real sensor readings. The
+  // configured range may only WIDEN the current-temperature range beyond the
+  // wide default of -100..100.
+  const minConfigured = Number(config.minTemperature);
+  const maxConfigured = Number(config.maxTemperature);
+  service.getCharacteristic(hap.Characteristic.CurrentTemperature).setProps({
+    minValue: Math.min(Number.isFinite(minConfigured) ? minConfigured : -100, -100),
+    maxValue: Math.max(Number.isFinite(maxConfigured) ? maxConfigured : 100, 100),
+  });
 }
 
 // Characteristic.CurrentRelativeHumidity (upstream index.js:1667)

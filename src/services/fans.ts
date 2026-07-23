@@ -172,8 +172,10 @@ registerServiceType('fanv2', (thing) => {
   const { config, hap } = thing;
   const service = new hap.Service.Fanv2(config.name, config.subtype);
   characteristic_Active(thing, service);
-  // upstream quirk: reads config.getCurrentFanState (not topics) - preserved for compatibility
-  if (config.getCurrentFanState) {
+  // F15: accept the correct topics.getCurrentFanState key; upstream only
+  // read the (undocumented) top-level config.getCurrentFanState, which is
+  // still honored for compatibility
+  if (config.topics?.getCurrentFanState || config.getCurrentFanState) {
     characteristic_CurrentFanState(thing, service);
   }
   if (config.topics?.setTargetFanState || config.topics?.getTargetFanState) {

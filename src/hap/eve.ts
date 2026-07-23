@@ -11,7 +11,6 @@ function eveUuid(id: string): string {
 
 export const WEATHER_SERVICE_UUID = 'D92D5391-92AF-4824-AF4A-356F25F25EA1';
 
-/* eslint-disable @typescript-eslint/no-empty-object-type */
 export interface EveTypes {
   Characteristics: {
     AirParticulateDensity: CharacteristicClass;
@@ -40,7 +39,6 @@ export interface EveTypes {
     AirPressureSensor: ServiceClass;
   };
 }
-/* eslint-enable @typescript-eslint/no-empty-object-type */
 
 type CharacteristicClass = { new (): InstanceType<HAP['Characteristic']>; UUID: string };
 type ServiceClass = { new (displayName?: string, subtype?: string): InstanceType<HAP['Service']>; UUID: string };

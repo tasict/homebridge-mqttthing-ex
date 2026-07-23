@@ -12,7 +12,7 @@ behavior and are called out in the release notes.
 |---|---|---|---|---|
 | F1 | #567 #552 #617 #686 | Spurious color/state publishes on startup: adaptive-lighting internal color temperature (initialValue 140) recomputes hue/saturation and publishes uninitialized defaults to set topics during service construction | Never publish to set topics during construction; publishes only from HomeKit actions or post-priming adaptive-lighting ticks | implemented (src/services/lightbulb.ts) |
 | F2 | #431 #436 | Adaptive lighting publishes color while the light is off (turns devices on); `adaptiveLighting: "false"` (string) not honored | Suppress CT/HSV publishes while off; coerce string booleans | implemented (src/services/lightbulb.ts; string coercion in binding) |
-| F3 | #587 #592 #392 | `minTemperature`/`maxTemperature` clamp CurrentTemperature, invalidating real readings and causing characteristicWarnings | Apply configured range only to Target/Threshold characteristics; CurrentTemperature keeps the wide default | planned |
+| F3 | #587 #592 #392 | `minTemperature`/`maxTemperature` clamp CurrentTemperature, invalidating real readings and causing characteristicWarnings | Apply configured range only to Target/Threshold characteristics; CurrentTemperature keeps the wide default | implemented (src/services/shared.ts) |
 | F4 | #500 (#607) | Wildcard subscriptions (`+`/`#`) never dispatch (exact-key lookup) | MQTT topic-filter matching in dispatch | implemented (src/mqtt) |
 | F5 | #605 #201 | `history: true` with multiple same-type services in a custom accessory crashes (duplicate fakegato UUID, no subtype) | Unique subtype per history service | planned (history port) |
 | F6 | #463 #414 #556 #525 #529 #520 #530 #667 #695 #455 #578 | Validation cluster: floats rejected for int formats instead of rounding; LightLevel 0 vs HAP min 0.0001; numeric-string config values silently break props; NaN re-warns forever | Central sanitize step: round for int formats, clamp to bounds, coerce numeric strings, drop NaN quietly (debug once per topic) | planned |
@@ -24,7 +24,7 @@ behavior and are called out in the release notes.
 | F12 | #606 #670 | Empty URL passes '' to mqtt.connect; AggregateError (IPv6+IPv4 refusal) logged verbatim | Default `mqtt://localhost:1883`; unwrap AggregateError causes in logs | implemented (src/mqtt) |
 | F13 | #403 #677 #366 | Missing `topics` object crashes; typo'd/case-wrong topic keys silently ignored | Config validation pass: friendly error for missing required topics; near-miss warnings | planned |
 | F14 | #308 | Numeric/boolean config values given as strings silently misbehave | Coerce in config normalization (lenient) | planned |
-| F15 | (#78) | fanv2 reads `config.getCurrentFanState` instead of `config.topics.getCurrentFanState` | Accept the correct topics key; keep legacy top-level key working | planned |
+| F15 | (#78) | fanv2 reads `config.getCurrentFanState` instead of `config.topics.getCurrentFanState` | Accept the correct topics key; keep legacy top-level key working | implemented (src/services/fans.ts) |
 | F16 | #619 #347 #342 | Offline devices zero out battery/sensor values | Opt-in: hold last-known values / No Response when offline | backlog (opt-in) |
 
 ## Already addressed by the rewrite (release-note references)

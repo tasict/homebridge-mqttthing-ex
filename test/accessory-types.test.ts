@@ -130,7 +130,10 @@ describe('thermostat', () => {
     expect(svc.getCharacteristic(Characteristic.TargetTemperature).value).toBe(10);
     expect(svc.getCharacteristic(Characteristic.TargetTemperature).props.minValue).toBe(5);
     expect(svc.getCharacteristic(Characteristic.TargetTemperature).props.maxValue).toBe(30);
-    expect(svc.getCharacteristic(Characteristic.CurrentTemperature).props.minValue).toBe(5);
+    // F3: the configured range must NOT clamp CurrentTemperature (upstream
+    // #587/#592) - it keeps the wide default so real readings stay valid
+    expect(svc.getCharacteristic(Characteristic.CurrentTemperature).props.minValue).toBe(-100);
+    expect(svc.getCharacteristic(Characteristic.CurrentTemperature).props.maxValue).toBe(100);
   });
 
   it('maps heatingCoolingStateValues strings from MQTT and publishes them on set', async () => {
@@ -369,7 +372,9 @@ describe('fanv2', () => {
     await waitFor(() => seen.some((p) => p.topic === 't/fv2a/active/set' && p.payload === 'true'));
   });
 
-  it('does not add CurrentFanState from topics.getCurrentFanState alone', () => {
+  it('adds CurrentFanState from topics.getCurrentFanState (F15)', () => {
+    // upstream only honored a top-level config.getCurrentFanState key; the
+    // correct topics key now works too (see docs/UpstreamIssues.md F15)
     const { accessory } = makeAccessory(
       {
         type: 'fanv2',
@@ -383,7 +388,7 @@ describe('fanv2', () => {
       api,
     );
     const svc = accessory.getServices().find((s) => s instanceof Service.Fanv2)!;
-    expect(svc.testCharacteristic(Characteristic.CurrentFanState)).toBe(false);
+    expect(svc.testCharacteristic(Characteristic.CurrentFanState)).toBe(true);
   });
 });
 
