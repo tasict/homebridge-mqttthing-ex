@@ -4,6 +4,9 @@
 
 # homebridge-mqttthing-ex
 
+[![GitHub version](https://img.shields.io/github/package-json/v/tasict/homebridge-mqttthing-ex?label=GitHub)](https://github.com/tasict/homebridge-mqttthing-ex)
+[![npm version](https://img.shields.io/npm/v/homebridge-mqttthing-ex?color=%23cb3837&label=npm)](https://www.npmjs.com/package/homebridge-mqttthing-ex)
+
 A [Homebridge](https://homebridge.io) plugin supporting a wide range of HomeKit
 services over MQTT — a modern, actively maintained successor to
 [homebridge-mqttthing](https://github.com/arachnetech/homebridge-mqttthing).
