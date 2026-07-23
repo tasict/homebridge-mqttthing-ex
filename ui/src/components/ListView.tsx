@@ -2,6 +2,7 @@
 // a responsive card grid (one accessory per card, opened via a single Edit
 // button). Duplicate and delete live in the editor; the raw config order is
 // preserved as the default sort.
+import { Pencil } from 'lucide-preact';
 import { useState } from 'preact/hooks';
 
 import type { ThingConfig } from '../../../src/config.js';
@@ -107,26 +108,37 @@ export function ListView({ configs, onEdit, onAdd }: Props) {
       {configs.length > 0 && entries.length === 0 && <div class="alert alert-secondary">No accessories match the current search.</div>}
 
       {entries.length > 0 && (
-        <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3">
+        <div class="row row-cols-2 row-cols-md-4 row-cols-xl-6 g-2">
           {entries.map(({ config, index }) => {
             const summary = summarizeConfig(config);
             const findings = [...summary.errors, ...summary.warnings];
             const serviceCount = Array.isArray(config.services) ? config.services.length : 0;
             return (
               <div key={index} class="col">
-                {/* the whole card is a pointer shortcut; the Edit button is the accessible control */}
+                {/* the whole card is a pointer shortcut; the pencil button is the accessible control */}
                 <div class="card h-100 mqx-acc-card" onClick={() => onEdit(index)}>
-                  <div class="card-body d-flex flex-column p-3">
-                    <div class="d-flex align-items-center gap-3">
+                  <div class="card-body d-flex flex-column p-2">
+                    <div class="d-flex align-items-start gap-2">
                       <div class="mqx-card-icon flex-shrink-0">
-                        <TypeIcon type={config.type} size={26} />
+                        <TypeIcon type={config.type} size={22} />
                       </div>
                       <div class="flex-grow-1 overflow-hidden">
-                        <div class="fs-5 fw-semibold text-truncate" title={String(config.name ?? '')}>
+                        <div class="fw-semibold text-truncate" title={String(config.name ?? '')}>
                           {String(config.name ?? '(unnamed)')}
                         </div>
                         <div class="text-body-secondary small text-truncate">{typeLabel(config.type)}</div>
                       </div>
+                      <button
+                        class="btn btn-outline-primary btn-sm mqx-edit-btn flex-shrink-0"
+                        aria-label="Edit"
+                        title="Edit"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEdit(index);
+                        }}
+                      >
+                        <Pencil size={15} />
+                      </button>
                     </div>
                     {(serviceCount > 0 || summary.total > 0) && (
                       <div class="d-flex flex-wrap gap-1 mt-2">
@@ -145,11 +157,6 @@ export function ListView({ configs, onEdit, onAdd }: Props) {
                         )}
                       </div>
                     )}
-                    <div class="mt-auto pt-3">
-                      <button class="btn btn-outline-primary w-100" onClick={() => onEdit(index)}>
-                        Edit
-                      </button>
-                    </div>
                   </div>
                 </div>
               </div>
