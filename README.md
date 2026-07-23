@@ -23,11 +23,28 @@ services over MQTT — a modern, actively maintained successor to
 2. Install `homebridge-mqttthing-ex`.
 3. Restart Homebridge. **No configuration changes are required.**
 
+## What's new compared to homebridge-mqttthing
+
+- **Custom configuration UI** for the Homebridge UI: searchable accessory
+  list built for setups with dozens of accessories, a type-aware editor with
+  a topic table, `apply` function editing (the old schema form destroyed
+  such configs), full support for the `custom` multi-service type, MQTT
+  connection testing, and live topic probing.
+- **Outbound publish queue** (`publishMinIntervalms`) with per-topic
+  coalescing, protecting low-power devices from HomeKit command bursts.
+- **Long-standing upstream bugs fixed**, including spurious color publishes
+  at startup, adaptive lighting turning lights on, temperature range
+  clamping of sensor readings, wildcard subscriptions, null-payload crashes,
+  and history crashes with multiple services — see
+  [docs/UpstreamIssues.md](docs/UpstreamIssues.md) for the complete list
+  with upstream issue references.
+
 ## Documentation
 
 - [Configuration](docs/Configuration.md)
 - [Accessory types](docs/Accessories.md)
 - [Codecs](docs/Codecs.md)
+- [Upstream issues fixed](docs/UpstreamIssues.md)
 
 ## Status
 

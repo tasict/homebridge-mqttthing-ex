@@ -1,7 +1,34 @@
-[![npm](https://badgen.net/npm/v/homebridge-mqttthing/latest)](https://www.npmjs.com/package/homebridge-mqttthing)
-[![npm](https://badgen.net/npm/dt/homebridge-mqttthing)](https://www.npmjs.com/package/homebridge-mqttthing)
-[![Discord](https://img.shields.io/discord/432663330281226270?color=728ED5&logo=discord&label=discord)](https://discord.gg/MTpeMC)
-[![verified-by-homebridge](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
+# Homebridge MQTT-Thing EX: Release Notes
+
+### Version 2.0.0-beta.1
+
+Ground-up TypeScript rewrite of homebridge-mqttthing. Existing
+configurations work unchanged (`"accessory": "mqttthing"`).
+
++ Homebridge 1.8+ and 2.x support, Node 18-24, ES modules, modern HAP
+  bindings (onGet/onSet), fixing upstream #681, #609, #689, #533, #666
++ All 36 accessory types plus `custom`, full codec / apply / JSONPath
+  compatibility, adaptive lighting, and Eve history (without the
+  homebridge-lib dependency)
++ New: outbound publish queue (`publishMinIntervalms`,
+  `publishQueueLimit`, `publishCoalesce`) protecting low-power devices
+  from HomeKit command bursts (upstream #648, #641)
++ New: custom configuration UI with accessory search/filter, topic table
+  with apply-function editing, custom-type support, MQTT connection test
+  and topic probing, replacing the schema form that destroyed apply
+  configs (upstream #709, #700, #614, #453)
++ Fixed: spurious color publishes at startup (upstream #567, #552, #617,
+  #686); adaptive lighting no longer turns lights on (#431) and honors
+  `adaptiveLighting: "false"` (#436); temperature ranges no longer clamp
+  sensor readings (#587, #592, #392); wildcard subscriptions dispatch
+  (#500); null payloads and apply() null results are handled safely
+  (#438, #458); StatusTampered uses UINT8 (#631); empty broker URL
+  defaults to localhost (#606); clearer connection errors (#670);
+  history with multiple services no longer crashes (#605); fanv2 honors
+  `topics.getCurrentFanState`
+
+Release notes below this point are inherited from the original
+homebridge-mqttthing project.
 
 # Homebridge MQTT-Thing: Release Notes
 
