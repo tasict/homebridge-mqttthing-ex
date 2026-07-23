@@ -3,7 +3,7 @@ import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   {
-    ignores: ['dist/', '.upstream-ref/', 'codecs/', 'node_modules/', 'homebridge-ui/public/'],
+    ignores: ['dist/', '.upstream-ref/', 'codecs/', 'node_modules/', 'homebridge-ui/public/', 'test/fixtures/upstream/'],
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,

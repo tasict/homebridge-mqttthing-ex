@@ -8,7 +8,7 @@ import { PublishQueue } from '../src/mqtt/queue.js';
 import { rawSend } from '../src/mqtt/wiring.js';
 
 export const repoRoot = fileURLToPath(new URL('..', import.meta.url));
-export const upstreamTestDir = path.join(repoRoot, '.upstream-ref', 'test');
+export const upstreamTestDir = path.join(repoRoot, 'test', 'fixtures', 'upstream');
 
 export interface TestLog {
   log: Log;
