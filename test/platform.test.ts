@@ -57,7 +57,7 @@ describe('MqttThingPlatform lifecycle', () => {
       h.api,
     );
 
-    expect(messages.join('\n')).toContain('Only one "mqttthing" platform block is supported');
+    expect(messages.join('\n')).toContain('Only one "mqttthing-ex" platform block is supported');
     // it never launches, so it can neither publish nor unregister anything
     expect(emitter.listenerCount('didFinishLaunching')).toBe(listenersAfterFirst);
     second.configureAccessory(h.makeCachedAccessory('Sw2', uuidOf('Sw2')));

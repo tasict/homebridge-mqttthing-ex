@@ -95,7 +95,7 @@ export function makePlatform(
   cached: PlatformAccessoryType[] = [],
 ): TestPlatform {
   const { log, messages } = makeTestLog();
-  const fullConfig = { platform: 'mqttthing', ...config } as PlatformConfig;
+  const fullConfig = { platform: 'mqttthing-ex', ...config } as PlatformConfig;
   const platform = new MqttThingPlatform(log as never, fullConfig, harness.api);
   for (const accessory of cached) {
     platform.configureAccessory(accessory);

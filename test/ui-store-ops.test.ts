@@ -41,7 +41,7 @@ function device(name: string, extra: Partial<ThingConfig> = {}): ThingConfig {
 function store(legacy: ThingConfig[] = [], platform: Partial<PlatformBlock> | null = null): DeviceStore {
   return {
     legacy,
-    platform: platform === null ? null : ({ platform: 'mqttthing', devices: [], ...platform } as PlatformBlock),
+    platform: platform === null ? null : ({ platform: 'mqttthing-ex', devices: [], ...platform } as PlatformBlock),
   };
 }
 
@@ -49,7 +49,7 @@ describe('store shape', () => {
   it('creates a canonical platform block on demand and is idempotent', () => {
     const s = store();
     const block = ensurePlatformBlock(s);
-    expect(block).toEqual({ platform: 'mqttthing', devices: [] });
+    expect(block).toEqual({ platform: 'mqttthing-ex', devices: [] });
     expect(ensurePlatformBlock(s)).toBe(block);
   });
 

@@ -411,7 +411,7 @@ fully supported and unchanged.
 {
     "platforms": [
         {
-            "platform": "mqttthing",
+            "platform": "mqttthing-ex",
             "name": "MQTT Thing",
             "url": "mqtt://192.168.1.235:1883",
             "username": "MQTT_username",

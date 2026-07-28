@@ -59,7 +59,7 @@ Platform mode is an alternative that puts every device in one block:
 {
   "platforms": [
     {
-      "platform": "mqttthing",
+      "platform": "mqttthing-ex",
       "name": "MQTT Thing",
       "url": "mqtt://broker:1883",
       "username": "user",
@@ -101,6 +101,11 @@ What it gives you:
 A device entry is exactly an accessory block without `"accessory"`, plus the
 optional `"id"`. Broker settings given on the block are defaults that any
 device can override.
+
+Note the block's alias is `"mqttthing-ex"`, unlike accessory entries which
+keep `"accessory": "mqttthing"` for compatibility. Homebridge prefixes the
+platform's log messages with the block's `name`, or with the alias when no
+name is given, so it is always clear which plugin is speaking.
 
 ### Moving accessories to platform mode
 

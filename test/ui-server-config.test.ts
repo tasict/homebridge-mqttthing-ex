@@ -69,7 +69,7 @@ function configOf(fs: FakeFs): Record<string, unknown> {
 }
 
 const platformBlock = (extra: Record<string, unknown> = {}) => ({
-  platform: 'mqttthing',
+  platform: 'mqttthing-ex',
   devices: [{ name: 'Lamp', type: 'lightbulb' }],
   ...extra,
 });
@@ -128,7 +128,7 @@ describe('readPlatformConfig', () => {
 
 describe('validatePlatformBlock', () => {
   it('forces the platform alias', () => {
-    expect(validatePlatformBlock({ platform: 'wrong', devices: [] }).platform).toBe('mqttthing');
+    expect(validatePlatformBlock({ platform: 'wrong', devices: [] }).platform).toBe('mqttthing-ex');
   });
 
   it('rejects malformed blocks and devices', () => {
@@ -234,7 +234,7 @@ describe('writePlatformConfig', () => {
   });
 
   it('refuses when platforms is not an array', async () => {
-    const fs = fakeFs({ platforms: { platform: 'mqttthing' } });
+    const fs = fakeFs({ platforms: { platform: 'mqttthing-ex' } });
     await expect(writePlatformConfig(fs.deps, CONFIG_PATH, platformBlock(), null)).rejects.toThrow(
       'not an array. Refusing to touch it',
     );
@@ -257,7 +257,7 @@ describe('writePlatformConfig', () => {
 
   it('allows emptying a large block, which shrinks the file legitimately', async () => {
     const many = {
-      platform: 'mqttthing',
+      platform: 'mqttthing-ex',
       devices: Array.from({ length: 200 }, (_, i) => ({
         name: `Device ${i}`,
         type: 'switch',
@@ -267,7 +267,7 @@ describe('writePlatformConfig', () => {
     const fs = fakeFs({ accessories: [], platforms: [many] });
 
     await expect(
-      writePlatformConfig(fs.deps, CONFIG_PATH, { platform: 'mqttthing', devices: [] }, hashOfBlock(many)),
+      writePlatformConfig(fs.deps, CONFIG_PATH, { platform: 'mqttthing-ex', devices: [] }, hashOfBlock(many)),
     ).resolves.toBeDefined();
     expect((configOf(fs).platforms as Array<Record<string, unknown>>)[0].devices).toEqual([]);
   });
@@ -279,7 +279,7 @@ describe('writePlatformConfig', () => {
     await writePlatformConfig(
       fs.deps,
       CONFIG_PATH,
-      { platform: 'mqttthing', devices: [] },
+      { platform: 'mqttthing-ex', devices: [] },
       hashOfBlock(platformBlock()),
     );
 

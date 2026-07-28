@@ -6,10 +6,12 @@ export const PLUGIN_NAME = 'homebridge-mqttthing-ex';
 // ("accessory": "mqttthing") keep working without modification.
 export const ACCESSORY_NAME = 'mqttthing';
 
-// Platform mode uses the same alias: Homebridge keeps accessory and platform
-// registrations in separate maps, and sharing the name lets a device keep its
-// HomeKit UUID when it moves from accessories[] to the platform's devices[].
-export const PLATFORM_NAME = 'mqttthing';
+// Platform mode is new, so it carries this plugin's own name: Homebridge
+// prefixes the platform's log messages with it, which is how a reader tells
+// which plugin is speaking. A device keeps its HomeKit UUID when it moves
+// into the platform regardless, because that identity is derived from
+// ACCESSORY_NAME, not from the platform alias.
+export const PLATFORM_NAME = 'mqttthing-ex';
 
 const require = createRequire(import.meta.url);
 

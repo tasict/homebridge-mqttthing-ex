@@ -8,7 +8,7 @@ import { createHash } from 'node:crypto';
 export const BUILT_IN_CODECS = ['json', 'shellyAMAX'];
 
 /** Alias of the platform block this plugin owns. */
-export const MQTTTHING_PLATFORM = 'mqttthing';
+export const MQTTTHING_PLATFORM = 'mqttthing-ex';
 
 /** Refuse blocks beyond this size - a sanity limit, not a real-world one. */
 export const MAX_BLOCK_CHARS = 2_000_000;

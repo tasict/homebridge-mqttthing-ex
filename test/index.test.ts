@@ -14,7 +14,7 @@ describe('plugin registration', () => {
     );
     expect(registerPlatform).toHaveBeenCalledWith(
       'homebridge-mqttthing-ex',
-      'mqttthing',
+      'mqttthing-ex',
       expect.any(Function),
     );
   });
@@ -43,7 +43,7 @@ describe('plugin registration', () => {
     try {
       const registerAccessory = vi.fn();
       const registerPlatform = vi.fn(() => {
-        throw new Error("The requested platform 'mqttthing' has already been registered.");
+        throw new Error("The requested platform 'mqttthing-ex' has already been registered.");
       });
       expect(() => registerPlugin({ registerAccessory, registerPlatform } as never)).not.toThrow();
       expect(registerAccessory).toHaveBeenCalledOnce();

@@ -7,10 +7,11 @@ Adds **platform mode**: the same devices can now be configured as a single
 stays fully supported — existing configurations keep working exactly as
 before.
 
-+ Platform mode: one configuration block for all devices, one shared MQTT
-  connection per broker (instead of one per device), Homebridge accessory
-  caching so devices appear before the broker is reachable, and start-up
-  validation of every device
++ Platform mode: one configuration block (`"platform": "mqttthing-ex"`) for
+  all devices, one shared MQTT connection per broker (instead of one per
+  device), Homebridge accessory caching so devices appear before the broker
+  is reachable, and start-up validation of every device. Accessory entries
+  keep `"accessory": "mqttthing"` unchanged
 + New optional per-device `id` giving each device a stable HomeKit identity,
   so devices can be renamed without HomeKit treating them as new. An `id`
   that is a UUID is the HomeKit accessory itself; any other value is used the

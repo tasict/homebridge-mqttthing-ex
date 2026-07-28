@@ -16,6 +16,9 @@ import { accessoryUuid, isUuid, randomUuid } from './hap-uuid.js';
 
 export type DeviceSource = 'accessory' | 'platform';
 
+/** The alias of the platform block this plugin owns. */
+export const PLATFORM_ALIAS = 'mqttthing-ex';
+
 export interface PlatformBlock {
   platform: string;
   name?: string;
@@ -74,7 +77,7 @@ export function newDeviceId(): string {
 /** The platform block, created (empty) when the configuration has none yet. */
 export function ensurePlatformBlock(store: DeviceStore): PlatformBlock {
   if (store.platform === null) {
-    store.platform = { platform: 'mqttthing', devices: [] };
+    store.platform = { platform: PLATFORM_ALIAS, devices: [] };
   } else if (!Array.isArray(store.platform.devices)) {
     store.platform.devices = [];
   }
