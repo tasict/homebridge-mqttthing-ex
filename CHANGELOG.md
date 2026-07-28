@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.2.1
+
+### Fixed
+
+- **The settings UI could report "no devices configured" straight after
+  upgrading to 1.2.0.** Nothing was lost — `config.json` was untouched and
+  Homebridge kept serving every device. The Homebridge UI caches each plugin's
+  `pluginAlias`/`pluginType` for 24 hours and does not invalidate that cache
+  when a plugin is updated, so it went on looking in the part of `config.json`
+  that 1.1.0 declared. The settings screen now detects that disagreement and
+  says to restart Homebridge, instead of showing an empty list with an
+  **Add device** button that would have written to the wrong place.
+
 ## 1.2.0
 
 ### Changed

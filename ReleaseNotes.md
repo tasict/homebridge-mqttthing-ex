@@ -4,6 +4,25 @@ What each release means for you, in prose. For the terse per-version list —
 which is also what the Homebridge UI shows under the plugin's changelog — see
 [CHANGELOG.md](CHANGELOG.md).
 
+### Version 1.2.1
+
+Fixes an alarming — but harmless — thing 1.2.0 could do on the settings
+screen: report that you have no devices configured.
+
+Nothing was ever lost. `config.json` was untouched and Homebridge kept serving
+every device normally; only the settings screen was blind. The Homebridge UI
+caches each plugin's `pluginAlias`/`pluginType` for 24 hours and does not
+invalidate that cache when a plugin is updated. Since 1.2.0 changed both, the
+Homebridge UI went on looking in the part of `config.json` that 1.1.0 had
+declared, found nothing there, and reported an empty configuration. Restarting
+Homebridge cleared it.
+
+The settings screen now notices when what the Homebridge UI hands it disagrees
+with what is actually in `config.json`, and asks you to restart Homebridge
+rather than showing an empty list. That matters for more than looks: the empty
+list came with an **Add device** button, and saving from that state would have
+written to the array the stale cache pointed at.
+
 ### Version 1.2.0
 
 Housekeeping for Homebridge plugin verification, with one genuine improvement
