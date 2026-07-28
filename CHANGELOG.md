@@ -10,8 +10,10 @@
   `pluginAlias`/`pluginType` for 24 hours and does not invalidate that cache
   when a plugin is updated, so it went on looking in the part of `config.json`
   that 1.1.0 declared. The settings screen now detects that disagreement and
-  says to restart Homebridge, instead of showing an empty list with an
-  **Add device** button that would have written to the wrong place.
+  asks for a restart of the **Homebridge UI** — which is the service holding
+  that cache, so restarting Homebridge alone does not clear it — instead of
+  showing an empty list with an **Add device** button that would have written
+  to the wrong place.
 
 ## 1.2.0
 

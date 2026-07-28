@@ -156,13 +156,19 @@ export function App() {
     return (
       <div class="alert alert-warning">
         <p>
-          <strong>Restart Homebridge to finish updating this plugin.</strong>
+          <strong>Restart the Homebridge UI to finish updating this plugin.</strong>
+        </p>
+        <p>
+          This update changed how the plugin declares its configuration, and the Homebridge UI remembers that per
+          plugin until it restarts. It is currently looking in the part of <span class="mqx-mono">config.json</span>{' '}
+          the previous version used, which is why your devices would appear to be missing.{' '}
+          <strong>They are not.</strong> Nothing in your configuration has been changed or lost — Homebridge itself is
+          serving them normally, as the log will show.
         </p>
         <p class="mb-0">
-          The Homebridge UI is still using this plugin&rsquo;s previous configuration schema, so it is looking in the
-          wrong part of <span class="mqx-mono">config.json</span> and would report your devices as missing. Nothing has
-          been lost and nothing has changed in your configuration — restart Homebridge (or the Homebridge UI service, if
-          you run it separately) and reopen this page.
+          <strong>Restarting Homebridge is not enough</strong>, because the Homebridge UI runs as a service of its own.
+          Use <em>Restart Homebridge UI</em> from the menu in the top right of this page — or restart the Homebridge
+          service (or container) as a whole — then reopen this page. This is only needed once, after this update.
         </p>
       </div>
     );

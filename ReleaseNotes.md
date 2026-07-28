@@ -14,14 +14,19 @@ every device normally; only the settings screen was blind. The Homebridge UI
 caches each plugin's `pluginAlias`/`pluginType` for 24 hours and does not
 invalidate that cache when a plugin is updated. Since 1.2.0 changed both, the
 Homebridge UI went on looking in the part of `config.json` that 1.1.0 had
-declared, found nothing there, and reported an empty configuration. Restarting
-Homebridge cleared it.
+declared, found nothing there, and reported an empty configuration.
 
 The settings screen now notices when what the Homebridge UI hands it disagrees
-with what is actually in `config.json`, and asks you to restart Homebridge
-rather than showing an empty list. That matters for more than looks: the empty
-list came with an **Add device** button, and saving from that state would have
-written to the array the stale cache pointed at.
+with what is actually in `config.json`, and stops with an explanation instead
+of showing an empty list. That matters for more than looks: the empty list came
+with an **Add device** button, and saving from that state would have written to
+the array the stale cache pointed at.
+
+The explanation is specific about what to restart, because this is easy to get
+wrong: the cache lives in the **Homebridge UI** service, not in Homebridge, so
+restarting Homebridge does not clear it. Use *Restart Homebridge UI*, or
+restart the Homebridge service or container as a whole. It is a one-time step
+after this update; a fresh installation never sees it.
 
 ### Version 1.2.0
 
