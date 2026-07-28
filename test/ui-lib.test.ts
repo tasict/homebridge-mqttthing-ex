@@ -315,17 +315,19 @@ describe('ui-lib: validation display mapping', () => {
 });
 
 describe('generate-schema: document shape', () => {
-  it('produces the mqttthing fallback schema with the custom UI enabled', () => {
+  it('produces the mqttthing-ex fallback schema with the custom UI enabled', () => {
     const document = buildSchemaDocument(generateConfigSchema()) as Record<string, any>;
-    expect(document.pluginAlias).toBe('mqttthing');
-    expect(document.pluginType).toBe('accessory');
-    expect(document.singular).toBe(false);
+    expect(document.pluginAlias).toBe('mqttthing-ex');
+    expect(document.pluginType).toBe('platform');
+    expect(document.singular).toBe(true);
     expect(document.customUi).toBe(true);
     expect(document.customUiPath).toBe('./homebridge-ui');
-    // the fallback form only edits accessory blocks, and says so
+    // the fallback form edits the platform block, and says where the rest is
     expect(document.headerDisplay).toContain('Platform mode');
-    expect(document.schema.properties.name.required).toBe(true);
-    const typeIds = (document.schema.properties.type.oneOf as { enum: string[] }[]).flatMap((c) => c.enum);
+    expect(document.schema.required).toEqual(['name']);
+    const typeIds = (
+      document.schema.properties.devices.items.properties.type.oneOf as { enum: string[] }[]
+    ).flatMap((c) => c.enum);
     expect(typeIds).toContain('lightbulb');
     expect(typeIds).toContain('lightbulb-RGB');
     expect(typeIds).toContain('custom');

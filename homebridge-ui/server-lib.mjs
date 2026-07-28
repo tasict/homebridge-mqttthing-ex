@@ -10,11 +10,11 @@ export const BUILT_IN_CODECS = ['json', 'shellyAMAX'];
 /** Alias of the platform block this plugin owns. */
 export const MQTTTHING_PLATFORM = 'mqttthing-ex';
 
+/** Alias of the legacy accessory blocks this plugin owns. */
+export const MQTTTHING_ACCESSORY = 'mqttthing';
+
 /** Refuse blocks beyond this size - a sanity limit, not a real-world one. */
 export const MAX_BLOCK_CHARS = 2_000_000;
-
-/** Stand-in for the platform block while checking the rest of the file. */
-const PLACEHOLDER = { __mqttthing__: 'placeholder' };
 
 /**
  * List the codecs available to this Homebridge instance: the bundled codec
@@ -69,14 +69,15 @@ function errorMessage(err) {
   return err instanceof Error ? err.message : String(err);
 }
 
-// --- platform block access ------------------------------------------------
+// --- legacy accessory block access ----------------------------------------
 //
-// Legacy accessory blocks are managed by homebridge-config-ui-x itself
-// (getPluginConfig/updatePluginConfig, driven by the schema's accessory
-// pluginType). The platform block is invisible to that API, so it is read and
-// written here - carefully: this is the user's whole config.json.
+// The platform block is managed by homebridge-config-ui-x itself
+// (getPluginConfig/updatePluginConfig, driven by the schema's platform
+// pluginType). Legacy "accessory": "mqttthing" entries are invisible to that
+// API, so they are read and written here - carefully: this is the user's whole
+// config.json.
 
-/** Content hash of a platform block, used to detect concurrent edits. */
+/** Content hash of a block or block list, used to detect concurrent edits. */
 export function hashOfBlock(block) {
   if (block === null || block === undefined) {
     return null;
@@ -84,15 +85,15 @@ export function hashOfBlock(block) {
   return createHash('sha256').update(JSON.stringify(block)).digest('hex');
 }
 
-/** Every "mqttthing" entry of platforms[], with its position. */
-export function findMqttthingPlatformBlocks(config) {
-  const platforms = config === null || typeof config !== 'object' ? undefined : config.platforms;
-  if (!Array.isArray(platforms)) {
+/** Every "mqttthing" entry of accessories[], with its position. */
+export function findMqttthingAccessoryBlocks(config) {
+  const accessories = config === null || typeof config !== 'object' ? undefined : config.accessories;
+  if (!Array.isArray(accessories)) {
     return [];
   }
   const found = [];
-  platforms.forEach((block, index) => {
-    if (block && typeof block === 'object' && block.platform === MQTTTHING_PLATFORM) {
+  accessories.forEach((block, index) => {
+    if (block && typeof block === 'object' && block.accessory === MQTTTHING_ACCESSORY) {
       found.push({ block, index });
     }
   });
@@ -123,18 +124,11 @@ function assertNoMistypedBlock(config) {
   }
 }
 
-function tooManyBlocks(count) {
-  return new Error(
-    `config.json contains ${count} "${MQTTTHING_PLATFORM}" platform blocks. ` +
-      'Merge them into one in the JSON config editor before using platform mode.',
-  );
-}
-
 async function parseConfigFile(readFile, configPath) {
   if (typeof configPath !== 'string' || configPath === '') {
     throw new Error(
       'The Homebridge UI did not provide the config.json path; ' +
-        'platform mode requires a newer homebridge-config-ui-x.',
+        'editing legacy accessory blocks requires a newer homebridge-config-ui-x.',
     );
   }
   let raw;
@@ -151,23 +145,18 @@ async function parseConfigFile(readFile, configPath) {
 }
 
 /**
- * Read the platform block. Resolves with { exists, block, hash }; the hash is
- * passed back on save so a concurrent edit can be detected.
+ * Read the legacy accessory blocks. Resolves with { blocks, hash }; the hash
+ * is passed back on save so a concurrent edit can be detected. An empty list
+ * still hashes, so "someone deleted them all behind my back" is detectable.
  *
  * @param {(path: string, encoding: string) => Promise<string>} readFile
  * @param {string} configPath
  */
-export async function readPlatformConfig(readFile, configPath) {
+export async function readAccessoryConfig(readFile, configPath) {
   const { config } = await parseConfigFile(readFile, configPath);
   assertNoMistypedBlock(config);
-  const blocks = findMqttthingPlatformBlocks(config);
-  if (blocks.length > 1) {
-    throw tooManyBlocks(blocks.length);
-  }
-  if (blocks.length === 0) {
-    return { exists: false, block: null, hash: null };
-  }
-  return { exists: true, block: blocks[0].block, hash: hashOfBlock(blocks[0].block) };
+  const blocks = findMqttthingAccessoryBlocks(config).map((entry) => entry.block);
+  return { blocks, hash: hashOfBlock(blocks) };
 }
 
 /**
@@ -177,116 +166,111 @@ export async function readPlatformConfig(readFile, configPath) {
  *
  * Returns the block to write; throws with a specific message otherwise.
  */
-export function validatePlatformBlock(block) {
-  if (!block || typeof block !== 'object' || Array.isArray(block)) {
-    throw new Error('The platform configuration must be a JSON object.');
+export function validateAccessoryBlocks(blocks) {
+  if (!Array.isArray(blocks)) {
+    throw new Error('The accessory configuration must be a JSON array.');
   }
-  const validated = { ...block, platform: MQTTTHING_PLATFORM };
-
-  for (const key of ['name', 'url', 'username', 'password']) {
-    if (validated[key] !== undefined && typeof validated[key] !== 'string') {
-      throw new Error(`"${key}" must be a string.`);
+  const validated = blocks.map((block, index) => {
+    if (!block || typeof block !== 'object' || Array.isArray(block)) {
+      throw new Error(`accessories[${index}] must be a JSON object.`);
     }
-  }
-  if (
-    validated.mqttOptions !== undefined &&
-    (typeof validated.mqttOptions !== 'object' || validated.mqttOptions === null || Array.isArray(validated.mqttOptions))
-  ) {
-    throw new Error('"mqttOptions" must be a JSON object.');
-  }
-
-  if (validated.devices !== undefined) {
-    if (!Array.isArray(validated.devices)) {
-      throw new Error('"devices" must be an array.');
+    if (typeof block.name !== 'string' || block.name.trim() === '') {
+      throw new Error(`accessories[${index}] must have a non-empty "name".`);
     }
-    const ids = new Set();
-    validated.devices.forEach((device, index) => {
-      if (!device || typeof device !== 'object' || Array.isArray(device)) {
-        throw new Error(`devices[${index}] must be a JSON object.`);
-      }
-      if (typeof device.name !== 'string' || device.name.trim() === '') {
-        throw new Error(`devices[${index}] must have a non-empty "name".`);
-      }
-      if (Object.prototype.hasOwnProperty.call(device, 'accessory')) {
-        throw new Error(`devices[${index}] ("${device.name}") must not have an "accessory" property.`);
-      }
-      if (device.id !== undefined) {
-        if (typeof device.id !== 'string' || device.id === '') {
-          throw new Error(`devices[${index}] ("${device.name}") has an invalid "id".`);
-        }
-        if (ids.has(device.id)) {
-          throw new Error(`devices[${index}] ("${device.name}") reuses the id "${device.id}".`);
-        }
-        ids.add(device.id);
-      }
-    });
-  }
+    if (typeof block.type !== 'string' || block.type.trim() === '') {
+      throw new Error(`accessories[${index}] ("${block.name}") must have a non-empty "type".`);
+    }
+    // The alias is what makes Homebridge hand the block to this plugin, and
+    // it is also half of the accessory's HomeKit identity, so it is forced
+    // rather than trusted.
+    return { ...block, accessory: MQTTTHING_ACCESSORY };
+  });
 
   if (JSON.stringify(validated).length > MAX_BLOCK_CHARS) {
-    throw new Error('The platform configuration is too large to write.');
+    throw new Error('The accessory configuration is too large to write.');
   }
   return validated;
 }
 
+/** config.json with this plugin's accessory blocks dropped, for comparison. */
+function skeletonWithoutOurAccessories(config) {
+  const accessories = Array.isArray(config.accessories)
+    ? config.accessories.filter(
+        (block) => !(block && typeof block === 'object' && block.accessory === MQTTTHING_ACCESSORY),
+      )
+    : config.accessories;
+  return JSON.stringify({ ...config, accessories });
+}
+
 /**
- * Replace (or add) the platform block in config.json, leaving everything else
- * byte-identical in content. The write is guarded: an unreadable or
- * unparseable file, a concurrent change, a malformed block or an unexpectedly
- * large shrink all abort before anything is written, a backup is taken, and
- * the file is replaced atomically.
+ * Replace this plugin's accessory blocks in config.json, leaving everything
+ * else byte-identical in content. The write is guarded: an unreadable or
+ * unparseable file, a concurrent change or a malformed block all abort before
+ * anything is written, a backup is taken, and the file is replaced atomically.
+ *
+ * Surviving blocks keep their original positions in accessories[]; added ones
+ * follow the last of them, so a save does not reshuffle the user's file.
  *
  * @param {{ readFile: Function, writeFile: Function, rename: Function,
  *           copyFile: Function, stat: Function, chmod: Function,
  *           unlink: Function }} fsDeps
  * @param {string} configPath
- * @param {object} block
+ * @param {object[]} blocks
  * @param {string|null} baseHash Hash from the read that this edit started from.
  */
-export async function writePlatformConfig(fsDeps, configPath, block, baseHash) {
+export async function writeAccessoryConfig(fsDeps, configPath, blocks, baseHash) {
   const { readFile, writeFile, rename, copyFile, stat, chmod, unlink } = fsDeps;
   const { config } = await parseConfigFile(readFile, configPath);
   assertNoMistypedBlock(config);
 
-  const blocks = findMqttthingPlatformBlocks(config);
-  if (blocks.length > 1) {
-    throw tooManyBlocks(blocks.length);
-  }
-  const current = blocks[0];
-  const currentHash = current ? hashOfBlock(current.block) : null;
+  const current = findMqttthingAccessoryBlocks(config);
+  const currentHash = hashOfBlock(current.map((entry) => entry.block));
   if ((baseHash ?? null) !== currentHash) {
     throw new Error(
-      'The platform configuration in config.json changed outside this editor ' +
+      'The accessory configuration in config.json changed outside this editor ' +
         '(for example in the JSON config editor). Close and reopen this settings window, ' +
         'then re-apply your changes.',
     );
   }
 
-  const validated = validatePlatformBlock(block);
+  const validated = validateAccessoryBlocks(blocks);
 
-  if (config.platforms === undefined) {
-    config.platforms = [];
-  } else if (!Array.isArray(config.platforms)) {
-    throw new Error('config.json has a "platforms" property that is not an array. Refusing to touch it.');
+  if (config.accessories === undefined) {
+    config.accessories = [];
+  } else if (!Array.isArray(config.accessories)) {
+    throw new Error('config.json has an "accessories" property that is not an array. Refusing to touch it.');
   }
 
-  const index = current ? current.index : config.platforms.length;
-  config.platforms[index] = PLACEHOLDER;
-  const skeletonBefore = JSON.stringify(config);
+  // Everything outside this plugin's accessory blocks must be exactly as it
+  // was read. Dropping our blocks from both sides makes that an equality
+  // check rather than a size heuristic, so deleting every one of them is fine
+  // while losing an unrelated entry never is.
+  const skeletonBefore = skeletonWithoutOurAccessories(config);
 
-  config.platforms[index] = validated;
-  const serialized = JSON.stringify(config, null, 4) + '\n';
+  const next = [...config.accessories];
+  const kept = Math.min(current.length, validated.length);
+  for (let i = 0; i < kept; i++) {
+    next[current[i].index] = validated[i];
+  }
+  if (validated.length > current.length) {
+    const insertAt = current.length > 0 ? current[current.length - 1].index + 1 : next.length;
+    next.splice(insertAt, 0, ...validated.slice(kept));
+  } else {
+    // highest index first, so the earlier positions stay valid
+    for (let i = current.length - 1; i >= kept; i--) {
+      next.splice(current[i].index, 1);
+    }
+  }
+  config.accessories = next;
 
-  // Everything outside the platform block must be exactly as it was read.
-  // Blanking the block out on both sides makes that an equality check rather
-  // than a size heuristic, so emptying a large block is fine while losing an
-  // unrelated key never is.
-  config.platforms[index] = PLACEHOLDER;
-  const skeletonAfter = JSON.stringify(config);
-  config.platforms[index] = validated;
-
+  const skeletonAfter = skeletonWithoutOurAccessories(config);
   if (skeletonBefore !== skeletonAfter) {
-    throw new Error('Refusing to write config.json: the change would affect more than the platform block.');
+    throw new Error(
+      "Refusing to write config.json: the change would affect more than this plugin's accessory blocks.",
+    );
   }
+
+  const serialized = JSON.stringify(config, null, 4) + '\n';
 
   await copyFile(configPath, `${configPath}.bak-mqttthing`);
 

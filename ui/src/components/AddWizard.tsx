@@ -23,7 +23,8 @@ import { TypeIcon } from './TypeIcon.js';
 
 interface Props {
   store: DeviceStore;
-  platformAvailable: boolean;
+  /** False when legacy accessory blocks could not be read, so only the platform can take a new device. */
+  legacyAvailable: boolean;
   touch: Touch;
   onCancel: () => void;
   onCreated: (config: ThingConfig) => void;
@@ -41,7 +42,7 @@ const CATEGORY_ORDER: AccessoryCategory[] = [
   'Other',
 ];
 
-export function AddWizard({ store, platformAvailable, touch, onCancel, onCreated, onPlatformIntro }: Props) {
+export function AddWizard({ store, legacyAvailable, touch, onCancel, onCreated, onPlatformIntro }: Props) {
   const [type, setType] = useState<string | null>(null);
   const broker = mostCommonBrokerOf(store);
   const shape = configShape(store);
@@ -49,7 +50,7 @@ export function AddWizard({ store, platformAvailable, touch, onCancel, onCreated
   // Someone using accessory blocks keeps getting accessory blocks; the
   // alternative is offered on every screen, never withdrawn.
   const [target, setTarget] = useState<'accessory' | 'platform'>(
-    !platformAvailable || shape === 'accessory' ? 'accessory' : 'platform',
+    legacyAvailable && shape === 'accessory' ? 'accessory' : 'platform',
   );
   const [name, setName] = useState('');
   const asLegacy = target === 'accessory';
@@ -175,7 +176,7 @@ export function AddWizard({ store, platformAvailable, touch, onCancel, onCreated
                 )}
               </div>
             </div>
-            {platformAvailable && (
+            {legacyAvailable && (
               <div class="mb-3">
                 <div class="mqx-desc">
                   {asLegacy

@@ -35,14 +35,13 @@ import { TypeSelect } from './TypeSelect.js';
 interface Props {
   config: ThingConfig;
   store: DeviceStore;
-  platformAvailable: boolean;
   touch: Touch;
   onBack: () => void;
   /** Open the editor for another device (used after duplicating). */
   onOpen: (config: ThingConfig) => void;
 }
 
-export function EditorView({ config, store, platformAvailable, touch, onBack, onOpen }: Props) {
+export function EditorView({ config, store, touch, onBack, onOpen }: Props) {
   const [moved, setMoved] = useState<string | null>(null);
   useEffect(() => setMoved(null), [config]);
 
@@ -218,7 +217,7 @@ export function EditorView({ config, store, platformAvailable, touch, onBack, on
         <JsonEditor config={config} source={source ?? 'accessory'} touch={touchOwn} />
       </Section>
 
-      {shape === 'mixed' && source === 'accessory' && platformAvailable && (
+      {shape === 'mixed' && source === 'accessory' && (
         <Section title="Platform mode" summary="in accessory mode">
           {moved !== null ? (
             <div class="alert alert-success py-2 mb-0">

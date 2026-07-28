@@ -1,12 +1,11 @@
 // The save affordance in the page header, plus the failure rows below it.
 //
-// Accessory blocks are saved by the Homebridge UI's own Save button at the
-// bottom of the window; the platform block is written by this plugin's
-// server. Rather than explaining that, the UI takes ownership: as soon as a
-// platform block exists and something is unsaved, the native button is
-// disabled and this one saves both. A user with only accessory blocks never
-// sees this control at all - their Save button keeps working exactly as it
-// always did.
+// The platform block is saved by the Homebridge UI's own Save button at the
+// bottom of the window; legacy accessory blocks are written by this plugin's
+// server. Rather than explaining that, the UI takes ownership: as soon as an
+// accessory change is unsaved, the native button is disabled and this one
+// saves both. A user with only a platform block never sees this control at
+// all - their Save button keeps working exactly as it always did.
 import { ConfirmButton } from './ConfirmAction.js';
 
 export type SaveState =

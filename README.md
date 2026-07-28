@@ -163,10 +163,8 @@ Notes:
   an accessory cannot keep its own child bridge. Each child bridge is paired
   separately in HomeKit, so removing one means pairing it again. The UI
   therefore refuses to move these accessories and says why; move the whole
-  platform into a child bridge instead (add `_bridge` to the platform block
-  by hand — the Homebridge UI does not offer child-bridge management for
-  platform blocks here, because this plugin's configuration schema describes
-  accessory blocks).
+  platform into a child bridge instead, which the Homebridge UI offers for the
+  platform block in its usual place.
 - On a shared connection the last-will message names the platform rather than
   a single device, and `logMqtt` on any device logs the received messages of
   every device on that connection.
@@ -197,7 +195,8 @@ Notes:
 
 ## Status
 
-This project is under active development. See the release notes for progress.
+Actively maintained. See the [release notes](ReleaseNotes.md) for what is new
+in each version.
 
 ## License
 

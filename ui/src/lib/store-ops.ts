@@ -1,10 +1,10 @@
 // Working-copy operations spanning both configuration containers.
 //
-// Devices live either in the legacy accessories[] array (managed by
-// homebridge-config-ui-x) or in the platform block's devices[] array (managed
+// Devices live either in the platform block's devices[] array (managed by
+// homebridge-config-ui-x) or in the legacy accessories[] array (managed
 // through this plugin's own server endpoints). The store keeps them in
-// separate fields on purpose: the platform block must never be handed to
-// updatePluginConfig(), which only knows about accessory blocks and drops
+// separate fields on purpose: the accessory array must never be handed to
+// updatePluginConfig(), which only knows about the platform block and drops
 // everything it is not given.
 //
 // As in config-ops, every helper mutates the real configuration objects in

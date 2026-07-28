@@ -266,26 +266,59 @@ describe('generateConfigSchema', () => {
     singular: boolean;
     schema: {
       type: string;
-      properties: Record<string, { oneOf?: Array<{ title: string; enum: string[] }>; required?: boolean }>;
+      required?: string[];
+      properties: {
+        name: Record<string, unknown>;
+        devices: {
+          items: {
+            required?: string[];
+            properties: Record<string, { oneOf?: Array<{ title: string; enum: string[] }> }>;
+          };
+        };
+        [key: string]: unknown;
+      };
     };
   };
 
   it('has the config-ui-x header fields', () => {
-    expect(schema.pluginAlias).toBe('mqttthing');
-    expect(schema.pluginType).toBe('accessory');
-    expect(schema.singular).toBe(false);
+    expect(schema.pluginAlias).toBe('mqttthing-ex');
+    expect(schema.pluginType).toBe('platform');
+    expect(schema.singular).toBe(true);
   });
 
-  it('requires name and includes the core properties', () => {
-    const properties = schema.schema.properties;
-    expect(properties.name.required).toBe(true);
+  it('states requirements as arrays, never as booleans on a property', () => {
+    // A boolean `required` on a property is not valid JSON Schema, and the
+    // Homebridge plugin verification checks reject it.
+    expect(schema.schema.required).toEqual(['name']);
+    expect(schema.schema.properties.name).toBeDefined();
+
+    const device = schema.schema.properties.devices.items;
+    expect(device.required).toEqual(['name', 'type']);
     for (const key of ['type', 'url', 'username', 'password', 'topics', 'logMqtt']) {
-      expect(properties[key], `schema property '${key}'`).toBeDefined();
+      expect(device.properties[key], `device property '${key}'`).toBeDefined();
     }
+
+    const seen: string[] = [];
+    const scan = (node: unknown, path: string): void => {
+      if (Array.isArray(node)) {
+        node.forEach((item, index) => scan(item, `${path}/${index}`));
+      } else if (node !== null && typeof node === 'object') {
+        for (const [key, value] of Object.entries(node)) {
+          if (key === 'required' && !Array.isArray(value)) {
+            seen.push(`${path}/${key}`);
+          }
+          scan(value, `${path}/${key}`);
+        }
+      }
+    };
+    scan(schema, '');
+    expect(seen).toEqual([]);
   });
 
   it('includes every type id plus the lightbulb subtype aliases in the type enum', () => {
-    const enumValues = (schema.schema.properties.type.oneOf ?? []).flatMap((choice) => choice.enum);
+    const enumValues = (schema.schema.properties.devices.items.properties.type.oneOf ?? []).flatMap(
+      (choice) => choice.enum,
+    );
     for (const id of ALL_TYPE_IDS) {
       expect(enumValues, `type enum should contain '${id}'`).toContain(id);
     }

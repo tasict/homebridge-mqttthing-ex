@@ -1,15 +1,18 @@
-// Unit tests for the config.json access used by platform mode
+// Unit tests for the config.json access used for legacy accessory blocks
 // (homebridge-ui/server-lib.mjs), with a fake file system: these functions
 // rewrite the user's whole configuration file, so every guardrail is pinned.
+//
+// The platform block is not touched here - homebridge-config-ui-x owns it,
+// because the plugin's schema declares a platform pluginType.
 import { describe, expect, it } from 'vitest';
 
 // @ts-expect-error plain-JS module without type declarations
 import {
-  findMqttthingPlatformBlocks,
+  findMqttthingAccessoryBlocks,
   hashOfBlock,
-  readPlatformConfig,
-  validatePlatformBlock,
-  writePlatformConfig,
+  readAccessoryConfig,
+  validateAccessoryBlocks,
+  writeAccessoryConfig,
 } from '../homebridge-ui/server-lib.mjs';
 
 const CONFIG_PATH = '/homebridge/config.json';
@@ -68,254 +71,271 @@ function configOf(fs: FakeFs): Record<string, unknown> {
   return JSON.parse(fs.files.get(CONFIG_PATH)!) as Record<string, unknown>;
 }
 
-const platformBlock = (extra: Record<string, unknown> = {}) => ({
-  platform: 'mqttthing-ex',
-  devices: [{ name: 'Lamp', type: 'lightbulb' }],
+function accessoriesOf(fs: FakeFs): Array<Record<string, unknown>> {
+  return configOf(fs).accessories as Array<Record<string, unknown>>;
+}
+
+const block = (name: string, extra: Record<string, unknown> = {}) => ({
+  accessory: 'mqttthing',
+  name,
+  type: 'lightbulb',
   ...extra,
 });
 
-describe('findMqttthingPlatformBlocks', () => {
-  it('finds the block with its position, ignoring other plugins', () => {
-    const config = { platforms: [{ platform: 'other' }, platformBlock()] };
-    const found = findMqttthingPlatformBlocks(config);
-    expect(found).toHaveLength(1);
-    expect(found[0].index).toBe(1);
+/** Hash of "no blocks at all", which is what a fresh configuration reads as. */
+const EMPTY_HASH = hashOfBlock([]) as string;
+
+describe('findMqttthingAccessoryBlocks', () => {
+  it('finds the blocks with their positions, ignoring other plugins', () => {
+    const config = { accessories: [{ accessory: 'other' }, block('A'), { accessory: 'other' }, block('B')] };
+    const found = findMqttthingAccessoryBlocks(config);
+    expect(found).toHaveLength(2);
+    expect(found.map((entry: { index: number }) => entry.index)).toEqual([1, 3]);
   });
 
-  it('copes with a missing or non-array platforms key', () => {
-    expect(findMqttthingPlatformBlocks({})).toEqual([]);
-    expect(findMqttthingPlatformBlocks({ platforms: 'nope' })).toEqual([]);
-    expect(findMqttthingPlatformBlocks(null)).toEqual([]);
+  it('copes with a missing or non-array accessories key', () => {
+    expect(findMqttthingAccessoryBlocks({})).toEqual([]);
+    expect(findMqttthingAccessoryBlocks({ accessories: 'nope' })).toEqual([]);
+    expect(findMqttthingAccessoryBlocks(null)).toEqual([]);
   });
 });
 
-describe('readPlatformConfig', () => {
-  it('reports no block when the configuration has none', async () => {
-    const fs = fakeFs({ accessories: [], platforms: [{ platform: 'other' }] });
-    await expect(readPlatformConfig(fs.deps.readFile, CONFIG_PATH)).resolves.toEqual({
-      exists: false,
-      block: null,
-      hash: null,
+describe('readAccessoryConfig', () => {
+  it('reports an empty list when the configuration has none', async () => {
+    const fs = fakeFs({ accessories: [{ accessory: 'other' }], platforms: [] });
+    await expect(readAccessoryConfig(fs.deps.readFile, CONFIG_PATH)).resolves.toEqual({
+      blocks: [],
+      hash: EMPTY_HASH,
     });
   });
 
-  it('returns the block verbatim with a stable hash', async () => {
-    const fs = fakeFs({ platforms: [platformBlock({ url: 'mqtt://b' })] });
-    const first = await readPlatformConfig(fs.deps.readFile, CONFIG_PATH);
-    expect(first.exists).toBe(true);
-    expect(first.block).toEqual(platformBlock({ url: 'mqtt://b' }));
-    expect(first.hash).toBe(hashOfBlock(first.block));
+  it('returns the blocks verbatim, in order, with a stable hash', async () => {
+    const fs = fakeFs({ accessories: [block('A', { url: 'mqtt://b' }), { accessory: 'other' }, block('B')] });
+    const first = await readAccessoryConfig(fs.deps.readFile, CONFIG_PATH);
+    expect(first.blocks).toEqual([block('A', { url: 'mqtt://b' }), block('B')]);
+    expect(first.hash).toBe(hashOfBlock(first.blocks));
 
-    const second = await readPlatformConfig(fs.deps.readFile, CONFIG_PATH);
+    const second = await readAccessoryConfig(fs.deps.readFile, CONFIG_PATH);
     expect(second.hash).toBe(first.hash);
-  });
-
-  it('refuses when the configuration holds more than one mqttthing block', async () => {
-    const fs = fakeFs({ platforms: [platformBlock(), platformBlock()] });
-    await expect(readPlatformConfig(fs.deps.readFile, CONFIG_PATH)).rejects.toThrow('Merge them into one');
   });
 
   it('refuses an unparseable configuration', async () => {
     const fs = fakeFs('{ not json');
-    await expect(readPlatformConfig(fs.deps.readFile, CONFIG_PATH)).rejects.toThrow('Refusing to touch it');
+    await expect(readAccessoryConfig(fs.deps.readFile, CONFIG_PATH)).rejects.toThrow('Refusing to touch it');
   });
 
-  it('explains a block that uses the accessory alias by mistake', async () => {
+  it('explains a platform block that uses the accessory alias by mistake', async () => {
     const fs = fakeFs({ platforms: [{ platform: 'mqttthing', devices: [{ name: 'Lamp' }] }] });
-    await expect(readPlatformConfig(fs.deps.readFile, CONFIG_PATH)).rejects.toThrow('"mqttthing" is the accessory alias');
+    await expect(readAccessoryConfig(fs.deps.readFile, CONFIG_PATH)).rejects.toThrow(
+      '"mqttthing" is the accessory alias',
+    );
   });
 
   it('leaves another plugin’s platform named mqttthing alone', async () => {
     // no devices array, so it is not ours to complain about
     const fs = fakeFs({ platforms: [{ platform: 'mqttthing', somethingElse: true }] });
-    await expect(readPlatformConfig(fs.deps.readFile, CONFIG_PATH)).resolves.toEqual({
-      exists: false,
-      block: null,
-      hash: null,
+    await expect(readAccessoryConfig(fs.deps.readFile, CONFIG_PATH)).resolves.toEqual({
+      blocks: [],
+      hash: EMPTY_HASH,
     });
   });
 
   it('explains a missing config path', async () => {
     const fs = fakeFs({});
-    await expect(readPlatformConfig(fs.deps.readFile, '')).rejects.toThrow('newer homebridge-config-ui-x');
+    await expect(readAccessoryConfig(fs.deps.readFile, '')).rejects.toThrow('newer homebridge-config-ui-x');
   });
 });
 
-describe('validatePlatformBlock', () => {
-  it('forces the platform alias', () => {
-    expect(validatePlatformBlock({ platform: 'wrong', devices: [] }).platform).toBe('mqttthing-ex');
+describe('validateAccessoryBlocks', () => {
+  it('forces the accessory alias', () => {
+    const [validated] = validateAccessoryBlocks([{ accessory: 'wrong', name: 'A', type: 'switch' }]);
+    expect(validated.accessory).toBe('mqttthing');
   });
 
-  it('rejects malformed blocks and devices', () => {
-    expect(() => validatePlatformBlock(null)).toThrow('must be a JSON object');
-    expect(() => validatePlatformBlock([])).toThrow('must be a JSON object');
-    expect(() => validatePlatformBlock({ url: 5 })).toThrow('"url" must be a string');
-    expect(() => validatePlatformBlock({ mqttOptions: [] })).toThrow('"mqttOptions" must be a JSON object');
-    expect(() => validatePlatformBlock({ devices: 'no' })).toThrow('"devices" must be an array');
-    expect(() => validatePlatformBlock({ devices: [null] })).toThrow('devices[0] must be a JSON object');
-    expect(() => validatePlatformBlock({ devices: [{ name: '  ' }] })).toThrow('non-empty "name"');
+  it('rejects anything that is not an array of objects', () => {
+    expect(() => validateAccessoryBlocks(null)).toThrow('must be a JSON array');
+    expect(() => validateAccessoryBlocks({})).toThrow('must be a JSON array');
+    expect(() => validateAccessoryBlocks([null])).toThrow('accessories[0] must be a JSON object');
+    expect(() => validateAccessoryBlocks([[]])).toThrow('accessories[0] must be a JSON object');
   });
 
-  it('rejects a device that still carries an accessory alias', () => {
-    expect(() => validatePlatformBlock({ devices: [{ name: 'A', accessory: 'mqttthing' }] })).toThrow(
-      'must not have an "accessory" property',
-    );
+  it('requires a non-empty name and type on every block', () => {
+    expect(() => validateAccessoryBlocks([{ type: 'switch' }])).toThrow('accessories[0] must have a non-empty "name"');
+    expect(() => validateAccessoryBlocks([{ name: '  ', type: 'switch' }])).toThrow('non-empty "name"');
+    expect(() => validateAccessoryBlocks([{ name: 'A' }])).toThrow('("A") must have a non-empty "type"');
+    expect(() => validateAccessoryBlocks([{ name: 'A', type: '  ' }])).toThrow('non-empty "type"');
   });
 
-  it('rejects invalid and duplicate ids', () => {
-    expect(() => validatePlatformBlock({ devices: [{ name: 'A', id: '' }] })).toThrow('invalid "id"');
-    expect(() =>
-      validatePlatformBlock({ devices: [{ name: 'A', id: 'x' }, { name: 'B', id: 'x' }] }),
-    ).toThrow('reuses the id "x"');
+  it('reports the position of the offending block', () => {
+    expect(() => validateAccessoryBlocks([block('A'), { name: 'B' }])).toThrow('accessories[1]');
   });
 
-  it('rejects an implausibly large block', () => {
-    const devices = [{ name: 'A', type: 'switch', note: 'x'.repeat(2_000_001) }];
-    expect(() => validatePlatformBlock({ devices })).toThrow('too large');
+  it('rejects an implausibly large configuration', () => {
+    expect(() => validateAccessoryBlocks([block('A', { note: 'x'.repeat(2_000_001) })])).toThrow('too large');
+  });
+
+  it('accepts an empty list, which is how the last block is deleted', () => {
+    expect(validateAccessoryBlocks([])).toEqual([]);
   });
 });
 
-describe('writePlatformConfig', () => {
-  it('adds the block without touching anything else', async () => {
+describe('writeAccessoryConfig', () => {
+  it('adds a block without touching anything else', async () => {
     const fs = fakeFs({
       bridge: { name: 'Homebridge' },
-      accessories: [{ accessory: 'mqttthing', name: 'Legacy' }],
-      platforms: [{ platform: 'other', keep: true }],
+      accessories: [{ accessory: 'other', keep: true }],
+      platforms: [{ platform: 'mqttthing-ex', devices: [{ name: 'Lamp', type: 'lightbulb' }] }],
       unknownTopLevelKey: { untouched: 1 },
     });
 
-    const result = await writePlatformConfig(fs.deps, CONFIG_PATH, platformBlock(), null);
+    const result = await writeAccessoryConfig(fs.deps, CONFIG_PATH, [block('A')], EMPTY_HASH);
 
     const written = configOf(fs);
     expect(written.bridge).toEqual({ name: 'Homebridge' });
-    expect(written.accessories).toEqual([{ accessory: 'mqttthing', name: 'Legacy' }]);
+    expect(written.platforms).toEqual([{ platform: 'mqttthing-ex', devices: [{ name: 'Lamp', type: 'lightbulb' }] }]);
     expect(written.unknownTopLevelKey).toEqual({ untouched: 1 });
-    expect(written.platforms).toEqual([{ platform: 'other', keep: true }, platformBlock()]);
-    expect(result.hash).toBe(hashOfBlock(platformBlock()));
+    expect(written.accessories).toEqual([{ accessory: 'other', keep: true }, block('A')]);
+    expect(result.hash).toBe(hashOfBlock([block('A')]));
   });
 
-  it('replaces the block in place, keeping its position', async () => {
-    const existing = platformBlock({ url: 'mqtt://old' });
-    const fs = fakeFs({ platforms: [existing, { platform: 'other' }] });
+  it('replaces blocks in place, keeping their positions among other plugins', async () => {
+    const existing = [{ accessory: 'other', n: 0 }, block('A'), { accessory: 'other', n: 1 }, block('B')];
+    const fs = fakeFs({ accessories: existing });
 
-    await writePlatformConfig(fs.deps, CONFIG_PATH, platformBlock({ url: 'mqtt://new' }), hashOfBlock(existing));
+    await writeAccessoryConfig(
+      fs.deps,
+      CONFIG_PATH,
+      [block('A', { url: 'mqtt://new' }), block('B')],
+      hashOfBlock([block('A'), block('B')]),
+    );
 
-    const written = configOf(fs);
-    expect((written.platforms as Array<Record<string, unknown>>)[0].url).toBe('mqtt://new');
-    expect((written.platforms as Array<Record<string, unknown>>)[1]).toEqual({ platform: 'other' });
+    expect(accessoriesOf(fs)).toEqual([
+      { accessory: 'other', n: 0 },
+      block('A', { url: 'mqtt://new' }),
+      { accessory: 'other', n: 1 },
+      block('B'),
+    ]);
   });
 
-  it('creates the platforms array when the configuration has none', async () => {
-    const fs = fakeFs({ accessories: [] });
-    await writePlatformConfig(fs.deps, CONFIG_PATH, platformBlock(), null);
-    expect(configOf(fs).platforms).toEqual([platformBlock()]);
+  it('appends added blocks after the last of ours', async () => {
+    const fs = fakeFs({ accessories: [block('A'), { accessory: 'other' }] });
+
+    await writeAccessoryConfig(fs.deps, CONFIG_PATH, [block('A'), block('B')], hashOfBlock([block('A')]));
+
+    expect(accessoriesOf(fs)).toEqual([block('A'), block('B'), { accessory: 'other' }]);
+  });
+
+  it('removes deleted blocks while leaving other plugins in place', async () => {
+    const fs = fakeFs({ accessories: [block('A'), { accessory: 'other' }, block('B'), block('C')] });
+
+    await writeAccessoryConfig(
+      fs.deps,
+      CONFIG_PATH,
+      [block('A')],
+      hashOfBlock([block('A'), block('B'), block('C')]),
+    );
+
+    expect(accessoriesOf(fs)).toEqual([block('A'), { accessory: 'other' }]);
+  });
+
+  it('allows deleting every one of our blocks, which shrinks the file legitimately', async () => {
+    const many = Array.from({ length: 200 }, (_, i) => block(`Device ${i}`));
+    const fs = fakeFs({ accessories: [...many, { accessory: 'other' }], platforms: [] });
+
+    await expect(writeAccessoryConfig(fs.deps, CONFIG_PATH, [], hashOfBlock(many))).resolves.toBeDefined();
+    expect(accessoriesOf(fs)).toEqual([{ accessory: 'other' }]);
+  });
+
+  it('creates the accessories array when the configuration has none', async () => {
+    const fs = fakeFs({ platforms: [] });
+    await writeAccessoryConfig(fs.deps, CONFIG_PATH, [block('A')], EMPTY_HASH);
+    expect(configOf(fs).accessories).toEqual([block('A')]);
   });
 
   it('returns a hash the next read agrees with', async () => {
     const fs = fakeFs({});
-    const { hash } = await writePlatformConfig(fs.deps, CONFIG_PATH, platformBlock(), null);
-    const read = await readPlatformConfig(fs.deps.readFile, CONFIG_PATH);
+    const { hash } = await writeAccessoryConfig(fs.deps, CONFIG_PATH, [block('A')], EMPTY_HASH);
+    const read = await readAccessoryConfig(fs.deps.readFile, CONFIG_PATH);
     expect(read.hash).toBe(hash);
   });
 
-  it('refuses when the block changed since it was read', async () => {
-    const fs = fakeFs({ platforms: [platformBlock({ url: 'mqtt://disk' })] });
+  it('refuses when the blocks changed since they were read', async () => {
+    const fs = fakeFs({ accessories: [block('A', { url: 'mqtt://disk' })] });
     await expect(
-      writePlatformConfig(fs.deps, CONFIG_PATH, platformBlock({ url: 'mqtt://mine' }), hashOfBlock(platformBlock())),
+      writeAccessoryConfig(fs.deps, CONFIG_PATH, [block('A', { url: 'mqtt://mine' })], hashOfBlock([block('A')])),
     ).rejects.toThrow('changed outside this editor');
-    expect(configOf(fs).platforms).toEqual([platformBlock({ url: 'mqtt://disk' })]);
+    expect(accessoriesOf(fs)).toEqual([block('A', { url: 'mqtt://disk' })]);
   });
 
   it('refuses when a block appeared while the editor was open', async () => {
-    const fs = fakeFs({ platforms: [platformBlock()] });
-    await expect(writePlatformConfig(fs.deps, CONFIG_PATH, platformBlock(), null)).rejects.toThrow(
+    const fs = fakeFs({ accessories: [block('A')] });
+    await expect(writeAccessoryConfig(fs.deps, CONFIG_PATH, [block('A')], EMPTY_HASH)).rejects.toThrow(
       'changed outside this editor',
     );
   });
 
-  it('refuses when the block disappeared while the editor was open', async () => {
-    const fs = fakeFs({ platforms: [] });
-    await expect(
-      writePlatformConfig(fs.deps, CONFIG_PATH, platformBlock(), hashOfBlock(platformBlock())),
-    ).rejects.toThrow('changed outside this editor');
+  it('refuses a stale save that would delete blocks it never saw', async () => {
+    // the guard is what stops "I read nothing, so write nothing" from
+    // emptying a configuration that has since gained blocks
+    const fs = fakeFs({ accessories: [block('A'), block('B')] });
+    await expect(writeAccessoryConfig(fs.deps, CONFIG_PATH, [], null)).rejects.toThrow('changed outside this editor');
+    expect(accessoriesOf(fs)).toHaveLength(2);
   });
 
   it('refuses to write over an unparseable configuration', async () => {
     const fs = fakeFs('{ broken');
-    await expect(writePlatformConfig(fs.deps, CONFIG_PATH, platformBlock(), null)).rejects.toThrow(
+    await expect(writeAccessoryConfig(fs.deps, CONFIG_PATH, [block('A')], EMPTY_HASH)).rejects.toThrow(
       'Refusing to touch it',
     );
     expect(fs.files.get(CONFIG_PATH)).toBe('{ broken');
   });
 
-  it('refuses to write while a mistyped block is present', async () => {
+  it('refuses to write while a mistyped platform block is present', async () => {
     const fs = fakeFs({ platforms: [{ platform: 'mqttthing', devices: [{ name: 'Lamp' }] }] });
-    await expect(writePlatformConfig(fs.deps, CONFIG_PATH, platformBlock(), null)).rejects.toThrow(
+    await expect(writeAccessoryConfig(fs.deps, CONFIG_PATH, [block('A')], EMPTY_HASH)).rejects.toThrow(
       'is the accessory alias',
     );
     expect(fs.ops).toEqual([]);
   });
 
-  it('refuses when platforms is not an array', async () => {
-    const fs = fakeFs({ platforms: { platform: 'mqttthing-ex' } });
-    await expect(writePlatformConfig(fs.deps, CONFIG_PATH, platformBlock(), null)).rejects.toThrow(
+  it('refuses when accessories is not an array', async () => {
+    const fs = fakeFs({ accessories: { accessory: 'mqttthing' } });
+    await expect(writeAccessoryConfig(fs.deps, CONFIG_PATH, [block('A')], EMPTY_HASH)).rejects.toThrow(
       'not an array. Refusing to touch it',
     );
   });
 
   it('refuses a malformed block before writing anything', async () => {
     const fs = fakeFs({ accessories: [] });
-    await expect(
-      writePlatformConfig(fs.deps, CONFIG_PATH, { devices: [{ noName: true }] }, null),
-    ).rejects.toThrow('non-empty "name"');
+    await expect(writeAccessoryConfig(fs.deps, CONFIG_PATH, [{ noName: true }], EMPTY_HASH)).rejects.toThrow(
+      'non-empty "name"',
+    );
     expect(fs.ops).toEqual([]);
   });
 
   it('is not fooled by a configuration file with different formatting', async () => {
     // two-space indentation on disk: reserializing grows the file, which must
     // not read as data loss in either direction
-    const fs = fakeFs(JSON.stringify({ accessories: [{ accessory: 'mqttthing', name: 'A' }] }, null, 2));
-    await expect(writePlatformConfig(fs.deps, CONFIG_PATH, platformBlock(), null)).resolves.toBeDefined();
+    const fs = fakeFs(JSON.stringify({ platforms: [{ platform: 'other' }] }, null, 2));
+    await expect(writeAccessoryConfig(fs.deps, CONFIG_PATH, [block('A')], EMPTY_HASH)).resolves.toBeDefined();
   });
 
-  it('allows emptying a large block, which shrinks the file legitimately', async () => {
-    const many = {
-      platform: 'mqttthing-ex',
-      devices: Array.from({ length: 200 }, (_, i) => ({
-        name: `Device ${i}`,
-        type: 'switch',
-        topics: { getOn: `home/device/${i}/state`, setOn: `home/device/${i}/set` },
-      })),
-    };
-    const fs = fakeFs({ accessories: [], platforms: [many] });
-
-    await expect(
-      writePlatformConfig(fs.deps, CONFIG_PATH, { platform: 'mqttthing-ex', devices: [] }, hashOfBlock(many)),
-    ).resolves.toBeDefined();
-    expect((configOf(fs).platforms as Array<Record<string, unknown>>)[0].devices).toEqual([]);
-  });
-
-  it('keeps a large unrelated configuration intact while emptying the block', async () => {
+  it('keeps a large unrelated configuration intact while emptying ours', async () => {
     const other = Array.from({ length: 200 }, (_, i) => ({ accessory: 'other', name: `A${i}` }));
-    const fs = fakeFs({ accessories: other, platforms: [{ platform: 'first' }, platformBlock()] });
+    const fs = fakeFs({ accessories: [...other, block('A')], platforms: [{ platform: 'first' }] });
 
-    await writePlatformConfig(
-      fs.deps,
-      CONFIG_PATH,
-      { platform: 'mqttthing-ex', devices: [] },
-      hashOfBlock(platformBlock()),
-    );
+    await writeAccessoryConfig(fs.deps, CONFIG_PATH, [], hashOfBlock([block('A')]));
 
     const written = configOf(fs);
     expect(written.accessories).toEqual(other);
-    expect((written.platforms as Array<Record<string, unknown>>)[0]).toEqual({ platform: 'first' });
+    expect(written.platforms).toEqual([{ platform: 'first' }]);
   });
 
   it('backs up, writes to a temporary file, preserves the mode and renames', async () => {
     const fs = fakeFs({ accessories: [] });
     fs.modes.set(CONFIG_PATH, 0o600);
 
-    await writePlatformConfig(fs.deps, CONFIG_PATH, platformBlock(), null);
+    await writeAccessoryConfig(fs.deps, CONFIG_PATH, [block('A')], EMPTY_HASH);
 
     expect(fs.ops).toEqual([
       `backup:${CONFIG_PATH}.bak-mqttthing`,
@@ -332,16 +352,18 @@ describe('writePlatformConfig', () => {
     const fs = fakeFs({ accessories: [] });
     const deps = { ...fs.deps, rename: async () => { throw new Error('disk full'); } };
 
-    await expect(writePlatformConfig(deps as never, CONFIG_PATH, platformBlock(), null)).rejects.toThrow('disk full');
+    await expect(writeAccessoryConfig(deps as never, CONFIG_PATH, [block('A')], EMPTY_HASH)).rejects.toThrow(
+      'disk full',
+    );
     expect(fs.ops).toContain(`unlink:${CONFIG_PATH}.tmp-mqttthing`);
-    expect(configOf(fs).platforms).toBeUndefined();
+    expect(accessoriesOf(fs)).toEqual([]);
   });
 
   it('writes four-space indented JSON with a trailing newline', async () => {
     const fs = fakeFs({ accessories: [] });
-    await writePlatformConfig(fs.deps, CONFIG_PATH, platformBlock(), null);
+    await writeAccessoryConfig(fs.deps, CONFIG_PATH, [block('A')], EMPTY_HASH);
     const raw = fs.files.get(CONFIG_PATH)!;
     expect(raw.endsWith('\n')).toBe(true);
-    expect(raw).toContain('\n    "platforms"');
+    expect(raw).toContain('\n    "accessories"');
   });
 });

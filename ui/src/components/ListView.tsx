@@ -30,8 +30,8 @@ type SortMode = 'config' | 'name' | 'type';
 
 interface Props {
   store: DeviceStore;
-  /** Why platform mode is unavailable, or null when it works. */
-  platformUnavailable: string | null;
+  /** Why legacy accessory blocks are unavailable, or null when they work. */
+  legacyUnavailable: string | null;
   onEdit: (config: ThingConfig) => void;
   onAdd: () => void;
   onPlatformSettings: () => void;
@@ -49,7 +49,7 @@ function typeLabel(type: string | undefined): string {
 
 export function ListView({
   store,
-  platformUnavailable,
+  legacyUnavailable,
   onEdit,
   onAdd,
   onPlatformSettings,
@@ -89,8 +89,7 @@ export function ListView({
     entries = [...entries].sort((a, b) => typeLabel(a.config.type).localeCompare(typeLabel(b.config.type)));
   }
 
-  const platformAvailable = platformUnavailable === null;
-  const platformLink = platformAvailable && (shape === 'accessory' || shape === 'mixed');
+  const platformLink = shape === 'accessory' || shape === 'mixed';
 
   const buildJson = () =>
     shape === 'accessory'
@@ -185,7 +184,7 @@ export function ListView({
           <option value="name">Sort by name</option>
           <option value="type">Sort by type</option>
         </select>
-        {platformAvailable && store.platform !== null && (
+        {store.platform !== null && (
           <button
             type="button"
             class="btn btn-outline-secondary d-flex align-items-center gap-1"
@@ -297,8 +296,8 @@ export function ListView({
           {showJson ? 'Hide JSON' : 'View JSON'}
         </button>
       </div>
-      {platformUnavailable !== null && (
-        <div class="mqx-desc mt-1">Platform mode is unavailable: {platformUnavailable}</div>
+      {legacyUnavailable !== null && (
+        <div class="mqx-desc mt-1">Legacy accessory blocks are unavailable: {legacyUnavailable}</div>
       )}
       {showJson && (
         <div class="mt-2">

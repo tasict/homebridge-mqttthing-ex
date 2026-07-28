@@ -1,8 +1,8 @@
 {
-  "pluginAlias": "mqttthing",
-  "pluginType": "accessory",
-  "singular": false,
-  "headerDisplay": "This fallback form edits legacy accessory blocks only. Platform mode is configured through the plugin's own settings UI, or directly in config.json - see the Platform mode section of the README.",
+  "pluginAlias": "mqttthing-ex",
+  "pluginType": "platform",
+  "singular": true,
+  "headerDisplay": "This fallback form edits the platform block. The plugin ships a settings UI of its own that supersedes it, and that is also where legacy \"accessory\": \"mqttthing\" entries are managed - see the Platform mode section of the README.",
   "customUi": true,
   "customUiPath": "./homebridge-ui",
   "schema": {
@@ -11,297 +11,13 @@
       "name": {
         "type": "string",
         "title": "Name",
-        "description": "Name of the accessory, as displayed in HomeKit.",
-        "required": true
-      },
-      "type": {
-        "type": "string",
-        "title": "Type",
-        "description": "Accessory type.",
-        "oneOf": [
-          {
-            "title": "Air Pressure Sensor",
-            "enum": [
-              "airPressureSensor"
-            ]
-          },
-          {
-            "title": "Air Purifier",
-            "enum": [
-              "airPurifier"
-            ]
-          },
-          {
-            "title": "Air Quality Sensor",
-            "enum": [
-              "airQualitySensor"
-            ]
-          },
-          {
-            "title": "Battery",
-            "enum": [
-              "battery"
-            ]
-          },
-          {
-            "title": "Carbon Dioxide Sensor",
-            "enum": [
-              "carbonDioxideSensor"
-            ]
-          },
-          {
-            "title": "Carbon Monoxide Sensor",
-            "enum": [
-              "carbonMonoxideSensor"
-            ]
-          },
-          {
-            "title": "Contact Sensor",
-            "enum": [
-              "contactSensor"
-            ]
-          },
-          {
-            "title": "Custom (Grouped Services)",
-            "enum": [
-              "custom"
-            ]
-          },
-          {
-            "title": "Dehumidifier",
-            "enum": [
-              "dehumidifier"
-            ]
-          },
-          {
-            "title": "Door",
-            "enum": [
-              "door"
-            ]
-          },
-          {
-            "title": "Doorbell",
-            "enum": [
-              "doorbell"
-            ]
-          },
-          {
-            "title": "Fan",
-            "enum": [
-              "fan"
-            ]
-          },
-          {
-            "title": "Fan v2",
-            "enum": [
-              "fanv2"
-            ]
-          },
-          {
-            "title": "Garage Door Opener",
-            "enum": [
-              "garageDoorOpener"
-            ]
-          },
-          {
-            "title": "Heater Cooler",
-            "enum": [
-              "heaterCooler"
-            ]
-          },
-          {
-            "title": "Humidity Sensor",
-            "enum": [
-              "humiditySensor"
-            ]
-          },
-          {
-            "title": "Irrigation System",
-            "enum": [
-              "irrigationSystem"
-            ]
-          },
-          {
-            "title": "Leak Sensor",
-            "enum": [
-              "leakSensor"
-            ]
-          },
-          {
-            "title": "Light bulb",
-            "enum": [
-              "lightbulb"
-            ]
-          },
-          {
-            "title": "Light bulb (Colour)",
-            "enum": [
-              "lightbulb-Colour"
-            ]
-          },
-          {
-            "title": "Light bulb (ColTemp)",
-            "enum": [
-              "lightbulb-ColTemp"
-            ]
-          },
-          {
-            "title": "Light bulb (Dimmable)",
-            "enum": [
-              "lightbulb-Dimmable"
-            ]
-          },
-          {
-            "title": "Light bulb (HSV)",
-            "enum": [
-              "lightbulb-HSV"
-            ]
-          },
-          {
-            "title": "Light bulb (OnOff)",
-            "enum": [
-              "lightbulb-OnOff"
-            ]
-          },
-          {
-            "title": "Light bulb (RGB)",
-            "enum": [
-              "lightbulb-RGB"
-            ]
-          },
-          {
-            "title": "Light bulb (RGBW)",
-            "enum": [
-              "lightbulb-RGBW"
-            ]
-          },
-          {
-            "title": "Light bulb (RGBWW)",
-            "enum": [
-              "lightbulb-RGBWW"
-            ]
-          },
-          {
-            "title": "Light bulb (White)",
-            "enum": [
-              "lightbulb-White"
-            ]
-          },
-          {
-            "title": "Light Sensor",
-            "enum": [
-              "lightSensor"
-            ]
-          },
-          {
-            "title": "Lock Mechanism",
-            "enum": [
-              "lockMechanism"
-            ]
-          },
-          {
-            "title": "Microphone",
-            "enum": [
-              "microphone"
-            ]
-          },
-          {
-            "title": "Motion Sensor",
-            "enum": [
-              "motionSensor"
-            ]
-          },
-          {
-            "title": "Occupancy Sensor",
-            "enum": [
-              "occupancySensor"
-            ]
-          },
-          {
-            "title": "Outlet",
-            "enum": [
-              "outlet"
-            ]
-          },
-          {
-            "title": "Security System",
-            "enum": [
-              "securitySystem"
-            ]
-          },
-          {
-            "title": "Smoke Sensor",
-            "enum": [
-              "smokeSensor"
-            ]
-          },
-          {
-            "title": "Speaker",
-            "enum": [
-              "speaker"
-            ]
-          },
-          {
-            "title": "Stateless Programmable Switch",
-            "enum": [
-              "statelessProgrammableSwitch"
-            ]
-          },
-          {
-            "title": "Switch",
-            "enum": [
-              "switch"
-            ]
-          },
-          {
-            "title": "Television",
-            "enum": [
-              "television"
-            ]
-          },
-          {
-            "title": "Temperature Sensor",
-            "enum": [
-              "temperatureSensor"
-            ]
-          },
-          {
-            "title": "Thermostat",
-            "enum": [
-              "thermostat"
-            ]
-          },
-          {
-            "title": "Valve",
-            "enum": [
-              "valve"
-            ]
-          },
-          {
-            "title": "Weather Station",
-            "enum": [
-              "weatherStation"
-            ]
-          },
-          {
-            "title": "Window",
-            "enum": [
-              "window"
-            ]
-          },
-          {
-            "title": "Window Covering",
-            "enum": [
-              "windowCovering"
-            ]
-          }
-        ],
-        "required": true
+        "description": "Name of the platform, used as the prefix of its log messages.",
+        "default": "MQTT Thing"
       },
       "url": {
         "type": "string",
         "title": "MQTT URL",
-        "description": "URL of the MQTT broker, e.g. mqtt://192.168.1.10:1883 (defaults to mqtt://localhost:1883)."
+        "description": "URL of the MQTT broker, e.g. mqtt://192.168.1.10:1883 (defaults to mqtt://localhost:1883). Devices sharing these settings share one connection."
       },
       "username": {
         "type": "string",
@@ -311,108 +27,440 @@
         "type": "string",
         "title": "MQTT Password"
       },
-      "topics": {
+      "mqttOptions": {
         "type": "object",
-        "title": "MQTT Topics",
-        "description": "MQTT topics used by the accessory (getXxx report state, setXxx control the device). See docs/Accessories.md for the topics of each type.",
+        "title": "MQTT Options",
+        "description": "Additional options passed to the MQTT client.",
         "additionalProperties": true
       },
-      "logMqtt": {
-        "type": "boolean",
-        "title": "Log MQTT",
-        "description": "Enable MQTT logging for this accessory.",
-        "default": false
-      },
-      "integerValue": {
-        "type": "boolean",
-        "title": "Integer Values",
-        "description": "Use 1/0 instead of true/false for Boolean values.",
-        "default": false
-      },
-      "onValue": {
-        "type": "string",
-        "title": "On Value",
-        "description": "Specific value representing Boolean true/on."
-      },
-      "offValue": {
-        "type": "string",
-        "title": "Off Value",
-        "description": "Specific value representing Boolean false/off."
-      },
-      "otherValueOff": {
-        "type": "boolean",
-        "title": "Other Values Mean Off",
-        "description": "Treat unrecognized received values as off.",
-        "default": false
-      },
-      "onlineValue": {
-        "type": "string",
-        "title": "Online Value",
-        "description": "Specific value representing the online state (getOnline topic)."
-      },
-      "offlineValue": {
-        "type": "string",
-        "title": "Offline Value",
-        "description": "Specific value representing the offline state (getOnline topic)."
-      },
-      "codec": {
-        "type": "string",
-        "title": "Codec",
-        "description": "Path of a JavaScript codec file used to encode/decode MQTT messages."
-      },
-      "confirmationPeriodms": {
-        "type": "integer",
-        "title": "Confirmation Period [ms]",
-        "description": "Enables set/get publishing confirmation where supported."
-      },
-      "retryLimit": {
-        "type": "integer",
-        "title": "Confirmation Retry Limit",
-        "description": "Maximum number of confirmation republish attempts.",
-        "default": 3
-      },
-      "debounceRecvms": {
-        "type": "integer",
-        "title": "Receive Debounce [ms]",
-        "description": "Debounce period applied to received messages."
-      },
-      "optimizePublishing": {
-        "type": "boolean",
-        "title": "Optimize Publishing",
-        "description": "Do not republish unchanged values.",
-        "default": false
-      },
-      "history": {
-        "type": "boolean",
-        "title": "Enable History",
-        "description": "Enable the Eve history service (supported accessory types only).",
-        "default": false
-      },
-      "manufacturer": {
-        "type": "string",
-        "title": "Manufacturer",
-        "description": "Accessory information service manufacturer."
-      },
-      "model": {
-        "type": "string",
-        "title": "Model",
-        "description": "Accessory information service model."
-      },
-      "serialNumber": {
-        "type": "string",
-        "title": "Serial Number",
-        "description": "Accessory information service serial number."
-      },
-      "firmwareRevision": {
-        "type": "string",
-        "title": "Firmware Revision",
-        "description": "Accessory information service firmware revision."
-      },
-      "caption": {
-        "type": "string",
-        "title": "Caption",
-        "description": "HomeKit caption/label."
+      "devices": {
+        "type": "array",
+        "title": "Devices",
+        "description": "Devices served by this platform.",
+        "items": {
+          "type": "object",
+          "title": "Device",
+          "properties": {
+            "name": {
+              "type": "string",
+              "title": "Name",
+              "description": "Name of the device, as displayed in HomeKit."
+            },
+            "type": {
+              "type": "string",
+              "title": "Type",
+              "description": "Accessory type.",
+              "oneOf": [
+                {
+                  "title": "Air Pressure Sensor",
+                  "enum": [
+                    "airPressureSensor"
+                  ]
+                },
+                {
+                  "title": "Air Purifier",
+                  "enum": [
+                    "airPurifier"
+                  ]
+                },
+                {
+                  "title": "Air Quality Sensor",
+                  "enum": [
+                    "airQualitySensor"
+                  ]
+                },
+                {
+                  "title": "Battery",
+                  "enum": [
+                    "battery"
+                  ]
+                },
+                {
+                  "title": "Carbon Dioxide Sensor",
+                  "enum": [
+                    "carbonDioxideSensor"
+                  ]
+                },
+                {
+                  "title": "Carbon Monoxide Sensor",
+                  "enum": [
+                    "carbonMonoxideSensor"
+                  ]
+                },
+                {
+                  "title": "Contact Sensor",
+                  "enum": [
+                    "contactSensor"
+                  ]
+                },
+                {
+                  "title": "Custom (Grouped Services)",
+                  "enum": [
+                    "custom"
+                  ]
+                },
+                {
+                  "title": "Dehumidifier",
+                  "enum": [
+                    "dehumidifier"
+                  ]
+                },
+                {
+                  "title": "Door",
+                  "enum": [
+                    "door"
+                  ]
+                },
+                {
+                  "title": "Doorbell",
+                  "enum": [
+                    "doorbell"
+                  ]
+                },
+                {
+                  "title": "Fan",
+                  "enum": [
+                    "fan"
+                  ]
+                },
+                {
+                  "title": "Fan v2",
+                  "enum": [
+                    "fanv2"
+                  ]
+                },
+                {
+                  "title": "Garage Door Opener",
+                  "enum": [
+                    "garageDoorOpener"
+                  ]
+                },
+                {
+                  "title": "Heater Cooler",
+                  "enum": [
+                    "heaterCooler"
+                  ]
+                },
+                {
+                  "title": "Humidity Sensor",
+                  "enum": [
+                    "humiditySensor"
+                  ]
+                },
+                {
+                  "title": "Irrigation System",
+                  "enum": [
+                    "irrigationSystem"
+                  ]
+                },
+                {
+                  "title": "Leak Sensor",
+                  "enum": [
+                    "leakSensor"
+                  ]
+                },
+                {
+                  "title": "Light bulb",
+                  "enum": [
+                    "lightbulb"
+                  ]
+                },
+                {
+                  "title": "Light bulb (Colour)",
+                  "enum": [
+                    "lightbulb-Colour"
+                  ]
+                },
+                {
+                  "title": "Light bulb (ColTemp)",
+                  "enum": [
+                    "lightbulb-ColTemp"
+                  ]
+                },
+                {
+                  "title": "Light bulb (Dimmable)",
+                  "enum": [
+                    "lightbulb-Dimmable"
+                  ]
+                },
+                {
+                  "title": "Light bulb (HSV)",
+                  "enum": [
+                    "lightbulb-HSV"
+                  ]
+                },
+                {
+                  "title": "Light bulb (OnOff)",
+                  "enum": [
+                    "lightbulb-OnOff"
+                  ]
+                },
+                {
+                  "title": "Light bulb (RGB)",
+                  "enum": [
+                    "lightbulb-RGB"
+                  ]
+                },
+                {
+                  "title": "Light bulb (RGBW)",
+                  "enum": [
+                    "lightbulb-RGBW"
+                  ]
+                },
+                {
+                  "title": "Light bulb (RGBWW)",
+                  "enum": [
+                    "lightbulb-RGBWW"
+                  ]
+                },
+                {
+                  "title": "Light bulb (White)",
+                  "enum": [
+                    "lightbulb-White"
+                  ]
+                },
+                {
+                  "title": "Light Sensor",
+                  "enum": [
+                    "lightSensor"
+                  ]
+                },
+                {
+                  "title": "Lock Mechanism",
+                  "enum": [
+                    "lockMechanism"
+                  ]
+                },
+                {
+                  "title": "Microphone",
+                  "enum": [
+                    "microphone"
+                  ]
+                },
+                {
+                  "title": "Motion Sensor",
+                  "enum": [
+                    "motionSensor"
+                  ]
+                },
+                {
+                  "title": "Occupancy Sensor",
+                  "enum": [
+                    "occupancySensor"
+                  ]
+                },
+                {
+                  "title": "Outlet",
+                  "enum": [
+                    "outlet"
+                  ]
+                },
+                {
+                  "title": "Security System",
+                  "enum": [
+                    "securitySystem"
+                  ]
+                },
+                {
+                  "title": "Smoke Sensor",
+                  "enum": [
+                    "smokeSensor"
+                  ]
+                },
+                {
+                  "title": "Speaker",
+                  "enum": [
+                    "speaker"
+                  ]
+                },
+                {
+                  "title": "Stateless Programmable Switch",
+                  "enum": [
+                    "statelessProgrammableSwitch"
+                  ]
+                },
+                {
+                  "title": "Switch",
+                  "enum": [
+                    "switch"
+                  ]
+                },
+                {
+                  "title": "Television",
+                  "enum": [
+                    "television"
+                  ]
+                },
+                {
+                  "title": "Temperature Sensor",
+                  "enum": [
+                    "temperatureSensor"
+                  ]
+                },
+                {
+                  "title": "Thermostat",
+                  "enum": [
+                    "thermostat"
+                  ]
+                },
+                {
+                  "title": "Valve",
+                  "enum": [
+                    "valve"
+                  ]
+                },
+                {
+                  "title": "Weather Station",
+                  "enum": [
+                    "weatherStation"
+                  ]
+                },
+                {
+                  "title": "Window",
+                  "enum": [
+                    "window"
+                  ]
+                },
+                {
+                  "title": "Window Covering",
+                  "enum": [
+                    "windowCovering"
+                  ]
+                }
+              ]
+            },
+            "id": {
+              "type": "string",
+              "title": "Identifier",
+              "description": "Stable identity of the device. Written once, when the device is created or moved here; changing it later makes HomeKit treat the device as new."
+            },
+            "url": {
+              "type": "string",
+              "title": "MQTT URL",
+              "description": "Overrides the broker URL of the platform for this device only."
+            },
+            "username": {
+              "type": "string",
+              "title": "MQTT Username",
+              "description": "Overrides the broker username of the platform for this device only."
+            },
+            "password": {
+              "type": "string",
+              "title": "MQTT Password",
+              "description": "Overrides the broker password of the platform for this device only."
+            },
+            "topics": {
+              "type": "object",
+              "title": "MQTT Topics",
+              "description": "MQTT topics used by the device (getXxx report state, setXxx control the device). See docs/Accessories.md for the topics of each type.",
+              "additionalProperties": true
+            },
+            "logMqtt": {
+              "type": "boolean",
+              "title": "Log MQTT",
+              "description": "Enable MQTT logging for this device.",
+              "default": false
+            },
+            "integerValue": {
+              "type": "boolean",
+              "title": "Integer Values",
+              "description": "Use 1/0 instead of true/false for Boolean values.",
+              "default": false
+            },
+            "onValue": {
+              "type": "string",
+              "title": "On Value",
+              "description": "Specific value representing Boolean true/on."
+            },
+            "offValue": {
+              "type": "string",
+              "title": "Off Value",
+              "description": "Specific value representing Boolean false/off."
+            },
+            "otherValueOff": {
+              "type": "boolean",
+              "title": "Other Values Mean Off",
+              "description": "Treat unrecognized received values as off.",
+              "default": false
+            },
+            "onlineValue": {
+              "type": "string",
+              "title": "Online Value",
+              "description": "Specific value representing the online state (getOnline topic)."
+            },
+            "offlineValue": {
+              "type": "string",
+              "title": "Offline Value",
+              "description": "Specific value representing the offline state (getOnline topic)."
+            },
+            "codec": {
+              "type": "string",
+              "title": "Codec",
+              "description": "Path of a JavaScript codec file used to encode/decode MQTT messages."
+            },
+            "confirmationPeriodms": {
+              "type": "integer",
+              "title": "Confirmation Period [ms]",
+              "description": "Enables set/get publishing confirmation where supported."
+            },
+            "retryLimit": {
+              "type": "integer",
+              "title": "Confirmation Retry Limit",
+              "description": "Maximum number of confirmation republish attempts.",
+              "default": 3
+            },
+            "debounceRecvms": {
+              "type": "integer",
+              "title": "Receive Debounce [ms]",
+              "description": "Debounce period applied to received messages."
+            },
+            "optimizePublishing": {
+              "type": "boolean",
+              "title": "Optimize Publishing",
+              "description": "Do not republish unchanged values.",
+              "default": false
+            },
+            "history": {
+              "type": "boolean",
+              "title": "Enable History",
+              "description": "Enable the Eve history service (supported accessory types only).",
+              "default": false
+            },
+            "manufacturer": {
+              "type": "string",
+              "title": "Manufacturer",
+              "description": "Accessory information service manufacturer."
+            },
+            "model": {
+              "type": "string",
+              "title": "Model",
+              "description": "Accessory information service model."
+            },
+            "serialNumber": {
+              "type": "string",
+              "title": "Serial Number",
+              "description": "Accessory information service serial number."
+            },
+            "firmwareRevision": {
+              "type": "string",
+              "title": "Firmware Revision",
+              "description": "Accessory information service firmware revision."
+            },
+            "caption": {
+              "type": "string",
+              "title": "Caption",
+              "description": "HomeKit caption/label."
+            }
+          },
+          "required": [
+            "name",
+            "type"
+          ]
+        }
       }
-    }
+    },
+    "required": [
+      "name"
+    ]
   }
 }

@@ -1,20 +1,21 @@
 // Top-level state container: owns the working copy, the current view and the
 // save lifecycle.
 //
-// Devices live in two containers. Accessory blocks are managed by the
-// Homebridge UI itself: every mutation goes through touch('accessory'), which
-// pushes the full array to updatePluginConfig() throttled on the leading edge
-// — a click-driven change is staged immediately, so the Save button always
+// Devices live in two containers. The platform block is managed by the
+// Homebridge UI itself: every mutation goes through touch('platform'), which
+// pushes it to updatePluginConfig() throttled on the leading edge — a
+// click-driven change is staged immediately, so the Save button always
 // persists it, while typing bursts coalesce into a trailing push at most
-// 300 ms later (the array is mutated in place, so a scheduled push always
+// 300 ms later (the block is mutated in place, so a scheduled push always
 // sends the latest contents).
 //
-// The platform block is invisible to that API (the plugin's schema declares
-// an accessory pluginType), so it is loaded and written through this plugin's
-// own server endpoints. To avoid two save buttons where only one is complete,
-// the Homebridge UI's Save button is disabled while a platform block exists
-// with unsaved changes, and our own "Save all changes" writes both. A user
-// with only accessory blocks never reaches that state and sees no change.
+// Legacy accessory blocks are invisible to that API (the plugin's schema
+// declares a platform pluginType), so they are loaded and written through this
+// plugin's own server endpoints. To avoid two save buttons where only one is
+// complete, the Homebridge UI's Save button is disabled while accessory
+// changes are pending, and our own "Save all changes" writes both. A user who
+// has already moved everything to platform mode never reaches that state and
+// sees no change.
 import { useEffect, useRef, useState } from 'preact/hooks';
 
 import type { ThingConfig } from '../../src/config.js';
@@ -49,9 +50,8 @@ export type Touch = (scope: DeviceSource) => void;
 const PUSH_DEBOUNCE_MS = 300;
 const SAVED_BADGE_MS = 4000;
 
-interface PlatformResponse {
-  exists: boolean;
-  block: PlatformBlock | null;
+interface AccessoryResponse {
+  blocks: ThingConfig[];
   hash: string | null;
 }
 
@@ -59,13 +59,15 @@ export function App() {
   // A stable store object: helpers mutate it in place (including creating the
   // platform block on demand), so it must not be rebuilt per render.
   const store = useRef<DeviceStore>({ legacy: [], platform: null }).current;
-  const platformHash = useRef<string | null>(null);
+  const legacyHash = useRef<string | null>(null);
   const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Read inside a promise callback, where the state value would be stale.
+  const ownsSaveNow = useRef(false);
 
   const [loaded, setLoaded] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [platformUnavailable, setPlatformUnavailable] = useState<string | null>(null);
+  const [legacyUnavailable, setLegacyUnavailable] = useState<string | null>(null);
   const [view, setView] = useState<View>({ name: 'list' });
   const [legacyDirty, setLegacyDirty] = useState(false);
   const [platformDirty, setPlatformDirty] = useState(false);
@@ -76,22 +78,23 @@ export function App() {
     (async () => {
       // two independent back-ends (the Homebridge UI's config API and this
       // plugin's own UI server), so both requests are in flight at once
-      const accessories = hb().getPluginConfig();
-      const platform = hb().request('/config/platform');
+      const platform = hb().getPluginConfig();
+      const accessories = hb().request('/config/accessories');
       try {
-        const blocks = await accessories;
-        store.legacy = Array.isArray(blocks) ? (blocks as ThingConfig[]) : [];
+        const blocks = await platform;
+        // the schema is singular, so Homebridge only ever hands back one
+        store.platform = Array.isArray(blocks) && blocks.length > 0 ? (blocks[0] as PlatformBlock) : null;
       } catch (e) {
         setLoadError(e instanceof Error ? e.message : String(e));
         return;
       }
       try {
-        const response = (await platform) as PlatformResponse;
-        store.platform = response.block;
-        platformHash.current = response.hash;
+        const response = (await accessories) as AccessoryResponse;
+        store.legacy = Array.isArray(response.blocks) ? response.blocks : [];
+        legacyHash.current = response.hash;
       } catch (e) {
-        // platform mode is optional: accessory editing must keep working
-        setPlatformUnavailable(requestErrorMessage(e));
+        // legacy blocks are optional: platform editing must keep working
+        setLegacyUnavailable(requestErrorMessage(e));
       }
       setLoaded(true);
     })();
@@ -110,8 +113,11 @@ export function App() {
   }, [view]);
 
   // Saving both containers is only possible from here, so the Homebridge UI's
-  // own button is disabled for exactly as long as it would be incomplete.
-  const ownsSave = store.platform !== null && (legacyDirty || platformDirty);
+  // own button is disabled for exactly as long as it would be incomplete —
+  // which is exactly while accessory changes are pending, since its own Save
+  // writes the platform block correctly on its own.
+  const ownsSave = legacyDirty;
+  ownsSaveNow.current = ownsSave;
   useEffect(() => {
     if (!loaded) {
       return;
@@ -132,15 +138,17 @@ export function App() {
 
   const shape = configShape(store);
   const terms = termsFor(shape);
-  const platformAvailable = platformUnavailable === null;
+  const legacyAvailable = legacyUnavailable === null;
 
-  const pushLegacy = () => {
+  const stagedPlatform = () => (store.platform === null ? [] : [store.platform]);
+
+  const pushPlatform = () => {
     hb()
-      .updatePluginConfig(store.legacy)
+      .updatePluginConfig(stagedPlatform())
       .then(() => {
         // the Homebridge UI re-enables its button when the staged config
         // changes, so the ownership has to be re-asserted
-        if (store.platform !== null) {
+        if (ownsSaveNow.current) {
           hb().disableSaveButton();
         }
       })
@@ -150,16 +158,16 @@ export function App() {
   const touch: Touch = (scope) => {
     setRevision((r) => r + 1);
     setSaveState({ kind: 'idle' });
-    if (scope === 'platform') {
-      setPlatformDirty(true);
+    if (scope === 'accessory') {
+      setLegacyDirty(true);
       return;
     }
-    setLegacyDirty(true);
+    setPlatformDirty(true);
     if (pushTimer.current === null) {
-      pushLegacy();
+      pushPlatform();
       pushTimer.current = setTimeout(() => {
         pushTimer.current = null;
-        pushLegacy();
+        pushPlatform();
       }, PUSH_DEBOUNCE_MS);
     }
   };
@@ -179,38 +187,41 @@ export function App() {
     setSaveState({ kind: 'saving' });
     hb().showSpinner();
     try {
-      // Stage the accessory array first: savePluginConfig() writes what was
-      // last staged, and this also flushes any pending throttled push.
-      await hb().updatePluginConfig(store.legacy);
-
       // The platform block is written before the accessories are committed.
       // If the second step then fails, a moved device exists in both places
       // and Homebridge keeps using the accessory copy - recoverable. The
       // other order would delete accessories before the platform block holds
       // them, and the devices would disappear from HomeKit.
-      if (store.platform !== null) {
+      //
+      // Staging first: savePluginConfig() writes what was last staged, and
+      // this also flushes any pending throttled push.
+      try {
+        await hb().updatePluginConfig(stagedPlatform());
+        await hb().savePluginConfig();
+        setPlatformDirty(false);
+      } catch (e) {
+        setSaveState({ kind: 'platform-failed', message: requestErrorMessage(e) });
+        window.scrollTo(0, 0);
+        return;
+      }
+
+      // Never write accessory blocks that could not be read: an empty array
+      // would delete every one of them. (The server's hash guard would refuse
+      // the write anyway, but failing here says so in plain words.)
+      if (legacyAvailable) {
         try {
-          const result = (await hb().request('/config/platform/save', {
-            block: store.platform,
-            baseHash: platformHash.current,
+          const result = (await hb().request('/config/accessories/save', {
+            blocks: store.legacy,
+            baseHash: legacyHash.current,
           })) as { hash: string };
-          platformHash.current = result.hash;
-          setPlatformDirty(false);
+          legacyHash.current = result.hash;
+          setLegacyDirty(false);
         } catch (e) {
-          setSaveState({ kind: 'platform-failed', message: requestErrorMessage(e) });
+          setSaveState({ kind: 'accessories-failed', message: requestErrorMessage(e) });
           window.scrollTo(0, 0);
           return;
         }
       }
-
-      try {
-        await hb().savePluginConfig();
-      } catch (e) {
-        setSaveState({ kind: 'accessories-failed', message: requestErrorMessage(e) });
-        window.scrollTo(0, 0);
-        return;
-      }
-      setLegacyDirty(false);
       flashSaved();
     } finally {
       hb().hideSpinner();
@@ -219,9 +230,10 @@ export function App() {
 
   const discardPlatformChanges = async () => {
     try {
-      const response = (await hb().request('/config/platform')) as PlatformResponse;
-      store.platform = response.block;
-      platformHash.current = response.hash;
+      const blocks = await hb().getPluginConfig();
+      store.platform = Array.isArray(blocks) && blocks.length > 0 ? (blocks[0] as PlatformBlock) : null;
+      // re-stage, so the Homebridge UI's own copy matches what is on disk
+      await hb().updatePluginConfig(stagedPlatform());
       setPlatformDirty(false);
       setSaveState({ kind: 'idle' });
       setRevision((r) => r + 1);
@@ -268,7 +280,7 @@ export function App() {
       {view.name === 'list' && (
         <ListView
           store={store}
-          platformUnavailable={platformUnavailable}
+          legacyUnavailable={legacyUnavailable}
           onEdit={openDevice}
           onAdd={() => setView({ name: 'add' })}
           onPlatformSettings={() => setView({ name: 'platform-settings' })}
@@ -280,7 +292,6 @@ export function App() {
         <EditorView
           config={view.device}
           store={store}
-          platformAvailable={platformAvailable}
           touch={touch}
           onBack={() => setView({ name: 'list' })}
           onOpen={openDevice}
@@ -297,7 +308,7 @@ export function App() {
       {view.name === 'add' && (
         <AddWizard
           store={store}
-          platformAvailable={platformAvailable}
+          legacyAvailable={legacyAvailable}
           touch={touch}
           onCancel={() => setView({ name: 'list' })}
           onCreated={openDevice}

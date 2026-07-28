@@ -6,7 +6,7 @@ import { chmod, copyFile, readdir, readFile, rename, stat, unlink, writeFile } f
 import { HomebridgePluginUiServer, RequestError } from '@homebridge/plugin-ui-utils';
 import mqtt from 'mqtt';
 
-import { listCodecs, probeTopic, readPlatformConfig, testMqttConnection, writePlatformConfig } from './server-lib.mjs';
+import { listCodecs, probeTopic, readAccessoryConfig, testMqttConnection, writeAccessoryConfig } from './server-lib.mjs';
 
 const CONFIG_FS = { readFile, writeFile, rename, copyFile, stat, chmod, unlink };
 
@@ -46,24 +46,24 @@ class MqttThingUiServer extends HomebridgePluginUiServer {
       return result;
     });
 
-    // Read the platform block. The Homebridge UI's own config API only
-    // exposes accessory blocks (the plugin's schema declares an accessory
-    // pluginType), so platform mode reads config.json here.
-    this.onRequest('/config/platform', async () => {
+    // Read the legacy accessory blocks. The Homebridge UI's own config API
+    // only exposes the platform block (the plugin's schema declares a platform
+    // pluginType), so accessory mode reads config.json here.
+    this.onRequest('/config/accessories', async () => {
       try {
-        return await readPlatformConfig(readFile, this.homebridgeConfigPath);
+        return await readAccessoryConfig(readFile, this.homebridgeConfigPath);
       } catch (e) {
         throw new RequestError(e instanceof Error ? e.message : String(e));
       }
     });
 
-    // Write the platform block back, leaving the rest of config.json alone.
-    this.onRequest('/config/platform/save', async (payload) => {
+    // Write the accessory blocks back, leaving the rest of config.json alone.
+    this.onRequest('/config/accessories/save', async (payload) => {
       try {
-        return await writePlatformConfig(
+        return await writeAccessoryConfig(
           CONFIG_FS,
           this.homebridgeConfigPath,
-          payload?.block,
+          payload?.blocks,
           payload?.baseHash ?? null,
         );
       } catch (e) {
