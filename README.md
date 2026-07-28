@@ -66,13 +66,13 @@ Platform mode is an alternative that puts every device in one block:
       "password": "secret",
       "devices": [
         {
-          "id": "Living Room Light",
+          "id": "e5f6a7b8-1234-4abc-8def-0123456789ab",
           "name": "Living Room Light",
           "type": "lightbulb",
           "topics": { "setOn": "home/light/set", "getOn": "home/light/state" }
         },
         {
-          "id": "a3f92c81d04b57e6",
+          "id": "9c8b7a65-4321-4fed-9cba-fedcba987654",
           "name": "Garage Sensor",
           "type": "contactSensor",
           "url": "mqtt://other-broker:1883",
@@ -93,8 +93,9 @@ What it gives you:
   than one per device.
 - **Accessory caching** — devices appear in HomeKit at startup, before the
   broker is reachable.
-- **A stable identity** — the optional `id` decides the HomeKit accessory,
-  so a device can be renamed freely.
+- **A stable identity** — the optional `id` decides the HomeKit accessory, so
+  a device can be renamed freely. It is normally the accessory's UUID, which
+  is what the settings UI writes.
 - **Start-up validation** — configuration problems are reported in the log.
 
 A device entry is exactly an accessory block without `"accessory"`, plus the
@@ -114,19 +115,22 @@ page; then restart Homebridge. While platform changes are pending, the
 Homebridge UI's own Save button is greyed out, because it would only save
 part of the configuration.
 
-**No HomeKit re-pairing is needed.** The accessory UUID is generated from
-`uuid.generate("mqttthing:" + (id || uuid_base || name))`, which is the same
-formula Homebridge uses for accessory blocks. Migration pins `id` to what the
-device is identified by today — its `uuid_base` if set, otherwise its name —
-so the UUID does not change and rooms, scenes and automations are preserved.
-Afterwards the `name` is only a display name and can be changed at will.
+**No HomeKit re-pairing is needed.** Homebridge identifies an accessory block
+by `uuid.generate("mqttthing:" + (uuid_base || name))`. Moving a device writes
+exactly that UUID into its `id`, and a platform device whose `id` is already a
+UUID *is* that accessory — nothing is hashed a second time. The device
+therefore stays the accessory it was, keeping its rooms, scenes and
+automations, while `name` becomes a label you can change at will.
+
+An `id` that is not a UUID still works and is treated as a seed, so a
+hand-written `"id": "living-room"` behaves the same way a name does.
 
 Notes:
 
 - Do not configure the same device in both `accessories[]` and `devices[]`.
   Homebridge publishes the accessory and skips the platform copy; the plugin
   warns about it in the log, and the UI flags both entries.
-- The `id` is written once, when a device is created or migrated. Changing it
+- The `id` is written once, when a device is created or moved. Changing it
   later makes HomeKit treat the device as new, which is why the UI only
   allows it through "Edit as JSON" with an explicit confirmation.
 - There is no automatic way back. To return a device to accessory mode, move

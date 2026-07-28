@@ -12,10 +12,13 @@ before.
   caching so devices appear before the broker is reachable, and start-up
   validation of every device
 + New optional per-device `id` giving each device a stable HomeKit identity,
-  so devices can be renamed without HomeKit treating them as new
+  so devices can be renamed without HomeKit treating them as new. An `id`
+  that is a UUID is the HomeKit accessory itself; any other value is used the
+  way a name is
 + Moving a device from `accessories` to the platform block preserves its
-  HomeKit identity: rooms, scenes and automations survive, no re-pairing.
-  The settings UI offers this per device and for all at once
+  HomeKit identity: its `id` is set to the UUID Homebridge had already given
+  it, so rooms, scenes and automations survive and nothing has to be paired
+  again. The settings UI offers this per device and for all at once
 + Custom UI now manages both configuration formats. If you only use accessory
   blocks the settings screen is unchanged apart from one **About platform
   mode** link at the bottom of the list — no banner, no badges, no renamed

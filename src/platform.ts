@@ -203,8 +203,14 @@ export class MqttThingPlatform implements DynamicPlatformPlugin {
             'platform device. Move the whole platform into a child bridge instead.',
         );
       }
+      // An id that is already a UUID *is* the HomeKit accessory: that is what
+      // moving a device from accessories[] writes, so the accessory it was
+      // stays the accessory it is. Anything else is a seed, hashed exactly as
+      // Homebridge hashes an accessory block's name.
       const seed = config.id || config.uuid_base || config.name;
-      const uuid = this.api.hap.uuid.generate(ACCESSORY_NAME + ':' + seed);
+      const uuid = this.api.hap.uuid.isValid(seed)
+        ? seed.toLowerCase()
+        : this.api.hap.uuid.generate(ACCESSORY_NAME + ':' + seed);
 
       const clash = seenUuids.get(uuid);
       if (clash !== undefined) {

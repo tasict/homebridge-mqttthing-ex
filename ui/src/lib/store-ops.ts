@@ -12,6 +12,7 @@
 // identity when it moves between containers.
 import type { ThingConfig } from '../../../src/config.js';
 import { deepClone, duplicateName, mostCommonOfBrokers, type BrokerSettings } from './config-ops.js';
+import { accessoryUuid, isUuid, randomUuid } from './hap-uuid.js';
 
 export type DeviceSource = 'accessory' | 'platform';
 
@@ -48,39 +49,26 @@ function stringValue(value: unknown): string | undefined {
 }
 
 /**
- * What the accessory UUID is generated from: "mqttthing:" + this. Mirrors the
- * runtime (and Homebridge's own accessory-mode formula), so two devices with
- * the same seed would be the same HomeKit accessory.
+ * The HomeKit accessory a configuration entry resolves to.
+ *
+ * A platform device whose id is already a UUID *is* that accessory; anything
+ * else is a seed Homebridge hashes together with the accessory alias. An
+ * accessory block has no id of its own - Homebridge identifies it by
+ * uuid_base or name - so its source decides how it is read.
  */
-export function seedOf(config: ThingConfig): string {
-  return stringValue(config.id) ?? stringValue(config.uuid_base) ?? String(config.name ?? '');
+export function identityUuid(config: ThingConfig, source: DeviceSource): string {
+  if (source === 'platform') {
+    const id = stringValue(config.id);
+    if (id !== undefined) {
+      return isUuid(id) ? id.toLowerCase() : accessoryUuid(id);
+    }
+  }
+  return accessoryUuid(stringValue(config.uuid_base) ?? String(config.name ?? ''));
 }
 
-/**
- * 64-bit FNV-1a as 16 hex digits. Synchronous by design: crypto.subtle is
- * unavailable when the Homebridge UI is served over plain HTTP.
- */
-export function fnv1a64(input: string): string {
-  const mask = (1n << 64n) - 1n;
-  let hash = 14695981039346656037n;
-  for (let i = 0; i < input.length; i++) {
-    hash ^= BigInt(input.charCodeAt(i));
-    hash = (hash * 1099511628211n) & mask;
-  }
-  return hash.toString(16).padStart(16, '0');
-}
-
-/**
- * Identity for a newly created device: a hash of its name, so the id carries
- * no trace of a name that may later change. Re-hashed until unique.
- */
-export function newDeviceId(name: string, existingIds: Iterable<string>): string {
-  const used = new Set(existingIds);
-  let id = fnv1a64(name);
-  while (used.has(id)) {
-    id = fnv1a64(id);
-  }
-  return id;
+/** Identity for a newly created device: opaque, and unique by construction. */
+export function newDeviceId(): string {
+  return randomUuid();
 }
 
 /** The platform block, created (empty) when the configuration has none yet. */
@@ -163,14 +151,10 @@ export function duplicateDevice(store: DeviceStore, config: ThingConfig): ThingC
     String(config.name ?? 'device'),
   );
   if (sourceOf(store, config) === 'platform') {
-    copy.id = newDeviceId(String(copy.name), platformIds(store));
+    copy.id = newDeviceId();
   }
   container.splice(container.indexOf(config) + 1, 0, copy);
   return copy;
-}
-
-function platformIds(store: DeviceStore): string[] {
-  return (store.platform?.devices ?? []).map((device) => seedOf(device));
 }
 
 /**
@@ -207,12 +191,16 @@ export function moveEligibility(store: DeviceStore, config: ThingConfig): MoveEl
       reason: 'it runs in its own child bridge, which platform mode cannot keep for a single device',
     };
   }
-  const id = stringValue(config.uuid_base) ?? String(config.name ?? '');
-  if (id === '') {
+  if (stringValue(config.uuid_base) === undefined && String(config.name ?? '') === '') {
     return { movable: false, reason: 'it has no name' };
   }
-  if ((store.platform?.devices ?? []).some((device) => seedOf(device) === id)) {
-    return { movable: false, reason: `a platform device with the identity "${id}" already exists` };
+  const uuid = identityUuid(config, 'accessory');
+  const clash = (store.platform?.devices ?? []).find((device) => identityUuid(device, 'platform') === uuid);
+  if (clash !== undefined) {
+    return {
+      movable: false,
+      reason: `the platform device "${String(clash.name ?? '')}" is already the same HomeKit accessory`,
+    };
   }
   return { movable: true };
 }
@@ -293,10 +281,11 @@ export type MigrateResult = { ok: true; id: string } | { ok: false; reason: stri
 /**
  * Move a legacy accessory into the platform block.
  *
- * The device's id is pinned to what its HomeKit UUID is generated from today
- * (uuid_base if set, otherwise the name), copied verbatim - the UUID stays
- * identical, so rooms, scenes and automations survive. Renaming afterwards is
- * then free.
+ * The device's id is set to the HomeKit accessory it already is - the very
+ * UUID Homebridge derived from its name (or uuid_base). Nothing is hashed
+ * again afterwards, so the identity is unchanged and rooms, scenes and
+ * automations survive, while the id carries no trace of a name that may
+ * later change.
  *
  * Per-device broker settings are deliberately left in place even when they
  * match the platform defaults: removing them would silently re-point the
@@ -307,7 +296,7 @@ export function migrateDevice(store: DeviceStore, config: ThingConfig): MigrateR
   if (!eligibility.movable) {
     return { ok: false, reason: eligibility.reason };
   }
-  const id = stringValue(config.uuid_base) ?? String(config.name ?? '');
+  const id = identityUuid(config, 'accessory');
 
   const block = ensurePlatformBlock(store);
   store.legacy.splice(store.legacy.indexOf(config), 1);
@@ -385,12 +374,12 @@ export function duplicateIdentityFindings(store: DeviceStore): Map<ThingConfig, 
   if (!store.platform) {
     return findings;
   }
-  const legacyBySeed = new Map<string, ThingConfig>();
+  const legacyByUuid = new Map<string, ThingConfig>();
   for (const config of store.legacy) {
-    legacyBySeed.set(seedOf(config), config);
+    legacyByUuid.set(identityUuid(config, 'accessory'), config);
   }
   for (const device of store.platform.devices ?? []) {
-    const clash = legacyBySeed.get(seedOf(device));
+    const clash = legacyByUuid.get(identityUuid(device, 'platform'));
     if (clash) {
       findings.set(device, 'Also configured as a legacy accessory, which is the copy Homebridge publishes.');
       findings.set(clash, 'Also configured as a platform device, which Homebridge skips in favour of this one.');

@@ -94,6 +94,43 @@ describe('MqttThingPlatform identity', () => {
     expect(h.registered[0].UUID).toBe(uuidOf('stable'));
   });
 
+  it('uses an id that is already a UUID as the accessory itself', () => {
+    const h = harness();
+    const uuid = uuidOf('Original Name');
+    makePlatform({ mqttOptions: quiet, devices: [{ name: 'Renamed', type: 'switch', id: uuid }] }, h);
+    // not hashed again: the accessory is exactly the one the id names
+    expect(h.registered[0].UUID).toBe(uuid);
+  });
+
+  it('accepts an uppercase UUID id', () => {
+    const h = harness();
+    const uuid = uuidOf('Original Name');
+    makePlatform(
+      { mqttOptions: quiet, devices: [{ name: 'Renamed', type: 'switch', id: uuid.toUpperCase() }] },
+      h,
+    );
+    expect(h.registered[0].UUID).toBe(uuid);
+  });
+
+  it('keeps a moved accessory the same HomeKit accessory', () => {
+    // what the settings UI writes when moving an accessory: its id becomes
+    // the UUID Homebridge had already given it, and the name is then free
+    const h = harness();
+    const uuid = uuidOf('Old Accessory Name');
+    const cached = h.makeCachedAccessory('Old Accessory Name', uuid);
+
+    makePlatform(
+      { mqttOptions: quiet, devices: [{ name: 'A Better Name', type: 'switch', id: uuid }] },
+      h,
+      [cached],
+    );
+
+    expect(h.registered).toHaveLength(0); // recognised, not re-created
+    expect(h.updated[0]).toBe(cached);
+    expect(cached.UUID).toBe(uuid);
+    expect(cached.displayName).toBe('A Better Name');
+  });
+
   it('records the identity in the accessory context', () => {
     const h = harness();
     makePlatform({ mqttOptions: quiet, devices: [{ name: 'Sw1', type: 'switch', id: 'abc123' }] }, h);

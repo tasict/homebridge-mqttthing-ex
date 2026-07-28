@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { ThingConfig } from '../src/config.js';
 import { parsePlatformDeviceJson } from '../ui/src/lib/config-ops.js';
+import { accessoryUuid, isUuid } from '../ui/src/lib/hap-uuid.js';
 import {
   allDevices,
   applyBrokerToAllDevices,
@@ -16,7 +17,6 @@ import {
   duplicateIdentityFindings,
   effectiveBroker,
   ensurePlatformBlock,
-  fnv1a64,
   hoistBrokerToPlatform,
   migrateDevice,
   migrateSelected,
@@ -24,7 +24,7 @@ import {
   moveEligibility,
   newDeviceId,
   removeDevice,
-  seedOf,
+  identityUuid,
   sourceOf,
   type DeviceStore,
   type PlatformBlock,
@@ -89,28 +89,31 @@ describe('store shape', () => {
 });
 
 describe('identity', () => {
-  it('derives the UUID seed like the runtime does', () => {
-    expect(seedOf(device('Name'))).toBe('Name');
-    expect(seedOf(device('Name', { uuid_base: 'Base' }))).toBe('Base');
-    expect(seedOf(device('Name', { uuid_base: 'Base', id: 'Id' }))).toBe('Id');
+  it('resolves an accessory block the way Homebridge does', () => {
+    expect(identityUuid(accessory('Name'), 'accessory')).toBe(accessoryUuid('Name'));
+    expect(identityUuid(accessory('Name', { uuid_base: 'Base' }), 'accessory')).toBe(accessoryUuid('Base'));
+    // an id is meaningless on an accessory block: Homebridge never reads it
+    expect(identityUuid(accessory('Name', { id: 'Id' }), 'accessory')).toBe(accessoryUuid('Name'));
   });
 
-  it('hashes names to a stable 16-digit id', () => {
-    expect(fnv1a64('Living Room Light')).toMatch(/^[0-9a-f]{16}$/);
-    expect(fnv1a64('Living Room Light')).toBe(fnv1a64('Living Room Light'));
-    expect(fnv1a64('a')).not.toBe(fnv1a64('b'));
+  it('uses a UUID id as the accessory itself', () => {
+    const uuid = accessoryUuid('Original Name');
+    expect(identityUuid(device('Renamed', { id: uuid }), 'platform')).toBe(uuid);
+    expect(identityUuid(device('Renamed', { id: uuid.toUpperCase() }), 'platform')).toBe(uuid);
   });
 
-  it('hashes non-ASCII names without trouble', () => {
-    expect(fnv1a64('客廳燈')).toMatch(/^[0-9a-f]{16}$/);
-    expect(fnv1a64('客廳燈')).not.toBe(fnv1a64('臥室燈'));
+  it('hashes a platform id that is not a UUID', () => {
+    expect(identityUuid(device('Name', { id: 'living-room' }), 'platform')).toBe(accessoryUuid('living-room'));
+    expect(identityUuid(device('Name', { uuid_base: 'Base' }), 'platform')).toBe(accessoryUuid('Base'));
+    expect(identityUuid(device('Name'), 'platform')).toBe(accessoryUuid('Name'));
   });
 
-  it('re-hashes until the id is unused', () => {
-    const taken = fnv1a64('Switch');
-    expect(newDeviceId('Switch', [])).toBe(taken);
-    expect(newDeviceId('Switch', [taken])).toBe(fnv1a64(taken));
-    expect(newDeviceId('Switch', [taken, fnv1a64(taken)])).toBe(fnv1a64(fnv1a64(taken)));
+  it('gives new devices an opaque, unique id', () => {
+    const ids = new Set(Array.from({ length: 50 }, () => newDeviceId()));
+    expect(ids.size).toBe(50);
+    for (const id of ids) {
+      expect(isUuid(id)).toBe(true);
+    }
   });
 });
 
@@ -123,7 +126,7 @@ describe('duplication', () => {
     expect(s.platform!.devices.map((d) => d.name)).toEqual(['Lamp', 'Lamp copy', 'Other']);
     expect(copy.uuid_base).toBeUndefined();
     expect(copy.id).not.toBe('abc');
-    expect(copy.id).toBe(fnv1a64('Lamp copy'));
+    expect(isUuid(String(copy.id))).toBe(true);
     (copy.topics as Record<string, string>).getOn = 'changed';
     expect((original.topics as Record<string, string>).getOn).toBe('t');
   });
@@ -147,10 +150,12 @@ describe('migration', () => {
     const s = store([config]);
 
     const result = migrateDevice(s, config);
-    expect(result).toEqual({ ok: true, id: 'Living Room' });
+    // the id is the accessory it already was, not a new one
+    expect(result).toEqual({ ok: true, id: accessoryUuid('Living Room') });
     expect(s.legacy).toEqual([]);
     expect(s.platform!.devices[0]).toBe(config); // same object: an open editor survives
-    expect(config.id).toBe('Living Room');
+    expect(config.id).toBe(accessoryUuid('Living Room'));
+    expect(identityUuid(config, 'platform')).toBe(accessoryUuid('Living Room'));
     expect((config as Record<string, unknown>).accessory).toBeUndefined();
     // per-device broker settings stay put
     expect(config.url).toBe('mqtt://a');
@@ -159,8 +164,8 @@ describe('migration', () => {
   it('pins the identity to uuid_base when one is configured', () => {
     const config = accessory('Renamed', { uuid_base: 'Original' });
     const s = store([config]);
-    expect(migrateDevice(s, config)).toEqual({ ok: true, id: 'Original' });
-    expect(config.id).toBe('Original');
+    expect(migrateDevice(s, config)).toEqual({ ok: true, id: accessoryUuid('Original') });
+    expect(config.id).toBe(accessoryUuid('Original'));
   });
 
   it('refuses when a platform device already has that identity', () => {
@@ -170,7 +175,7 @@ describe('migration', () => {
     const result = migrateDevice(s, config);
     expect(result.ok).toBe(false);
     expect(s.legacy).toHaveLength(1);
-    expect(!result.ok && result.reason).toContain('already exists');
+    expect(!result.ok && result.reason).toContain('already the same HomeKit accessory');
   });
 
   it('refuses an accessory running in its own child bridge', () => {
@@ -198,7 +203,9 @@ describe('migration', () => {
 
     const result = migrateSelected(s, [...s.legacy]);
     expect(result.migrated).toBe(2);
-    expect(result.skipped).toEqual([{ name: 'B', reason: expect.stringContaining('already exists') }]);
+    expect(result.skipped).toEqual([
+      { name: 'B', reason: expect.stringContaining('already the same HomeKit accessory') },
+    ]);
     expect(s.legacy).toEqual([clash]);
     expect(s.platform!.devices.map((d) => d.name)).toEqual(['B', 'A', 'C']);
   });
@@ -247,7 +254,7 @@ describe('move eligibility', () => {
     const config = accessory('A');
     const result = moveEligibility(store([config], { devices: [device('A')] }), config);
     expect(result.movable).toBe(false);
-    expect(!result.movable && result.reason).toContain('already exists');
+    expect(!result.movable && result.reason).toContain('already the same HomeKit accessory');
   });
 
   it('agrees with what migrateDevice does', () => {
@@ -353,7 +360,7 @@ describe('broker resolution', () => {
 describe('duplicate identity findings', () => {
   it('flags both copies when a device is configured twice', () => {
     const legacy = accessory('Lamp');
-    const platformDevice = device('Renamed', { id: 'Lamp' });
+    const platformDevice = device('Renamed', { id: accessoryUuid('Lamp') });
     const s = store([legacy, accessory('Fine')], { devices: [platformDevice] });
 
     const findings = duplicateIdentityFindings(s);

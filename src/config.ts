@@ -31,10 +31,14 @@ export interface ThingConfig {
   type: string;
   name: string;
 
-  // HomeKit identity. The accessory UUID is generated from
-  // "mqttthing:" + (id || uuid_base || name), so setting one of these keeps
-  // the identity stable when the displayed name changes. `uuid_base` is read
-  // by Homebridge itself in accessory mode; `id` is the platform-mode field.
+  // HomeKit identity, which is what makes a name just a label.
+  //
+  // `id` is the platform-mode field: an id that is already a UUID *is* the
+  // HomeKit accessory (that is what moving a device from accessories[]
+  // writes, so it stays the accessory it was), and any other value is a seed
+  // for "mqttthing:" + id. Without an id the seed is uuid_base or the name -
+  // the same rule Homebridge applies to accessory blocks, where `uuid_base`
+  // is read by Homebridge itself.
   id?: string;
   uuid_base?: string;
 

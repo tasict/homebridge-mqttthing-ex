@@ -419,7 +419,7 @@ fully supported and unchanged.
             "mqttOptions": {},
             "devices": [
                 {
-                    "id": "<stable identity - see below>",
+                    "id": "e5f6a7b8-1234-4abc-8def-0123456789ab",
                     "type": "lightbulb",
                     "name": "My lightbulb",
                     "topics": {
@@ -428,7 +428,7 @@ fully supported and unchanged.
                     }
                 },
                 {
-                    "id": "a3f92c81d04b57e6",
+                    "id": "9c8b7a65-4321-4fed-9cba-fedcba987654",
                     "type": "switch",
                     "name": "Switch on another broker",
                     "url": "mqtt://192.168.1.240:1883",
@@ -457,21 +457,27 @@ connection. A device overriding any of them gets its own connection.
 
 ### Device identity
 
-The HomeKit accessory is generated from `"mqttthing:" + (id || uuid_base ||
-name)` — the same formula Homebridge applies to accessory blocks. Consequences:
+The HomeKit accessory a device resolves to is decided by its `id`:
+
+* an `id` that is already a **UUID** *is* that accessory, used as-is;
+* any other `id` is a seed, hashed as `"mqttthing:" + id`;
+* without an `id`, the seed is `uuid_base` or the name — the same rule
+  Homebridge applies to an accessory block.
+
+Consequences:
 
 * A device with an `id` can be renamed freely; HomeKit keeps its rooms, scenes
   and automations.
 * Moving a device from `accessories` to `devices` preserves its HomeKit
-  identity as long as `id` is set to what identified it before: its `uuid_base`
-  if it had one, otherwise its exact name. The plugin's settings UI does this
-  automatically.
+  identity when `id` is set to the UUID it already had, namely
+  `uuid.generate("mqttthing:" + (uuid_base || name))`. The plugin's settings UI
+  computes and writes this for you.
 * Changing an `id` afterwards creates a new HomeKit accessory, losing the old
   one's assignments.
-* Without an `id`, the name identifies the device, exactly as in accessory
-  mode.
+* A hand-written `id` such as `"living-room"` is perfectly valid; it simply
+  acts as the seed instead of the name.
 
-Two devices resolving to the same identity are a configuration error: the
+Two devices resolving to the same accessory are a configuration error: the
 second one is skipped with a message in the log.
 
 ### Defining a device twice
@@ -491,7 +497,10 @@ warns if a `_bridge` is found on a platform device.
 
 ### Returning to accessory mode
 
-There is no automatic un-migration. Move the device entry back into
-`accessories` in `config.json` and restore `"accessory": "mqttthing"`. Keep the
-`id` value in mind: if it differs from the name, set `uuid_base` to it so the
-HomeKit identity is preserved.
+There is no automatic un-migration, and it cannot be fully lossless: an
+accessory block is identified by `uuid.generate("mqttthing:" + (uuid_base ||
+name))`, so it cannot reproduce an arbitrary UUID. Moving a device back into
+`accessories` with `"accessory": "mqttthing"` restores its original identity
+only if it still has the name (or `uuid_base`) it had before the move, which is
+the case unless it was renamed since. Otherwise HomeKit treats it as a new
+accessory.

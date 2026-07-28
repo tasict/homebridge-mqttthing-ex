@@ -15,7 +15,6 @@ import {
   ensurePlatformBlock,
   mostCommonBrokerOf,
   newDeviceId,
-  seedOf,
   type DeviceStore,
 } from '../lib/store-ops.js';
 import { termsFor } from '../lib/terms.js';
@@ -89,7 +88,7 @@ export function AddWizard({ store, platformAvailable, touch, onCancel, onCreated
       touch('legacy');
     } else {
       const block = ensurePlatformBlock(store);
-      entry.id = newDeviceId(entry.name, block.devices.map((device) => seedOf(device)));
+      entry.id = newDeviceId();
       block.devices.push(entry);
       touch('platform');
     }
