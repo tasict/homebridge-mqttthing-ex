@@ -24,6 +24,10 @@ function subtypeAliasTitle(baseLabel: string, alias: string): string {
  * config-ui-x. Header fields match the shipped config.schema.json
  * (pluginAlias 'mqttthing', pluginType 'accessory') plus singular: false,
  * since one accessory config may be added many times.
+ *
+ * A plugin gets exactly one schema, and this one describes accessory blocks:
+ * keeping the accessory pluginType leaves the legacy path exactly as it was,
+ * and platform mode is edited through the custom UI instead.
  */
 export function generateConfigSchema(): Record<string, unknown> {
   const typeChoices: TypeChoice[] = [];
@@ -39,6 +43,9 @@ export function generateConfigSchema(): Record<string, unknown> {
     pluginAlias: 'mqttthing',
     pluginType: 'accessory',
     singular: false,
+    headerDisplay:
+      'This fallback form edits legacy accessory blocks only. Platform mode is configured through the ' +
+      "plugin's own settings UI, or directly in config.json - see the Platform mode section of the README.",
     schema: {
       type: 'object',
       properties: {

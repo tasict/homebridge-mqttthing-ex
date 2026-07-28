@@ -356,6 +356,8 @@ describe('generate-schema: document shape', () => {
     expect(document.singular).toBe(false);
     expect(document.customUi).toBe(true);
     expect(document.customUiPath).toBe('./homebridge-ui');
+    // the fallback form only edits accessory blocks, and says so
+    expect(document.headerDisplay).toContain('Platform mode');
     expect(document.schema.properties.name.required).toBe(true);
     const typeIds = (document.schema.properties.type.oneOf as { enum: string[] }[]).flatMap((c) => c.enum);
     expect(typeIds).toContain('lightbulb');

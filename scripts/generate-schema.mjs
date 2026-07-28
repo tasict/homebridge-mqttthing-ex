@@ -19,6 +19,7 @@ export function buildSchemaDocument(base) {
     pluginAlias: base.pluginAlias,
     pluginType: base.pluginType,
     singular: base.singular,
+    headerDisplay: base.headerDisplay,
     customUi: true,
     customUiPath: './homebridge-ui',
     schema: base.schema,

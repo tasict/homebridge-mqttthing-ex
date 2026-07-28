@@ -8,8 +8,17 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import type { ThingConfig } from '../../../src/config.js';
 import { getTypeModel } from '../../../src/model/types.js';
 import { hb } from '../homebridge.js';
-import { changeAccessoryType, deleteAccessory, duplicateAccessory, setOption } from '../lib/config-ops.js';
+import { changeAccessoryType, setOption } from '../lib/config-ops.js';
+import {
+  duplicateDevice,
+  effectiveBroker,
+  migrateDevice,
+  removeDevice,
+  sourceOf,
+  type DeviceStore,
+} from '../lib/store-ops.js';
 import { summarizeConfig } from '../lib/validation.js';
+import type { Touch } from '../app.js';
 import { AdvancedSection } from './AdvancedSection.js';
 import { JsonEditor } from './JsonEditor.js';
 import { MqttSection } from './MqttSection.js';
@@ -21,56 +30,89 @@ import { TypeSelect } from './TypeSelect.js';
 
 interface Props {
   config: ThingConfig;
-  configs: ThingConfig[];
-  touch: () => void;
+  store: DeviceStore;
+  platformAvailable: boolean;
+  touch: Touch;
   onBack: () => void;
-  /** Open the editor for another accessory (used after duplicating). */
-  onOpen: (index: number) => void;
+  /** Open the editor for another device (used after duplicating). */
+  onOpen: (config: ThingConfig) => void;
 }
 
-export function EditorView({ config, configs, touch, onBack, onOpen }: Props) {
-  // Two-click delete: the first click arms the button, the second deletes.
-  // The armed state falls back to normal after a few seconds, and resets
-  // whenever the editor switches to another accessory (e.g. after Duplicate).
+export function EditorView({ config, store, platformAvailable, touch, onBack, onOpen }: Props) {
+  // Two-click delete and move: the first click arms the button, the second
+  // acts. The armed state falls back to normal after a few seconds, and
+  // resets whenever the editor switches to another device.
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmMove, setConfirmMove] = useState(false);
   const confirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const moveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     setConfirmDelete(false);
+    setConfirmMove(false);
     return () => {
-      if (confirmTimer.current !== null) {
-        clearTimeout(confirmTimer.current);
+      for (const timer of [confirmTimer, moveTimer]) {
+        if (timer.current !== null) {
+          clearTimeout(timer.current);
+        }
       }
     };
   }, [config]);
 
+  const source = sourceOf(store, config);
+  const scope = source === 'platform' ? 'platform' : 'legacy';
+  const touchOwn = () => touch(scope);
+
+  const arm = (
+    timer: typeof confirmTimer,
+    set: (value: boolean) => void,
+  ) => {
+    set(true);
+    if (timer.current !== null) {
+      clearTimeout(timer.current);
+    }
+    timer.current = setTimeout(() => {
+      timer.current = null;
+      set(false);
+    }, 4000);
+  };
+
   const duplicate = () => {
-    const index = configs.indexOf(config);
-    if (index < 0) {
+    const copy = duplicateDevice(store, config);
+    if (!copy) {
       return;
     }
-    const copyIndex = duplicateAccessory(configs, index);
-    touch();
-    onOpen(copyIndex);
+    touchOwn();
+    onOpen(copy);
   };
 
   const remove = () => {
     if (!confirmDelete) {
-      setConfirmDelete(true);
-      if (confirmTimer.current !== null) {
-        clearTimeout(confirmTimer.current);
-      }
-      confirmTimer.current = setTimeout(() => {
-        confirmTimer.current = null;
-        setConfirmDelete(false);
-      }, 4000);
+      arm(confirmTimer, setConfirmDelete);
       return;
     }
-    const index = configs.indexOf(config);
-    if (index >= 0) {
-      deleteAccessory(configs, index);
-      touch();
+    if (removeDevice(store, config)) {
+      touchOwn();
     }
     onBack();
+  };
+
+  const move = () => {
+    if (!confirmMove) {
+      arm(moveTimer, setConfirmMove);
+      return;
+    }
+    setConfirmMove(false);
+    const name = String(config.name ?? '');
+    const result = migrateDevice(store, config);
+    if (!result.ok) {
+      hb().toast.error(result.reason, `"${name}" was not moved`);
+      return;
+    }
+    touch('legacy');
+    touch('platform');
+    hb().toast.success(
+      `Moved "${name}" to the platform block (id: ${result.id}). Click Save changes to write it.`,
+    );
   };
 
   const model = getTypeModel(config.type);
@@ -80,8 +122,9 @@ export function EditorView({ config, configs, touch, onBack, onOpen }: Props) {
   // JSON-based editing anyway; keep every other model option here.
   const optionModels = (model?.options ?? []).filter((o) => !(isCustom && o.key === 'services'));
 
-  const mqttSummary = `${typeof config.url === 'string' && config.url !== '' ? config.url : 'default broker'}${
-    typeof config.username === 'string' && config.username !== '' ? ` · ${config.username}` : ''
+  const broker = effectiveBroker(store, config);
+  const mqttSummary = `${broker.url !== undefined ? broker.url : 'default broker'}${
+    broker.username !== undefined ? ` · ${broker.username}` : ''
   }`;
 
   return (
@@ -89,17 +132,32 @@ export function EditorView({ config, configs, touch, onBack, onOpen }: Props) {
       <div class="mb-3 d-flex flex-wrap align-items-end gap-2">
         <div class="flex-grow-1">
           <button type="button" class="btn btn-link btn-sm p-0" onClick={onBack}>
-            ← All accessories
+            ← All devices
           </button>
           <h5 class="m-0 mt-1">
             {String(config.name ?? '(unnamed)')}{' '}
-            <span class="text-body-secondary fw-normal">{model ? model.label : String(config.type ?? '')}</span>
+            <span class="text-body-secondary fw-normal">{model ? model.label : String(config.type ?? '')}</span>{' '}
+            {source === 'platform' ? (
+              <span class="badge text-bg-info align-middle">Platform</span>
+            ) : (
+              <span class="badge text-bg-secondary align-middle">Legacy</span>
+            )}
           </h5>
         </div>
         <div class="d-flex gap-2">
-          <button type="button" class="btn btn-outline-secondary" title="Create a copy of this accessory and edit it" onClick={duplicate}>
+          <button type="button" class="btn btn-outline-secondary" title="Create a copy of this device and edit it" onClick={duplicate}>
             Duplicate
           </button>
+          {source === 'accessory' && platformAvailable && (
+            <button
+              type="button"
+              class={`btn ${confirmMove ? 'btn-primary' : 'btn-outline-primary'}`}
+              title="Moves this accessory into the platform block and pins its HomeKit identity. Nothing is written until you save."
+              onClick={move}
+            >
+              {confirmMove ? 'Confirm move?' : 'Move to platform'}
+            </button>
+          )}
           <button
             type="button"
             class={`btn ${confirmDelete ? 'btn-danger' : 'btn-outline-danger'}`}
@@ -137,7 +195,7 @@ export function EditorView({ config, configs, touch, onBack, onOpen }: Props) {
               value={typeof config.name === 'string' ? config.name : ''}
               onChange={(e) => {
                 setOption(config, 'name', (e.currentTarget as HTMLInputElement).value.trim() || undefined);
-                touch();
+                touchOwn();
               }}
             />
           </div>
@@ -150,7 +208,7 @@ export function EditorView({ config, configs, touch, onBack, onOpen }: Props) {
                   return;
                 }
                 const dropped = changeAccessoryType(config, id);
-                touch();
+                touchOwn();
                 if (dropped.length > 0) {
                   hb().toast.info(`Removed topics not supported by the new type: ${dropped.join(', ')}`);
                 }
@@ -158,39 +216,49 @@ export function EditorView({ config, configs, touch, onBack, onOpen }: Props) {
             />
           </div>
         </div>
+        {source === 'platform' && typeof config.id === 'string' && (
+          <div class="mt-2">
+            <label class="form-label mb-0">Device id</label>
+            <input type="text" class="form-control form-control-sm mqx-mono" value={config.id} readOnly />
+            <div class="mqx-desc mt-1">
+              This device&apos;s stable HomeKit identity. Renaming the device is safe; the id can only be changed
+              under &quot;Edit as JSON&quot;, where HomeKit will treat the result as a new device.
+            </div>
+          </div>
+        )}
         {model?.notes && <div class="mqx-desc mt-2">{model.notes}</div>}
       </Section>
 
       <Section title="MQTT connection" summary={mqttSummary}>
-        <MqttSection config={config} configs={configs} touch={touch} />
+        <MqttSection config={config} store={store} touch={touch} />
       </Section>
 
       {!isCustom && (
         <Section title="Topics" defaultOpen>
-          <TopicsTable owner={config} broker={config} touch={touch} />
+          <TopicsTable owner={config} broker={broker} touch={touchOwn} />
         </Section>
       )}
 
       {isCustom && (
         <Section title="Services" defaultOpen badge={<span class="badge text-bg-secondary">{Array.isArray(config.services) ? config.services.length : 0}</span>}>
-          <ServicesSection config={config} touch={touch} />
+          <ServicesSection config={config} touch={touchOwn} />
         </Section>
       )}
 
       {optionModels.length > 0 && (
         <Section title={`${model?.label ?? 'Type'} options`}>
           {optionModels.map((option) => (
-            <OptionField key={option.key} option={option} config={config} touch={touch} />
+            <OptionField key={option.key} option={option} config={config} touch={touchOwn} />
           ))}
         </Section>
       )}
 
       <Section title="Advanced">
-        <AdvancedSection config={config} touch={touch} />
+        <AdvancedSection config={config} touch={touchOwn} />
       </Section>
 
-      <Section title="Edit as JSON" summary="escape hatch: the raw accessory config">
-        <JsonEditor config={config} touch={touch} />
+      <Section title="Edit as JSON" summary="escape hatch: the raw device config">
+        <JsonEditor config={config} source={source ?? 'accessory'} touch={touchOwn} />
       </Section>
     </div>
   );

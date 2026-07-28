@@ -31,10 +31,13 @@ MQTT topics used fall into two categories:
    * [Validation](#validation)
    * [Accessories](#accessories)
    * [Grouped Accessories](#grouped-accessories)
+   * [Platform Mode](#platform-mode)
 
 ## Common Settings
 
-The following settings apply to all device types:
+The following settings apply to all device types. Every per-device setting
+documented below works identically in [platform mode](#platform-mode), inside
+the `devices` array — without `accessory`, and with an optional `id`.
 
 ```javascript
 {
@@ -397,3 +400,89 @@ Any settings which apply to all services may be defined within the custom-type a
 Custom accessories are only intended for use with simple services, not with accessories like 'weather station' which already combine multiple services.
 
 Custom accessories cannot be configured through Config UI X.
+
+## Platform Mode
+
+Devices may alternatively be configured as a single platform block. This is an
+addition of homebridge-mqttthing-ex; the `accessories` format above remains
+fully supported and unchanged.
+
+```javascript
+{
+    "platforms": [
+        {
+            "platform": "mqttthing",
+            "name": "MQTT Thing",
+            "url": "mqtt://192.168.1.235:1883",
+            "username": "MQTT_username",
+            "password": "MQTT_password",
+            "mqttOptions": {},
+            "devices": [
+                {
+                    "id": "<stable identity - see below>",
+                    "type": "lightbulb",
+                    "name": "My lightbulb",
+                    "topics": {
+                        "getOn": "home/get/lightbulb/POWER",
+                        "setOn": "home/set/lightbulb/POWER"
+                    }
+                },
+                {
+                    "id": "a3f92c81d04b57e6",
+                    "type": "switch",
+                    "name": "Switch on another broker",
+                    "url": "mqtt://192.168.1.240:1883",
+                    "topics": {
+                        "getOn": "home/get/switch/POWER",
+                        "setOn": "home/set/switch/POWER"
+                    }
+                }
+            ]
+        }
+    ]
+}
+```
+
+A device entry takes exactly the same settings as an accessory entry, minus
+`accessory` and plus the optional `id`.
+
+### Broker settings and connections
+
+`url`, `username`, `password` and `mqttOptions` given on the platform block
+are defaults for every device. A device may override any of them; `mqttOptions`
+is replaced as a whole rather than merged.
+
+Devices whose resulting broker settings are identical share a single MQTT
+connection. A device overriding any of them gets its own connection.
+
+### Device identity
+
+The HomeKit accessory is generated from `"mqttthing:" + (id || uuid_base ||
+name)` — the same formula Homebridge applies to accessory blocks. Consequences:
+
+* A device with an `id` can be renamed freely; HomeKit keeps its rooms, scenes
+  and automations.
+* Moving a device from `accessories` to `devices` preserves its HomeKit
+  identity as long as `id` is set to what identified it before: its `uuid_base`
+  if it had one, otherwise its exact name. The plugin's settings UI does this
+  automatically.
+* Changing an `id` afterwards creates a new HomeKit accessory, losing the old
+  one's assignments.
+* Without an `id`, the name identifies the device, exactly as in accessory
+  mode.
+
+Two devices resolving to the same identity are a configuration error: the
+second one is skipped with a message in the log.
+
+### Defining a device twice
+
+If the same device is configured both in `accessories` and in `devices`,
+Homebridge publishes the accessory and silently skips the platform copy. The
+plugin reports this in the log. Remove one of the two definitions.
+
+### Returning to accessory mode
+
+There is no automatic un-migration. Move the device entry back into
+`accessories` in `config.json` and restore `"accessory": "mqttthing"`. Keep the
+`id` value in mind: if it differs from the name, set `uuid_base` to it so the
+HomeKit identity is preserved.

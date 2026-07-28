@@ -2,6 +2,7 @@
   "pluginAlias": "mqttthing",
   "pluginType": "accessory",
   "singular": false,
+  "headerDisplay": "This fallback form edits legacy accessory blocks only. Platform mode is configured through the plugin's own settings UI, or directly in config.json - see the Platform mode section of the README.",
   "customUi": true,
   "customUiPath": "./homebridge-ui",
   "schema": {

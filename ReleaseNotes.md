@@ -1,5 +1,34 @@
 # Homebridge MQTT-Thing EX: Release Notes
 
+### Version 1.1.0
+
+Adds **platform mode**: the same devices can now be configured as a single
+`platforms` block with a `devices` array. Accessory mode is unchanged and
+stays fully supported — existing configurations keep working exactly as
+before.
+
++ Platform mode: one configuration block for all devices, one shared MQTT
+  connection per broker (instead of one per device), Homebridge accessory
+  caching so devices appear before the broker is reachable, and start-up
+  validation of every device
++ New optional per-device `id` giving each device a stable HomeKit identity,
+  so devices can be renamed without HomeKit treating them as new
++ Moving a device from `accessories` to the platform block preserves its
+  HomeKit identity: rooms, scenes and automations survive, no re-pairing.
+  The settings UI offers this per device and for all at once
++ Custom UI now manages both configuration formats: devices show which block
+  they belong to, platform broker defaults have their own settings page, and
+  a device configured in both places is flagged
++ A device configured both as an accessory and as a platform device is
+  reported in the log (Homebridge publishes the accessory and skips the
+  platform copy)
+
+Notes for platform mode: on a shared connection the last-will message names
+the platform rather than a single device, and `logMqtt` on any device logs
+the received messages of every device on that connection. The Homebridge UI
+does not offer child-bridge management for the platform block; add `_bridge`
+to it by hand if needed.
+
 ### Version 1.0.1
 + Fixed: changes applied through the accessory "Edit as JSON" editor could
   be lost when clicking Save right afterwards — click-driven edits (Apply

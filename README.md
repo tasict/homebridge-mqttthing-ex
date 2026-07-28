@@ -15,6 +15,10 @@ services over MQTT — a modern, actively maintained successor to
 
 - **Drop-in replacement** — your existing `config.json` works unchanged.
   Accessory entries keep using `"accessory": "mqttthing"`.
+- **Platform mode** — an optional second way to configure the same devices:
+  one config block, one shared MQTT connection per broker, and a stable
+  per-device identity so renaming a device no longer matters to HomeKit.
+  Moving a device there preserves its rooms, scenes and automations.
 - **Homebridge v2 ready** — TypeScript, ES modules, modern HAP APIs
   (`onGet`/`onSet`), works on Homebridge 1.8+ and 2.x.
 - **Device protection** — optional outbound publish queue with throttling and
@@ -44,6 +48,90 @@ automations, and scenes are all preserved. To make the switch seamless:
   accessory identity, as it always was).
 - If you run mqttthing accessories in a child bridge (`_bridge`), keep the
   same `_bridge.username` and the pairing is preserved too.
+
+## Platform mode
+
+Accessory mode (`accessories[]`) is the format inherited from
+homebridge-mqttthing and is fully supported — nothing about it changes.
+Platform mode is an alternative that puts every device in one block:
+
+```json
+{
+  "platforms": [
+    {
+      "platform": "mqttthing",
+      "name": "MQTT Thing",
+      "url": "mqtt://broker:1883",
+      "username": "user",
+      "password": "secret",
+      "devices": [
+        {
+          "id": "Living Room Light",
+          "name": "Living Room Light",
+          "type": "lightbulb",
+          "topics": { "setOn": "home/light/set", "getOn": "home/light/state" }
+        },
+        {
+          "id": "a3f92c81d04b57e6",
+          "name": "Garage Sensor",
+          "type": "contactSensor",
+          "url": "mqtt://other-broker:1883",
+          "topics": { "getContactSensorState": "garage/door" }
+        }
+      ]
+    }
+  ]
+}
+```
+
+What it gives you:
+
+- **One MQTT connection per broker** instead of one per device. Devices
+  sharing the same effective broker settings share a connection; a device
+  overriding `url`, `username`, `password` or `mqttOptions` gets its own.
+  With a child bridge, the whole platform runs in one child process rather
+  than one per device.
+- **Accessory caching** — devices appear in HomeKit at startup, before the
+  broker is reachable.
+- **A stable identity** — the optional `id` decides the HomeKit accessory,
+  so a device can be renamed freely.
+- **Start-up validation** — configuration problems are reported in the log.
+
+A device entry is exactly an accessory block without `"accessory"`, plus the
+optional `"id"`. Broker settings given on the block are defaults that any
+device can override.
+
+### Moving accessories to platform mode
+
+Open the plugin settings in the Homebridge UI. A banner offers **Migrate
+all**, and each accessory's editor has a **Move to platform** button. Then
+click **Save changes** and restart Homebridge.
+
+**No HomeKit re-pairing is needed.** The accessory UUID is generated from
+`uuid.generate("mqttthing:" + (id || uuid_base || name))`, which is the same
+formula Homebridge uses for accessory blocks. Migration pins `id` to what the
+device is identified by today — its `uuid_base` if set, otherwise its name —
+so the UUID does not change and rooms, scenes and automations are preserved.
+Afterwards the `name` is only a display name and can be changed at will.
+
+Notes:
+
+- Do not configure the same device in both `accessories[]` and `devices[]`.
+  Homebridge publishes the accessory and skips the platform copy; the plugin
+  warns about it in the log, and the UI flags both entries.
+- The `id` is written once, when a device is created or migrated. Changing it
+  later makes HomeKit treat the device as new, which is why the UI only
+  allows it through "Edit as JSON" with an explicit confirmation.
+- There is no automatic way back. To return a device to accessory mode, move
+  its entry into `accessories[]` in config.json and restore
+  `"accessory": "mqttthing"` (drop `id` only if it equals the name).
+- The Homebridge UI does not offer child-bridge management for platform
+  blocks with this plugin, because its configuration schema describes
+  accessory blocks. Add `_bridge` to the platform block by hand if you want
+  one.
+- On a shared connection the last-will message names the platform rather than
+  a single device, and `logMqtt` on any device logs the received messages of
+  every device on that connection.
 
 ## What's new compared to homebridge-mqttthing
 

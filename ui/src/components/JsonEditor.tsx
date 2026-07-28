@@ -1,27 +1,44 @@
-// Per-accessory "Edit as JSON" escape hatch. Applying replaces the CONTENTS
-// of the existing config object (keeping its identity), so the working-copy
+// Per-device "Edit as JSON" escape hatch. Applying replaces the CONTENTS of
+// the existing config object (keeping its identity), so the working-copy
 // array itself is never rebuilt.
+//
+// For a platform device the id is protected: omitting it keeps the current
+// one, and changing it has to be confirmed because HomeKit would see a
+// different accessory.
 import { useState } from 'preact/hooks';
 
 import type { ThingConfig } from '../../../src/config.js';
 import { hb } from '../homebridge.js';
-import { parseAccessoryJson, replaceConfigContents } from '../lib/config-ops.js';
+import { parseAccessoryJson, parsePlatformDeviceJson, replaceConfigContents } from '../lib/config-ops.js';
+import type { DeviceSource } from '../lib/store-ops.js';
 
 interface Props {
   config: ThingConfig;
+  source: DeviceSource;
   touch: () => void;
 }
 
-export function JsonEditor({ config, touch }: Props) {
+export function JsonEditor({ config, source, touch }: Props) {
   const [draft, setDraft] = useState(() => JSON.stringify(config, null, 2));
   const [error, setError] = useState<string | null>(null);
 
   const apply = () => {
-    const result = parseAccessoryJson(draft);
+    const currentId = typeof config.id === 'string' ? config.id : undefined;
+    const result =
+      source === 'platform' ? parsePlatformDeviceJson(draft, currentId) : parseAccessoryJson(draft);
     if (result.error !== undefined) {
       setError(result.error);
       hb().toast.error(result.error, 'JSON not applied');
       return;
+    }
+    if (source === 'platform' && 'idChanged' in result && result.idChanged) {
+      const confirmed = window.confirm(
+        `Changing the device id makes HomeKit treat this as a brand-new accessory - its room assignment, ` +
+          `scenes and automations will be lost.\n\nKeep the new id "${String(result.config.id)}"?`,
+      );
+      if (!confirmed) {
+        result.config.id = currentId;
+      }
     }
     replaceConfigContents(config, result.config);
     setDraft(JSON.stringify(config, null, 2));

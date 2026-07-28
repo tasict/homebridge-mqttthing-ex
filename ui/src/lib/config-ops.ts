@@ -244,22 +244,21 @@ export interface BrokerSettings {
 }
 
 /**
- * The most common broker settings (url/username/password triple) among the
- * existing accessories - used to prefill the add wizard. Entries without a
+ * The most common broker among a list of broker settings. Entries without a
  * url are ignored; undefined when nothing usable exists.
  */
-export function mostCommonBroker(configs: ThingConfig[]): BrokerSettings | undefined {
+export function mostCommonOfBrokers(brokers: BrokerSettings[]): BrokerSettings | undefined {
   const counts = new Map<string, { count: number; broker: BrokerSettings }>();
-  for (const config of configs) {
-    if (typeof config.url !== 'string' || config.url === '') {
+  for (const candidate of brokers) {
+    if (typeof candidate.url !== 'string' || candidate.url === '') {
       continue;
     }
-    const broker: BrokerSettings = { url: config.url };
-    if (typeof config.username === 'string' && config.username !== '') {
-      broker.username = config.username;
+    const broker: BrokerSettings = { url: candidate.url };
+    if (typeof candidate.username === 'string' && candidate.username !== '') {
+      broker.username = candidate.username;
     }
-    if (typeof config.password === 'string' && config.password !== '') {
-      broker.password = config.password;
+    if (typeof candidate.password === 'string' && candidate.password !== '') {
+      broker.password = candidate.password;
     }
     const id = JSON.stringify([broker.url, broker.username ?? '', broker.password ?? '']);
     const entry = counts.get(id);
@@ -276,6 +275,20 @@ export function mostCommonBroker(configs: ThingConfig[]): BrokerSettings | undef
     }
   }
   return best?.broker;
+}
+
+/**
+ * The most common broker settings among the given accessories - used to
+ * prefill the add wizard.
+ */
+export function mostCommonBroker(configs: ThingConfig[]): BrokerSettings | undefined {
+  return mostCommonOfBrokers(
+    configs.map((config) => ({
+      url: config.url,
+      username: config.username,
+      password: config.password,
+    })),
+  );
 }
 
 export type ParsedAccessoryJson =
@@ -310,6 +323,37 @@ export function parseAccessoryJson(text: string): ParsedAccessoryJson {
   }
   config.accessory = 'mqttthing';
   return { config };
+}
+
+export type ParsedPlatformDeviceJson =
+  | { config: Record<string, unknown>; idChanged: boolean; error?: undefined }
+  | { config?: undefined; idChanged?: undefined; error: string };
+
+/**
+ * "Edit as JSON" for a platform device. Same rules as the accessory form,
+ * except that the accessory alias is stripped (platform devices have none)
+ * and the device id is protected: leaving it out keeps the current one, and
+ * changing it is reported so the UI can warn that HomeKit will see a
+ * different accessory.
+ */
+export function parsePlatformDeviceJson(text: string, currentId: string | undefined): ParsedPlatformDeviceJson {
+  const parsed = parseAccessoryJson(text);
+  if (parsed.error !== undefined) {
+    return { error: parsed.error };
+  }
+  const config = parsed.config;
+  delete config.accessory;
+
+  if (config.id === undefined) {
+    if (currentId !== undefined) {
+      config.id = currentId;
+    }
+    return { config, idChanged: false };
+  }
+  if (typeof config.id !== 'string' || config.id === '') {
+    return { error: 'The "id" must be a non-empty string.' };
+  }
+  return { config, idChanged: config.id !== currentId };
 }
 
 /**
