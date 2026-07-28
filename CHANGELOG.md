@@ -1,5 +1,42 @@
 # Changelog
 
+## 1.2.0
+
+### Changed
+
+- **`config.schema.json` now describes the platform block** (`pluginAlias`
+  `mqttthing-ex`, `pluginType` `platform`) instead of an accessory block. This
+  is what the Homebridge plugin verification checks require, and it is also
+  the right way round: the platform is the format this plugin is built on, and
+  declaring it here puts it under the Homebridge UI's own care — including
+  **child-bridge management for the platform block**, which was previously
+  unavailable.
+- **The settings UI swapped which container it manages itself.** The platform
+  block now goes through the Homebridge UI's config API, and legacy
+  `"accessory": "mqttthing"` entries are read and written by the plugin's own
+  UI server (`/config/accessories`), with the same guarded atomic write as
+  before: a backup, a hash check against concurrent edits, and a refusal if
+  the change would touch anything outside this plugin's blocks. Saving still
+  writes the platform block before the accessory blocks, so a device being
+  moved is never removed from `accessories[]` until the platform holds it.
+- **Configuration is not affected.** Both formats are read exactly as before
+  and nothing in `config.json` needs to change.
+
+### Fixed
+
+- The generated schema stated field requirements as `"required": true` on
+  individual properties, which is not valid JSON Schema. Requirements are now
+  arrays at the object level (`"required": ["name", "type"]`).
+- The README claimed the Homebridge UI could not manage a child bridge for the
+  platform block. It can, now that the schema declares the platform.
+
+### Added
+
+- `supports-hap` in the package keywords, declaring the transport the plugin
+  supports.
+- CI builds the settings UI and regenerates the schema on every push, failing
+  if the committed `config.schema.json` has drifted.
+
 ## 1.1.0
 
 ### Added

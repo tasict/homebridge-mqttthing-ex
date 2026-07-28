@@ -4,6 +4,47 @@ What each release means for you, in prose. For the terse per-version list —
 which is also what the Homebridge UI shows under the plugin's changelog — see
 [CHANGELOG.md](CHANGELOG.md).
 
+### Version 1.2.0
+
+Housekeeping for Homebridge plugin verification, with one genuine improvement
+falling out of it. **Nothing in your `config.json` needs to change**, and both
+configuration formats are read exactly as before.
+
+#### The plugin now declares itself as a platform
+
+`config.schema.json` described an accessory block, because that is the format
+inherited from homebridge-mqttthing and a plugin only gets one schema. The
+Homebridge verification requirements ask for a dynamic platform, and on
+reflection the requirement is right: platform mode is what this plugin is
+built on, and the schema is how the Homebridge UI decides which part of your
+configuration it looks after.
+
+So the schema now declares `"pluginType": "platform"` with the alias
+`mqttthing-ex`. The visible improvement is that **the Homebridge UI can now
+manage a child bridge for the platform block** from its usual place — the
+README previously had to tell you to add `_bridge` by hand.
+
+Behind the settings screen the two containers swapped hands. The platform
+block goes through the Homebridge UI's own configuration API; legacy
+`"accessory": "mqttthing"` entries are now read and written by this plugin's
+UI server, with the same care the platform block used to get: a backup before
+every write, a content hash that detects an edit made in the JSON editor while
+the settings window was open, a refusal to write if the change would affect
+anything outside this plugin's own blocks, and an atomic replace. Saving still
+writes the platform block first, so a device being moved is never removed from
+`accessories[]` before the platform holds it.
+
+If your setup is entirely accessory blocks, or entirely platform, you will not
+notice any of this.
+
+#### Also
+
+The generated schema stated field requirements as `"required": true` on
+individual properties, which is not valid JSON Schema — they are now arrays at
+the object level. The package declares the `supports-hap` keyword. CI builds
+the settings UI and regenerates the schema on every push, so a stale
+`config.schema.json` fails the build instead of surfacing at publish time.
+
 ### Version 1.1.0
 
 Adds **platform mode**: an optional second way to configure the same devices,
