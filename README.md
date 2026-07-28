@@ -54,6 +54,25 @@ automations, and scenes are all preserved. To make the switch seamless:
 - If you run mqttthing accessories in a child bridge (`_bridge`), keep the
   same `_bridge.username` and the pairing is preserved too.
 
+## Upgrading from 1.1.x or earlier
+
+One extra step, once: after the update, **restart the Homebridge UI** — not
+only Homebridge.
+
+1.2.0 changed how this plugin declares its configuration, so that the
+Homebridge UI manages the platform block (see the
+[changelog](CHANGELOG.md#120)). The Homebridge UI caches that declaration per
+plugin and does not reload it when a plugin is updated, so until it restarts it
+keeps looking in the part of `config.json` the previous version used — and the
+plugin's settings screen reports no devices configured.
+
+Nothing is lost when that happens. `config.json` is untouched and Homebridge
+serves every device normally; only the settings screen is affected, and it says
+so rather than showing an empty list. Use **Restart Homebridge UI** from the
+menu in the top right, or restart the Homebridge service or container as a
+whole. Restarting Homebridge on its own does not clear it, because the
+Homebridge UI runs as a service of its own.
+
 ## Platform mode
 
 Accessory mode (`accessories[]`) is the format inherited from

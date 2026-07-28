@@ -15,6 +15,11 @@
   showing an empty list with an **Add device** button that would have written
   to the wrong place.
 
+### Documentation
+
+- The README has an **Upgrading from 1.1.x or earlier** section covering the
+  one-time Homebridge UI restart.
+
 ## 1.2.0
 
 ### Changed
