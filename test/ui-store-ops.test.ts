@@ -167,6 +167,17 @@ describe('migration', () => {
     expect(!result.ok && result.reason).toContain('already exists');
   });
 
+  it('refuses an accessory running in its own child bridge', () => {
+    const config = accessory('Bridged', { _bridge: { username: '0E:11:22:33:44:55', port: 51888 } });
+    const s = store([config]);
+
+    const result = migrateDevice(s, config);
+    expect(result.ok).toBe(false);
+    expect(!result.ok && result.reason).toContain('child bridge');
+    expect(s.legacy).toEqual([config]);
+    expect(s.platform).toBeNull();
+  });
+
   it('refuses a device that is not a legacy accessory', () => {
     const config = device('Lamp');
     const s = store([], { devices: [config] });

@@ -271,6 +271,19 @@ describe('MqttThingPlatform diagnostics', () => {
     expect(messages.join('\n')).toContain('optimizePublishing');
   });
 
+  it('warns that _bridge has no effect on a single device', () => {
+    const h = harness();
+    const { messages } = makePlatform(
+      {
+        mqttOptions: quiet,
+        devices: [{ name: 'Sw1', type: 'switch', _bridge: { username: '0E:11:22:33:44:55' } }],
+      },
+      h,
+    );
+    expect(h.registered).toHaveLength(1);
+    expect(messages.join('\n')).toContain('has no effect on a single platform device');
+  });
+
   it('does not warn about the id field', () => {
     const h = harness();
     const { messages } = makePlatform(

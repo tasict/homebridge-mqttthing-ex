@@ -125,10 +125,16 @@ Notes:
 - There is no automatic way back. To return a device to accessory mode, move
   its entry into `accessories[]` in config.json and restore
   `"accessory": "mqttthing"` (drop `id` only if it equals the name).
-- The Homebridge UI does not offer child-bridge management for platform
-  blocks with this plugin, because its configuration schema describes
-  accessory blocks. Add `_bridge` to the platform block by hand if you want
-  one.
+- **Accessories running in their own child bridge are the one exception to
+  the no-re-pairing guarantee.** Homebridge supports `_bridge` on whole
+  accessory and platform blocks, not on individual platform devices, so such
+  an accessory cannot keep its own child bridge. Each child bridge is paired
+  separately in HomeKit, so removing one means pairing it again. The UI
+  therefore refuses to move these accessories and says why; move the whole
+  platform into a child bridge instead (add `_bridge` to the platform block
+  by hand — the Homebridge UI does not offer child-bridge management for
+  platform blocks here, because this plugin's configuration schema describes
+  accessory blocks).
 - On a shared connection the last-will message names the platform rather than
   a single device, and `logMqtt` on any device logs the received messages of
   every device on that connection.

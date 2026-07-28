@@ -25,9 +25,14 @@ before.
 
 Notes for platform mode: on a shared connection the last-will message names
 the platform rather than a single device, and `logMqtt` on any device logs
-the received messages of every device on that connection. The Homebridge UI
-does not offer child-bridge management for the platform block; add `_bridge`
-to it by hand if needed.
+the received messages of every device on that connection.
+
+Accessories running in their own child bridge cannot be moved to platform
+mode: a platform runs in at most one child bridge, and every child bridge is
+paired separately in HomeKit. The settings UI refuses to move these and
+explains why. To use a child bridge with platform mode, add `_bridge` to the
+platform block itself (by hand — the Homebridge UI does not offer
+child-bridge management for it here).
 
 ### Version 1.0.1
 + Fixed: changes applied through the accessory "Edit as JSON" editor could

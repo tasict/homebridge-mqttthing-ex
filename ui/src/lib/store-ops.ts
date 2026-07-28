@@ -191,6 +191,19 @@ export function migrateDevice(store: DeviceStore, config: ThingConfig): MigrateR
   if (sourceOf(store, config) !== 'accessory') {
     return { ok: false, reason: 'it is not a legacy accessory' };
   }
+  // Homebridge reads _bridge on accessory and platform blocks, but not on
+  // individual platform devices. Moving such an accessory would silently
+  // drop its child bridge, which is paired separately in HomeKit and would
+  // have to be paired again - so this needs a deliberate decision.
+  if (config._bridge !== undefined) {
+    return {
+      ok: false,
+      reason:
+        'it runs in its own child bridge, which platform mode cannot keep per device. ' +
+        'Remove "_bridge" from the accessory first (its child bridge has to be paired again in HomeKit), ' +
+        'or move the whole platform into a child bridge instead.',
+    };
+  }
   const id = stringValue(config.uuid_base) ?? String(config.name ?? '');
   if (id === '') {
     return { ok: false, reason: 'it has no name' };

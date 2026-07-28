@@ -480,6 +480,15 @@ If the same device is configured both in `accessories` and in `devices`,
 Homebridge publishes the accessory and silently skips the platform copy. The
 plugin reports this in the log. Remove one of the two definitions.
 
+### Child bridges
+
+`_bridge` is honoured on a whole platform block, not on individual devices —
+a platform runs in at most one child bridge. An accessory that has its own
+`_bridge` therefore cannot keep it when moved into `devices`, and since every
+child bridge is paired separately in HomeKit, removing one means pairing it
+again. The plugin's settings UI refuses to move such accessories, and the log
+warns if a `_bridge` is found on a platform device.
+
 ### Returning to accessory mode
 
 There is no automatic un-migration. Move the device entry back into

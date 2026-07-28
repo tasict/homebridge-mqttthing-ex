@@ -195,6 +195,14 @@ export class MqttThingPlatform implements DynamicPlatformPlugin {
       }
 
       const config = { ...entry, accessory: ACCESSORY_NAME } as ThingConfig;
+      if (config._bridge !== undefined) {
+        // Homebridge only honours _bridge on whole accessory or platform
+        // blocks; here it would look configured but do nothing.
+        this.log.warn(
+          `devices[${index}] ("${config.name}") has a "_bridge" setting, which has no effect on a single ` +
+            'platform device. Move the whole platform into a child bridge instead.',
+        );
+      }
       const seed = config.id || config.uuid_base || config.name;
       const uuid = this.api.hap.uuid.generate(ACCESSORY_NAME + ':' + seed);
 
