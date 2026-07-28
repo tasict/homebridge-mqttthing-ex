@@ -8,6 +8,7 @@ import type { ThingConfig } from '../../../src/config.js';
 import { getTypeModel } from '../../../src/model/types.js';
 import { hb } from '../homebridge.js';
 import { changeAccessoryType, setOption } from '../lib/config-ops.js';
+import { ConfirmButton } from './ConfirmAction.js';
 import { OptionField } from './OptionField.js';
 import { TopicsTable } from './TopicsTable.js';
 import { TypeSelect } from './TypeSelect.js';
@@ -41,17 +42,15 @@ function ServiceEditor({
         </span>
         <span class="fw-semibold">{String(service.name ?? '(unnamed service)')}</span>
         <span class="mqx-key">{model ? model.label : String(service.type ?? '(no type)')}</span>
-        <button
-          type="button"
-          class="btn btn-outline-danger btn-sm ms-auto"
-          title="Remove this service"
-          onClick={(e) => {
-            e.stopPropagation();
-            onRemove();
-          }}
-        >
-          ✕
-        </button>
+        <span class="ms-auto" onClick={(e) => e.stopPropagation()}>
+          <ConfirmButton
+            label="✕"
+            confirmLabel="Remove?"
+            title="Remove this service"
+            className="btn-sm"
+            onConfirm={onRemove}
+          />
+        </span>
       </div>
       {open && (
         <div class="card-body">
@@ -129,11 +128,8 @@ export function ServicesSection({ config, touch }: Props) {
   };
 
   const removeService = (index: number) => {
-    const name = String(services[index]?.name ?? `#${index + 1}`);
-    if (window.confirm(`Remove service "${name}"?`)) {
-      services.splice(index, 1);
-      touch();
-    }
+    services.splice(index, 1);
+    touch();
   };
 
   return (

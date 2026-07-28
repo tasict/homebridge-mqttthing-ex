@@ -16,6 +16,7 @@ import {
   type DeviceStore,
 } from '../lib/store-ops.js';
 import type { Touch } from '../app.js';
+import { ConfirmPanel } from './ConfirmAction.js';
 
 interface Props {
   config: ThingConfig;
@@ -25,6 +26,7 @@ interface Props {
 
 export function MqttSection({ config, store, touch }: Props) {
   const [testing, setTesting] = useState(false);
+  const [confirmingApplyToAll, setConfirmingApplyToAll] = useState(false);
 
   const source = sourceOf(store, config);
   const broker = effectiveBroker(store, config);
@@ -55,14 +57,7 @@ export function MqttSection({ config, store, touch }: Props) {
     if (others < 1) {
       return;
     }
-    if (
-      !window.confirm(
-        `Apply this broker (URL, username, password) to all ${counts.total} devices, legacy and platform?\n\n` +
-          'The platform default settings are not changed.',
-      )
-    ) {
-      return;
-    }
+    setConfirmingApplyToAll(false);
     applyBrokerToAllDevices(store, config);
     if (counts.legacy > 0) {
       touch('legacy');
@@ -109,12 +104,26 @@ export function MqttSection({ config, store, touch }: Props) {
         <button type="button" class="btn btn-outline-primary btn-sm" disabled={testing} onClick={test}>
           {testing ? 'Testing…' : 'Test connection'}
         </button>
-        {counts.total > 1 && (
-          <button type="button" class="btn btn-outline-secondary btn-sm" onClick={applyToAll}>
+        {counts.total > 1 && !confirmingApplyToAll && (
+          <button type="button" class="btn btn-outline-secondary btn-sm" onClick={() => setConfirmingApplyToAll(true)}>
             Apply to all devices
           </button>
         )}
       </div>
+      {confirmingApplyToAll && (
+        <div class="mt-2">
+          <ConfirmPanel
+            title={`Apply this broker to ${counts.total - 1} other ${counts.total - 1 === 1 ? 'device' : 'devices'}?`}
+            confirmLabel="Apply to all"
+            onConfirm={applyToAll}
+            onCancel={() => setConfirmingApplyToAll(false)}
+          >
+            The URL, username and password above replace the broker settings of every other device.
+            {counts.platform > 0 && ' The platform default settings are not changed.'} Nothing is written until you
+            save.
+          </ConfirmPanel>
+        </div>
+      )}
       <div class="mqx-desc mt-2">
         {source === 'platform' ? (
           <>

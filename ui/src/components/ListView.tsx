@@ -23,6 +23,7 @@ import {
 import { summarizeConfig } from '../lib/validation.js';
 import { hb } from '../homebridge.js';
 import type { Touch } from '../app.js';
+import { ConfirmPanel } from './ConfirmAction.js';
 import { TypeIcon } from './TypeIcon.js';
 
 type SortMode = 'config' | 'name' | 'type';
@@ -51,6 +52,7 @@ export function ListView({ store, platformAvailable, onEdit, onAdd, onPlatformSe
   const [sortMode, setSortMode] = useState<SortMode>('config');
   const [showJson, setShowJson] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [confirmingMigrate, setConfirmingMigrate] = useState(false);
 
   // The working copy is mutated in place (stable identity), so this is
   // recomputed on every render instead of memoized.
@@ -89,16 +91,7 @@ export function ListView({ store, platformAvailable, onEdit, onAdd, onPlatformSe
   };
 
   const runMigrateAll = () => {
-    const total = counts.legacy;
-    if (
-      !window.confirm(
-        `Move all ${total} legacy ${total === 1 ? 'accessory' : 'accessories'} into the platform block?\n\n` +
-          'Each device keeps its HomeKit identity, so rooms, scenes and automations are preserved. ' +
-          'Nothing is written until you click Save changes.',
-      )
-    ) {
-      return;
-    }
+    setConfirmingMigrate(false);
     const result = migrateAll(store);
     if (result.migrated > 0) {
       touch('legacy');
@@ -221,13 +214,25 @@ export function ListView({ store, platformAvailable, onEdit, onAdd, onPlatformSe
             Platform mode keeps every device in one block, shares MQTT connections between devices on the same broker
             and gives each device a stable identity. HomeKit rooms, scenes and automations are preserved.
           </div>
-          <button type="button" class="btn btn-primary btn-sm" onClick={runMigrateAll}>
+          <button type="button" class="btn btn-primary btn-sm" onClick={() => setConfirmingMigrate(true)}>
             Migrate all
           </button>
           <button type="button" class="btn btn-link btn-sm" onClick={() => setBannerDismissed(true)}>
             Not now
           </button>
         </div>
+      )}
+
+      {confirmingMigrate && (
+        <ConfirmPanel
+          title={`Move all ${counts.legacy} legacy ${counts.legacy === 1 ? 'accessory' : 'accessories'} into the platform block?`}
+          confirmLabel="Move them"
+          onConfirm={runMigrateAll}
+          onCancel={() => setConfirmingMigrate(false)}
+        >
+          Each device keeps its HomeKit identity, so rooms, scenes and automations are preserved. Accessories running
+          in their own child bridge cannot be moved and are left alone. Nothing is written until you save.
+        </ConfirmPanel>
       )}
 
       {counts.total === 0 && (

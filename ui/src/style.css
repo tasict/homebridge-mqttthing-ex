@@ -147,3 +147,8 @@
 #mqttthing-ui .form-control::placeholder {
   opacity: 0.4;
 }
+
+#mqttthing-ui .mqx-confirm {
+  padding: 0.6rem 0.75rem;
+  margin-bottom: 0.75rem;
+}
