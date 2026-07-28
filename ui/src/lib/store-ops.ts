@@ -173,6 +173,121 @@ function platformIds(store: DeviceStore): string[] {
   return (store.platform?.devices ?? []).map((device) => seedOf(device));
 }
 
+/**
+ * Which configuration formats are in use. The UI adapts to this rather than
+ * to a stored preference: a user who never adopts platform mode never sees
+ * anything about it beyond one entry point.
+ */
+export type ConfigShape = 'empty' | 'accessory' | 'platform' | 'mixed';
+
+export function configShape(store: DeviceStore): ConfigShape {
+  if (store.platform === null) {
+    return store.legacy.length > 0 ? 'accessory' : 'empty';
+  }
+  return store.legacy.length > 0 ? 'mixed' : 'platform';
+}
+
+export type MoveEligibility = { movable: true } | { movable: false; reason: string };
+
+/**
+ * Whether an accessory can be moved into the platform block. Shared by the
+ * migration preview and the move itself, so what the user is shown and what
+ * happens can never disagree.
+ */
+export function moveEligibility(store: DeviceStore, config: ThingConfig): MoveEligibility {
+  if (sourceOf(store, config) !== 'accessory') {
+    return { movable: false, reason: 'it is not an accessory block' };
+  }
+  // Homebridge reads _bridge on accessory and platform blocks, but not on
+  // individual platform devices. Moving such an accessory would silently
+  // drop its child bridge, which is paired separately in HomeKit.
+  if (config._bridge !== undefined) {
+    return {
+      movable: false,
+      reason: 'it runs in its own child bridge, which platform mode cannot keep for a single device',
+    };
+  }
+  const id = stringValue(config.uuid_base) ?? String(config.name ?? '');
+  if (id === '') {
+    return { movable: false, reason: 'it has no name' };
+  }
+  if ((store.platform?.devices ?? []).some((device) => seedOf(device) === id)) {
+    return { movable: false, reason: `a platform device with the identity "${id}" already exists` };
+  }
+  return { movable: true };
+}
+
+/** Accessories that cannot be moved because they run in their own child bridge. */
+export function childBridgeAccessories(store: DeviceStore): ThingConfig[] {
+  return store.legacy.filter((config) => config._bridge !== undefined);
+}
+
+/**
+ * MQTT connections before and after moving these accessories: accessory mode
+ * opens one per accessory, platform mode one per distinct broker.
+ */
+export function connectionEstimate(configs: ThingConfig[]): { before: number; after: number } {
+  const brokers = new Set(
+    configs.map((config) =>
+      JSON.stringify([
+        stringValue(config.url) ?? '',
+        stringValue(config.username) ?? '',
+        stringValue(config.password) ?? '',
+        JSON.stringify(config.mqttOptions ?? null),
+      ]),
+    ),
+  );
+  return { before: configs.length, after: brokers.size };
+}
+
+/** The one broker all of these share, or null when they differ. */
+export function commonBrokerOf(configs: ThingConfig[]): BrokerSettings | null {
+  if (configs.length === 0) {
+    return null;
+  }
+  const first: BrokerSettings = {
+    url: stringValue(configs[0].url),
+    username: stringValue(configs[0].username),
+    password: stringValue(configs[0].password),
+  };
+  if (first.url === undefined) {
+    return null;
+  }
+  for (const config of configs) {
+    if (
+      stringValue(config.url) !== first.url ||
+      stringValue(config.username) !== first.username ||
+      stringValue(config.password) !== first.password
+    ) {
+      return null;
+    }
+  }
+  return first;
+}
+
+/**
+ * Make a broker the platform default and drop it from the given devices, so
+ * one setting is not repeated on every entry.
+ */
+export function hoistBrokerToPlatform(
+  store: DeviceStore,
+  configs: ThingConfig[],
+  broker: BrokerSettings,
+): void {
+  const block = ensurePlatformBlock(store);
+  for (const key of ['url', 'username', 'password'] as const) {
+    const value = broker[key];
+    if (value === undefined) {
+      delete block[key];
+    } else {
+      block[key] = value;
+    }
+    for (const config of configs) {
+      delete asRecord(config)[key];
+    }
+  }
+}
+
 export type MigrateResult = { ok: true; id: string } | { ok: false; reason: string };
 
 /**
@@ -188,32 +303,13 @@ export type MigrateResult = { ok: true; id: string } | { ok: false; reason: stri
  * device if those defaults ever change.
  */
 export function migrateDevice(store: DeviceStore, config: ThingConfig): MigrateResult {
-  if (sourceOf(store, config) !== 'accessory') {
-    return { ok: false, reason: 'it is not a legacy accessory' };
-  }
-  // Homebridge reads _bridge on accessory and platform blocks, but not on
-  // individual platform devices. Moving such an accessory would silently
-  // drop its child bridge, which is paired separately in HomeKit and would
-  // have to be paired again - so this needs a deliberate decision.
-  if (config._bridge !== undefined) {
-    return {
-      ok: false,
-      reason:
-        'it runs in its own child bridge, which platform mode cannot keep per device. ' +
-        'Remove "_bridge" from the accessory first (its child bridge has to be paired again in HomeKit), ' +
-        'or move the whole platform into a child bridge instead.',
-    };
+  const eligibility = moveEligibility(store, config);
+  if (!eligibility.movable) {
+    return { ok: false, reason: eligibility.reason };
   }
   const id = stringValue(config.uuid_base) ?? String(config.name ?? '');
-  if (id === '') {
-    return { ok: false, reason: 'it has no name' };
-  }
 
   const block = ensurePlatformBlock(store);
-  if (block.devices.some((device) => seedOf(device) === id)) {
-    return { ok: false, reason: `a platform device with the identity "${id}" already exists` };
-  }
-
   store.legacy.splice(store.legacy.indexOf(config), 1);
   delete asRecord(config).accessory;
   config.id = id;
@@ -226,9 +322,10 @@ export interface MigrateAllResult {
   skipped: Array<{ name: string; reason: string }>;
 }
 
-export function migrateAll(store: DeviceStore): MigrateAllResult {
+/** Move exactly these accessories, in the order given. */
+export function migrateSelected(store: DeviceStore, configs: ThingConfig[]): MigrateAllResult {
   const result: MigrateAllResult = { migrated: 0, skipped: [] };
-  for (const config of [...store.legacy]) {
+  for (const config of [...configs]) {
     const outcome = migrateDevice(store, config);
     if (outcome.ok) {
       result.migrated++;

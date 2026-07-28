@@ -7,15 +7,21 @@ import { parsePlatformDeviceJson } from '../ui/src/lib/config-ops.js';
 import {
   allDevices,
   applyBrokerToAllDevices,
+  childBridgeAccessories,
+  commonBrokerOf,
+  configShape,
+  connectionEstimate,
   deviceCounts,
   duplicateDevice,
   duplicateIdentityFindings,
   effectiveBroker,
   ensurePlatformBlock,
   fnv1a64,
-  migrateAll,
+  hoistBrokerToPlatform,
   migrateDevice,
+  migrateSelected,
   mostCommonBrokerOf,
+  moveEligibility,
   newDeviceId,
   removeDevice,
   seedOf,
@@ -184,17 +190,118 @@ describe('migration', () => {
     expect(migrateDevice(s, config).ok).toBe(false);
   });
 
-  it('migrates everything and reports what it skipped', () => {
+  it('migrates the selected accessories and reports what it skipped', () => {
     const ok1 = accessory('A');
     const clash = accessory('B');
     const ok2 = accessory('C');
     const s = store([ok1, clash, ok2], { devices: [device('B')] });
 
-    const result = migrateAll(s);
+    const result = migrateSelected(s, [...s.legacy]);
     expect(result.migrated).toBe(2);
     expect(result.skipped).toEqual([{ name: 'B', reason: expect.stringContaining('already exists') }]);
     expect(s.legacy).toEqual([clash]);
     expect(s.platform!.devices.map((d) => d.name)).toEqual(['B', 'A', 'C']);
+  });
+
+  it('leaves accessories that were not selected alone', () => {
+    const chosen = accessory('A');
+    const untouched = accessory('B');
+    const s = store([chosen, untouched]);
+
+    expect(migrateSelected(s, [chosen]).migrated).toBe(1);
+    expect(s.legacy).toEqual([untouched]);
+    expect(s.platform!.devices.map((d) => d.name)).toEqual(['A']);
+  });
+});
+
+describe('configuration shape', () => {
+  it('reflects which formats are in use', () => {
+    expect(configShape(store())).toBe('empty');
+    expect(configShape(store([accessory('A')]))).toBe('accessory');
+    expect(configShape(store([], { devices: [device('B')] }))).toBe('platform');
+    expect(configShape(store([accessory('A')], { devices: [device('B')] }))).toBe('mixed');
+  });
+
+  it('counts an empty platform block as platform mode', () => {
+    // the block exists in config.json, so its settings must stay reachable
+    expect(configShape(store([], { devices: [] }))).toBe('platform');
+  });
+});
+
+describe('move eligibility', () => {
+  it('accepts a plain accessory', () => {
+    const config = accessory('A');
+    expect(moveEligibility(store([config]), config)).toEqual({ movable: true });
+  });
+
+  it('rejects an accessory in its own child bridge and lists it', () => {
+    const config = accessory('A', { _bridge: { username: '0E:11:22:33:44:55' } });
+    const s = store([config, accessory('B')]);
+    const result = moveEligibility(s, config);
+    expect(result.movable).toBe(false);
+    expect(!result.movable && result.reason).toContain('child bridge');
+    expect(childBridgeAccessories(s)).toEqual([config]);
+  });
+
+  it('rejects an identity that a platform device already uses', () => {
+    const config = accessory('A');
+    const result = moveEligibility(store([config], { devices: [device('A')] }), config);
+    expect(result.movable).toBe(false);
+    expect(!result.movable && result.reason).toContain('already exists');
+  });
+
+  it('agrees with what migrateDevice does', () => {
+    const config = accessory('A', { _bridge: {} });
+    const s = store([config]);
+    expect(migrateDevice(s, config)).toEqual({
+      ok: false,
+      reason: (moveEligibility(s, config) as { reason: string }).reason,
+    });
+  });
+});
+
+describe('connection estimate', () => {
+  it('counts one connection per accessory and one per distinct broker', () => {
+    const configs = [
+      accessory('A', { url: 'mqtt://one' }),
+      accessory('B', { url: 'mqtt://one' }),
+      accessory('C', { url: 'mqtt://two' }),
+    ];
+    expect(connectionEstimate(configs)).toEqual({ before: 3, after: 2 });
+  });
+
+  it('separates brokers that differ only by credentials', () => {
+    const configs = [
+      accessory('A', { url: 'mqtt://one', username: 'u' }),
+      accessory('B', { url: 'mqtt://one' }),
+    ];
+    expect(connectionEstimate(configs)).toEqual({ before: 2, after: 2 });
+  });
+});
+
+describe('hoisting a shared broker', () => {
+  it('finds the broker only when every accessory agrees', () => {
+    const same = [accessory('A', { url: 'mqtt://one', username: 'u' }), accessory('B', { url: 'mqtt://one', username: 'u' })];
+    expect(commonBrokerOf(same)).toEqual({ url: 'mqtt://one', username: 'u', password: undefined });
+    expect(commonBrokerOf([...same, accessory('C', { url: 'mqtt://two' })])).toBeNull();
+    expect(commonBrokerOf([accessory('D')])).toBeNull();
+    expect(commonBrokerOf([])).toBeNull();
+  });
+
+  it('moves the broker onto the block and off the devices', () => {
+    const a = device('A', { url: 'mqtt://one', username: 'u' });
+    const b = device('B', { url: 'mqtt://one', username: 'u' });
+    const s = store([], { devices: [a, b] });
+
+    hoistBrokerToPlatform(s, [a, b], { url: 'mqtt://one', username: 'u' });
+
+    expect(s.platform!.url).toBe('mqtt://one');
+    expect(s.platform!.username).toBe('u');
+    expect(s.platform!.password).toBeUndefined();
+    expect(a.url).toBeUndefined();
+    expect(b.username).toBeUndefined();
+    // the devices still resolve to the same broker through the defaults
+    expect(effectiveBroker(s, a)).toEqual({ url: 'mqtt://one', username: 'u', password: undefined });
   });
 });
 

@@ -3,20 +3,24 @@
 // settings, custom sub-services and a JSON escape hatch. Validation
 // findings are shown but never block saving. Duplicate and delete (with a
 // two-click confirm) live in the header here, keeping the list cards clean.
-import { useEffect, useRef, useState } from 'preact/hooks';
+import { useEffect, useState } from 'preact/hooks';
 
 import type { ThingConfig } from '../../../src/config.js';
 import { getTypeModel } from '../../../src/model/types.js';
 import { hb } from '../homebridge.js';
 import { changeAccessoryType, setOption } from '../lib/config-ops.js';
 import {
+  configShape,
   duplicateDevice,
   effectiveBroker,
   migrateDevice,
+  moveEligibility,
   removeDevice,
   sourceOf,
   type DeviceStore,
 } from '../lib/store-ops.js';
+import { termsFor } from '../lib/terms.js';
+import { useArmed } from '../lib/use-armed.js';
 import { summarizeConfig } from '../lib/validation.js';
 import type { Touch } from '../app.js';
 import { AdvancedSection } from './AdvancedSection.js';
@@ -39,42 +43,23 @@ interface Props {
 }
 
 export function EditorView({ config, store, platformAvailable, touch, onBack, onOpen }: Props) {
-  // Two-click delete and move: the first click arms the button, the second
-  // acts. The armed state falls back to normal after a few seconds, and
-  // resets whenever the editor switches to another device.
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const [confirmMove, setConfirmMove] = useState(false);
-  const confirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const moveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Two-click confirmation: the first click arms the button, the second acts,
+  // and the armed state relaxes after a few seconds. Native dialogs never
+  // appear in the Homebridge UI's sandboxed iframe.
+  const deleteArm = useArmed();
+  const moveArm = useArmed();
+  const [moved, setMoved] = useState<string | null>(null);
   useEffect(() => {
-    setConfirmDelete(false);
-    setConfirmMove(false);
-    return () => {
-      for (const timer of [confirmTimer, moveTimer]) {
-        if (timer.current !== null) {
-          clearTimeout(timer.current);
-        }
-      }
-    };
+    deleteArm.reset();
+    moveArm.reset();
+    setMoved(null);
   }, [config]);
 
   const source = sourceOf(store, config);
+  const shape = configShape(store);
+  const terms = termsFor(shape);
   const scope = source === 'platform' ? 'platform' : 'legacy';
   const touchOwn = () => touch(scope);
-
-  const arm = (
-    timer: typeof confirmTimer,
-    set: (value: boolean) => void,
-  ) => {
-    set(true);
-    if (timer.current !== null) {
-      clearTimeout(timer.current);
-    }
-    timer.current = setTimeout(() => {
-      timer.current = null;
-      set(false);
-    }, 4000);
-  };
 
   const duplicate = () => {
     const copy = duplicateDevice(store, config);
@@ -86,10 +71,11 @@ export function EditorView({ config, store, platformAvailable, touch, onBack, on
   };
 
   const remove = () => {
-    if (!confirmDelete) {
-      arm(confirmTimer, setConfirmDelete);
+    if (!deleteArm.armed) {
+      deleteArm.arm();
       return;
     }
+    deleteArm.reset();
     if (removeDevice(store, config)) {
       touchOwn();
     }
@@ -97,22 +83,19 @@ export function EditorView({ config, store, platformAvailable, touch, onBack, on
   };
 
   const move = () => {
-    if (!confirmMove) {
-      arm(moveTimer, setConfirmMove);
+    if (!moveArm.armed) {
+      moveArm.arm();
       return;
     }
-    setConfirmMove(false);
-    const name = String(config.name ?? '');
+    moveArm.reset();
     const result = migrateDevice(store, config);
     if (!result.ok) {
-      hb().toast.error(result.reason, `"${name}" was not moved`);
+      hb().toast.error(result.reason, `"${String(config.name ?? '')}" was not moved`);
       return;
     }
     touch('legacy');
     touch('platform');
-    hb().toast.success(
-      `Moved "${name}" to the platform block (id: ${result.id}). Click Save changes to write it.`,
-    );
+    setMoved(result.id);
   };
 
   const model = getTypeModel(config.type);
@@ -132,39 +115,34 @@ export function EditorView({ config, store, platformAvailable, touch, onBack, on
       <div class="mb-3 d-flex flex-wrap align-items-end gap-2">
         <div class="flex-grow-1">
           <button type="button" class="btn btn-link btn-sm p-0" onClick={onBack}>
-            ← All devices
+            {terms.backLabel}
           </button>
           <h5 class="m-0 mt-1">
             {String(config.name ?? '(unnamed)')}{' '}
             <span class="text-body-secondary fw-normal">{model ? model.label : String(config.type ?? '')}</span>{' '}
-            {source === 'platform' ? (
-              <span class="badge text-bg-info align-middle">Platform</span>
-            ) : (
-              <span class="badge text-bg-secondary align-middle">Legacy</span>
+            {shape === 'mixed' && (
+              <span class="badge text-bg-secondary fw-normal align-middle">
+                {source === 'platform' ? 'Platform' : 'Accessory'}
+              </span>
             )}
           </h5>
         </div>
         <div class="d-flex gap-2">
-          <button type="button" class="btn btn-outline-secondary" title="Create a copy of this device and edit it" onClick={duplicate}>
-            Duplicate
-          </button>
-          {source === 'accessory' && platformAvailable && (
-            <button
-              type="button"
-              class={`btn ${confirmMove ? 'btn-primary' : 'btn-outline-primary'}`}
-              title="Moves this accessory into the platform block and pins its HomeKit identity. Nothing is written until you save."
-              onClick={move}
-            >
-              {confirmMove ? 'Confirm move?' : 'Move to platform'}
-            </button>
-          )}
           <button
             type="button"
-            class={`btn ${confirmDelete ? 'btn-danger' : 'btn-outline-danger'}`}
+            class="btn btn-outline-secondary"
+            title={`Create a copy of this ${terms.singular} and edit it`}
+            onClick={duplicate}
+          >
+            Duplicate
+          </button>
+          <button
+            type="button"
+            class={`btn ${deleteArm.armed ? 'btn-danger' : 'btn-outline-danger'}`}
             title="Removed from the staged config; nothing is written until you save"
             onClick={remove}
           >
-            {confirmDelete ? 'Confirm delete?' : 'Delete'}
+            {deleteArm.armed ? 'Confirm delete?' : 'Delete'}
           </button>
         </div>
       </div>
@@ -257,9 +235,43 @@ export function EditorView({ config, store, platformAvailable, touch, onBack, on
         <AdvancedSection config={config} touch={touchOwn} />
       </Section>
 
-      <Section title="Edit as JSON" summary="escape hatch: the raw device config">
+      <Section title={`Edit as JSON`} summary={`escape hatch: the raw ${terms.singular} config`}>
         <JsonEditor config={config} source={source ?? 'accessory'} touch={touchOwn} />
       </Section>
+
+      {shape === 'mixed' && source === 'accessory' && platformAvailable && (
+        <Section title="Platform mode" summary="in accessory mode">
+          {moved !== null ? (
+            <div class="alert alert-success py-2 mb-0">
+              Moved to the platform block (id <span class="mqx-mono">{moved}</span>). Use{' '}
+              <strong>Save all changes</strong> at the top of this page to write it.
+            </div>
+          ) : (
+            <>
+              <div class="mqx-desc mb-2">
+                This {terms.singular} is configured as its own block in <span class="mqx-mono">accessories</span>.
+                Moving it into the platform block lets it share an MQTT connection with your other platform devices and
+                makes renaming it safe. Its HomeKit identity is preserved, so its room, scenes and automations are
+                kept. Nothing is written until you save.
+              </div>
+              {moveEligibility(store, config).movable ? (
+                <button
+                  type="button"
+                  class={`btn btn-sm ${moveArm.armed ? 'btn-primary' : 'btn-outline-primary'}`}
+                  onClick={move}
+                >
+                  {moveArm.armed ? 'Confirm move?' : 'Move to platform mode'}
+                </button>
+              ) : (
+                <div class="mqx-desc">
+                  This {terms.singular} cannot be moved: {(moveEligibility(store, config) as { reason: string }).reason}
+                  .
+                </div>
+              )}
+            </>
+          )}
+        </Section>
+      )}
     </div>
   );
 }

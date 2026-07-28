@@ -1,29 +1,29 @@
 // View A - the device list: search, type filter, sort and add on top of a
 // responsive card grid (one device per card, opened via a single Edit
-// button). Duplicate, delete and the move to platform mode live in the
-// editor; the raw config order is preserved as the default sort.
+// button). Duplicate, delete and moving to platform mode live in the editor;
+// the raw config order is preserved as the default sort.
 //
-// Devices come from both containers: legacy accessories[] blocks and the
-// platform block's devices[]. Cards say which one a device is in as soon as
-// both exist.
+// Devices come from both containers: accessory blocks and the platform
+// block's devices[]. Someone using only accessory blocks sees the list they
+// have always seen; the only addition is one link in the footer.
 import { ListFilter, Pencil, Settings } from 'lucide-preact';
 import { useState } from 'preact/hooks';
 
 import type { ThingConfig } from '../../../src/config.js';
 import { getTypeModel } from '../../../src/model/types.js';
 import { matchesSearch } from '../lib/config-ops.js';
+import { introSeen } from '../lib/prefs.js';
 import {
   allDevices,
+  configShape,
   deviceCounts,
   duplicateIdentityFindings,
-  migrateAll,
   type DeviceSource,
   type DeviceStore,
 } from '../lib/store-ops.js';
+import { plural, termsFor } from '../lib/terms.js';
 import { summarizeConfig } from '../lib/validation.js';
 import { hb } from '../homebridge.js';
-import type { Touch } from '../app.js';
-import { ConfirmPanel } from './ConfirmAction.js';
 import { TypeIcon } from './TypeIcon.js';
 
 type SortMode = 'config' | 'name' | 'type';
@@ -31,10 +31,12 @@ type SortMode = 'config' | 'name' | 'type';
 interface Props {
   store: DeviceStore;
   platformAvailable: boolean;
+  platformUnavailable: string | null;
   onEdit: (config: ThingConfig) => void;
   onAdd: () => void;
   onPlatformSettings: () => void;
-  touch: Touch;
+  onPlatformIntro: () => void;
+  onMigrate: () => void;
 }
 
 function typeLabel(type: string | undefined): string {
@@ -45,21 +47,30 @@ function typeLabel(type: string | undefined): string {
   return model.id === type ? model.label : `${model.label} (${type})`;
 }
 
-export function ListView({ store, platformAvailable, onEdit, onAdd, onPlatformSettings, touch }: Props) {
+export function ListView({
+  store,
+  platformAvailable,
+  platformUnavailable,
+  onEdit,
+  onAdd,
+  onPlatformSettings,
+  onPlatformIntro,
+  onMigrate,
+}: Props) {
   const [query, setQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
   const [sortMode, setSortMode] = useState<SortMode>('config');
   const [showJson, setShowJson] = useState(false);
-  const [bannerDismissed, setBannerDismissed] = useState(false);
-  const [confirmingMigrate, setConfirmingMigrate] = useState(false);
 
   // The working copy is mutated in place (stable identity), so this is
   // recomputed on every render instead of memoized.
   const devices = allDevices(store);
   const counts = deviceCounts(store);
+  const shape = configShape(store);
+  const terms = termsFor(shape);
   const findings = duplicateIdentityFindings(store);
-  const showSource = counts.platform > 0 && counts.legacy > 0;
+  const showSource = shape === 'mixed';
 
   const presentTypes: string[] = [];
   for (const { config } of devices) {
@@ -79,7 +90,14 @@ export function ListView({ store, platformAvailable, onEdit, onAdd, onPlatformSe
     entries = [...entries].sort((a, b) => typeLabel(a.config.type).localeCompare(typeLabel(b.config.type)));
   }
 
-  const jsonView = JSON.stringify({ accessories: store.legacy, platform: store.platform }, null, 2);
+  const jsonView =
+    shape === 'accessory'
+      ? JSON.stringify(store.legacy, null, 2)
+      : JSON.stringify(
+          { accessories: store.legacy, platforms: store.platform === null ? [] : [store.platform] },
+          null,
+          2,
+        );
 
   const copyJson = async () => {
     try {
@@ -90,35 +108,11 @@ export function ListView({ store, platformAvailable, onEdit, onAdd, onPlatformSe
     }
   };
 
-  const runMigrateAll = () => {
-    setConfirmingMigrate(false);
-    const result = migrateAll(store);
-    if (result.migrated > 0) {
-      touch('legacy');
-      touch('platform');
-      hb().toast.success(
-        `Moved ${result.migrated} ${result.migrated === 1 ? 'accessory' : 'accessories'} to platform mode. ` +
-          'Click Save changes to write them.',
-      );
-    }
-    if (result.skipped.length > 0) {
-      hb().toast.error(
-        result.skipped.map((s) => `${s.name}: ${s.reason}`).join('\n'),
-        `${result.skipped.length} could not be moved`,
-      );
-    }
-  };
-
-  const sourceBadge = (source: DeviceSource) =>
-    source === 'platform' ? (
-      <span class="badge text-bg-info" title="Configured in the platform block">
-        Platform
-      </span>
-    ) : (
-      <span class="badge text-bg-secondary" title="Configured as a legacy accessory block">
-        Legacy
-      </span>
-    );
+  const sourceLabel = (source: DeviceSource) => (
+    <span class="mqx-key" title={source === 'platform' ? 'In the platform block' : 'Its own accessory block'}>
+      {source === 'platform' ? 'Platform' : 'Accessory'}
+    </span>
+  );
 
   return (
     <div>
@@ -201,48 +195,18 @@ export function ListView({ store, platformAvailable, onEdit, onAdd, onPlatformSe
           </button>
         )}
         <button class="btn btn-primary" onClick={onAdd}>
-          + Add device
+          {terms.addLabel}
         </button>
       </div>
 
-      {platformAvailable && counts.legacy > 0 && !bannerDismissed && (
-        <div class="alert alert-info d-flex flex-wrap align-items-center gap-2">
-          <div class="flex-grow-1">
-            <strong>
-              {counts.legacy} legacy {counts.legacy === 1 ? 'accessory' : 'accessories'} can be moved to platform mode.
-            </strong>{' '}
-            Platform mode keeps every device in one block, shares MQTT connections between devices on the same broker
-            and gives each device a stable identity. HomeKit rooms, scenes and automations are preserved.
-          </div>
-          <button type="button" class="btn btn-primary btn-sm" onClick={() => setConfirmingMigrate(true)}>
-            Migrate all
-          </button>
-          <button type="button" class="btn btn-link btn-sm" onClick={() => setBannerDismissed(true)}>
-            Not now
-          </button>
-        </div>
-      )}
-
-      {confirmingMigrate && (
-        <ConfirmPanel
-          title={`Move all ${counts.legacy} legacy ${counts.legacy === 1 ? 'accessory' : 'accessories'} into the platform block?`}
-          confirmLabel="Move them"
-          onConfirm={runMigrateAll}
-          onCancel={() => setConfirmingMigrate(false)}
-        >
-          Each device keeps its HomeKit identity, so rooms, scenes and automations are preserved. Accessories running
-          in their own child bridge cannot be moved and are left alone. Nothing is written until you save.
-        </ConfirmPanel>
-      )}
-
       {counts.total === 0 && (
         <div class="alert alert-info">
-          No mqttthing devices configured yet. Use <strong>Add device</strong> to create the first one.
-          {platformAvailable && ' New devices are created in platform mode.'}
+          No mqttthing {terms.plural} configured yet. Use <strong>{terms.addLabel.replace('+ ', '')}</strong> to create
+          the first one.
         </div>
       )}
       {counts.total > 0 && entries.length === 0 && (
-        <div class="alert alert-secondary">No devices match the current search.</div>
+        <div class="alert alert-secondary">No {terms.plural} match the current search.</div>
       )}
 
       {entries.length > 0 && (
@@ -281,8 +245,8 @@ export function ListView({ store, platformAvailable, onEdit, onAdd, onPlatformSe
                       </button>
                     </div>
                     {(showSource || serviceCount > 0 || issues > 0) && (
-                      <div class="d-flex flex-wrap gap-1 mt-2">
-                        {showSource && sourceBadge(source)}
+                      <div class="d-flex flex-wrap align-items-center gap-1 mt-2">
+                        {showSource && sourceLabel(source)}
                         {serviceCount > 0 && (
                           <span class="badge text-bg-secondary" title="Grouped services">
                             {serviceCount} services
@@ -306,18 +270,35 @@ export function ListView({ store, platformAvailable, onEdit, onAdd, onPlatformSe
         </div>
       )}
 
-      <div class="d-flex align-items-center gap-2 mt-3">
+      <div class="d-flex flex-wrap align-items-center gap-2 mt-3">
         <span class="text-body-secondary small">
           {entries.length !== counts.total
-            ? `${entries.length} of ${counts.total} devices`
+            ? `${entries.length} of ${plural(counts.total, terms)}`
             : showSource
-              ? `${counts.total} devices (${counts.legacy} legacy, ${counts.platform} platform)`
-              : `${counts.total} ${counts.total === 1 ? 'device' : 'devices'}`}
+              ? `${plural(counts.total, terms)} — ${counts.legacy} in accessory mode, ${counts.platform} in platform mode`
+              : plural(counts.total, terms)}
         </span>
-        <button class="btn btn-link btn-sm ms-auto p-0" onClick={() => setShowJson(!showJson)}>
+        {platformAvailable && shape === 'accessory' && (
+          <button class="btn btn-link btn-sm ms-auto p-0" onClick={onPlatformIntro}>
+            About platform mode
+            {!introSeen() && <span class="badge text-bg-secondary ms-1">New</span>}
+          </button>
+        )}
+        {platformAvailable && shape === 'mixed' && (
+          <button class="btn btn-link btn-sm ms-auto p-0" onClick={onMigrate}>
+            Move accessories to platform mode
+          </button>
+        )}
+        <button
+          class={`btn btn-link btn-sm p-0${platformAvailable && shape !== 'platform' && shape !== 'empty' ? '' : ' ms-auto'}`}
+          onClick={() => setShowJson(!showJson)}
+        >
           {showJson ? 'Hide JSON' : 'View JSON'}
         </button>
       </div>
+      {platformUnavailable !== null && (
+        <div class="mqx-desc mt-1">Platform mode is unavailable: {platformUnavailable}</div>
+      )}
       {showJson && (
         <div class="mt-2">
           <textarea class="form-control mqx-json-view" rows={16} readOnly value={jsonView} />

@@ -152,3 +152,17 @@
   padding: 0.6rem 0.75rem;
   margin-bottom: 0.75rem;
 }
+
+#mqttthing-ui .mqx-card-muted {
+  opacity: 0.55;
+  cursor: default;
+}
+
+#mqttthing-ui .mqx-benefit-icon {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.6rem;
+  background-color: rgba(128, 128, 128, 0.14);
+}

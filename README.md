@@ -103,9 +103,16 @@ device can override.
 
 ### Moving accessories to platform mode
 
-Open the plugin settings in the Homebridge UI. A banner offers **Migrate
-all**, and each accessory's editor has a **Move to platform** button. Then
-click **Save changes** and restart Homebridge.
+Open the plugin settings in the Homebridge UI and follow **About platform
+mode** at the bottom of the accessory list. It explains what changes and what
+does not, and leads to a screen where you pick which accessories to move —
+each one shows up front whether it can be moved. A single accessory can also
+be moved from its own editor, under **Platform mode**.
+
+Nothing is written until you press **Save all changes** at the top of the
+page; then restart Homebridge. While platform changes are pending, the
+Homebridge UI's own Save button is greyed out, because it would only save
+part of the configuration.
 
 **No HomeKit re-pairing is needed.** The accessory UUID is generated from
 `uuid.generate("mqttthing:" + (id || uuid_base || name))`, which is the same

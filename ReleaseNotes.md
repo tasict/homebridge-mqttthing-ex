@@ -16,9 +16,21 @@ before.
 + Moving a device from `accessories` to the platform block preserves its
   HomeKit identity: rooms, scenes and automations survive, no re-pairing.
   The settings UI offers this per device and for all at once
-+ Custom UI now manages both configuration formats: devices show which block
-  they belong to, platform broker defaults have their own settings page, and
-  a device configured in both places is flagged
++ Custom UI now manages both configuration formats. If you only use accessory
+  blocks the settings screen is unchanged apart from one **About platform
+  mode** link at the bottom of the list — no banner, no badges, no renamed
+  buttons. Platform mode adds a settings page for the broker defaults and
+  flags any device configured in both places
++ Moving accessories has its own screen: pick which ones to move, see how
+  many MQTT connections that saves, and see up front which accessories
+  cannot be moved and why
++ While platform changes are pending, the Homebridge UI's own Save button is
+  disabled and a single **Save all changes** button writes both formats, so
+  there is never a save button on screen that would only save part of the
+  configuration
++ Fixed: confirmations now happen in the page. The Homebridge UI sandboxes
+  plugin settings without native dialogs, so "Apply to all" and removing a
+  service from a custom accessory silently did nothing in 1.0.x
 + A device configured both as an accessory and as a platform device is
   reported in the log (Homebridge publishes the accessory and skips the
   platform copy)

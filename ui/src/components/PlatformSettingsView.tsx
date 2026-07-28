@@ -4,18 +4,20 @@ import { useState } from 'preact/hooks';
 
 import { hb, requestErrorMessage } from '../homebridge.js';
 import { setOption } from '../lib/config-ops.js';
-import { deviceCounts, ensurePlatformBlock, mostCommonBrokerOf, type DeviceStore } from '../lib/store-ops.js';
+import { deviceCounts, mostCommonBrokerOf, type DeviceStore, type PlatformBlock } from '../lib/store-ops.js';
 import type { Touch } from '../app.js';
 import { Section } from './Section.js';
 
 interface Props {
+  /** The platform block; the route is refused when there is none. */
   store: DeviceStore;
+  block: PlatformBlock;
   touch: Touch;
   onBack: () => void;
 }
 
-export function PlatformSettingsView({ store, touch, onBack }: Props) {
-  const block = ensurePlatformBlock(store);
+export function PlatformSettingsView({ store, block, touch, onBack }: Props) {
+
   const [testing, setTesting] = useState(false);
   const [optionsDraft, setOptionsDraft] = useState(() =>
     block.mqttOptions === undefined ? '' : JSON.stringify(block.mqttOptions, null, 2),
