@@ -9,6 +9,7 @@ import { describe, expect, it } from 'vitest';
 // @ts-expect-error plain-JS module without type declarations
 import {
   findMqttthingAccessoryBlocks,
+  findMqttthingPlatformBlock,
   hashOfBlock,
   readAccessoryConfig,
   validateAccessoryBlocks,
@@ -100,13 +101,49 @@ describe('findMqttthingAccessoryBlocks', () => {
   });
 });
 
+describe('findMqttthingPlatformBlock', () => {
+  // The UI compares this against what homebridge-config-ui-x hands it: the two
+  // disagree while config-ui-x still holds the pluginAlias/pluginType it
+  // cached before this plugin was upgraded.
+  it('finds our platform block, ignoring other plugins', () => {
+    const ours = { platform: 'mqttthing-ex', devices: [] };
+    expect(findMqttthingPlatformBlock({ platforms: [{ platform: 'other' }, ours] })).toBe(ours);
+  });
+
+  it('returns null when there is none, or no platforms array at all', () => {
+    expect(findMqttthingPlatformBlock({ platforms: [{ platform: 'other' }] })).toBeNull();
+    expect(findMqttthingPlatformBlock({})).toBeNull();
+    expect(findMqttthingPlatformBlock({ platforms: 'nope' })).toBeNull();
+    expect(findMqttthingPlatformBlock(null)).toBeNull();
+  });
+
+  it('does not mistake the accessory alias for the platform alias', () => {
+    expect(findMqttthingPlatformBlock({ platforms: [{ platform: 'mqttthing', devices: [] }] })).toBeNull();
+  });
+});
+
 describe('readAccessoryConfig', () => {
   it('reports an empty list when the configuration has none', async () => {
     const fs = fakeFs({ accessories: [{ accessory: 'other' }], platforms: [] });
     await expect(readAccessoryConfig(fs.deps.readFile, CONFIG_PATH)).resolves.toEqual({
       blocks: [],
       hash: EMPTY_HASH,
+      platform: { present: false, devices: 0 },
     });
+  });
+
+  it('reports what config.json says about the platform block', async () => {
+    const fs = fakeFs({
+      platforms: [{ platform: 'other' }, { platform: 'mqttthing-ex', devices: [{ name: 'A' }, { name: 'B' }] }],
+    });
+    const read = await readAccessoryConfig(fs.deps.readFile, CONFIG_PATH);
+    expect(read.platform).toEqual({ present: true, devices: 2 });
+  });
+
+  it('reports a platform block with no devices array as present but empty', async () => {
+    const fs = fakeFs({ platforms: [{ platform: 'mqttthing-ex' }] });
+    const read = await readAccessoryConfig(fs.deps.readFile, CONFIG_PATH);
+    expect(read.platform).toEqual({ present: true, devices: 0 });
   });
 
   it('returns the blocks verbatim, in order, with a stable hash', async () => {
@@ -137,6 +174,7 @@ describe('readAccessoryConfig', () => {
     await expect(readAccessoryConfig(fs.deps.readFile, CONFIG_PATH)).resolves.toEqual({
       blocks: [],
       hash: EMPTY_HASH,
+      platform: { present: false, devices: 0 },
     });
   });
 

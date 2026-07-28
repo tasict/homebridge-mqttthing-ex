@@ -85,6 +85,22 @@ export function hashOfBlock(block) {
   return createHash('sha256').update(JSON.stringify(block)).digest('hex');
 }
 
+/**
+ * The platform block as it stands in config.json, used only to cross-check
+ * what homebridge-config-ui-x hands the UI. config-ui-x caches each plugin's
+ * pluginAlias/pluginType for 24 hours and does not invalidate that cache when
+ * a plugin is updated, so straight after an upgrade that changed either of
+ * them its idea of which config.json array this plugin owns can still be the
+ * previous one - and it then reports no configuration at all.
+ */
+export function findMqttthingPlatformBlock(config) {
+  const platforms = config === null || typeof config !== 'object' ? undefined : config.platforms;
+  if (!Array.isArray(platforms)) {
+    return null;
+  }
+  return platforms.find((block) => block && typeof block === 'object' && block.platform === MQTTTHING_PLATFORM) ?? null;
+}
+
 /** Every "mqttthing" entry of accessories[], with its position. */
 export function findMqttthingAccessoryBlocks(config) {
   const accessories = config === null || typeof config !== 'object' ? undefined : config.accessories;
@@ -145,9 +161,14 @@ async function parseConfigFile(readFile, configPath) {
 }
 
 /**
- * Read the legacy accessory blocks. Resolves with { blocks, hash }; the hash
- * is passed back on save so a concurrent edit can be detected. An empty list
- * still hashes, so "someone deleted them all behind my back" is detectable.
+ * Read the legacy accessory blocks. Resolves with { blocks, hash, platform };
+ * the hash is passed back on save so a concurrent edit can be detected. An
+ * empty list still hashes, so "someone deleted them all behind my back" is
+ * detectable.
+ *
+ * `platform` describes what config.json says about the platform block, which
+ * the UI compares against what config-ui-x gave it - see
+ * findMqttthingPlatformBlock for why those can disagree.
  *
  * @param {(path: string, encoding: string) => Promise<string>} readFile
  * @param {string} configPath
@@ -156,7 +177,15 @@ export async function readAccessoryConfig(readFile, configPath) {
   const { config } = await parseConfigFile(readFile, configPath);
   assertNoMistypedBlock(config);
   const blocks = findMqttthingAccessoryBlocks(config).map((entry) => entry.block);
-  return { blocks, hash: hashOfBlock(blocks) };
+  const platformBlock = findMqttthingPlatformBlock(config);
+  return {
+    blocks,
+    hash: hashOfBlock(blocks),
+    platform: {
+      present: platformBlock !== null,
+      devices: Array.isArray(platformBlock?.devices) ? platformBlock.devices.length : 0,
+    },
+  };
 }
 
 /**

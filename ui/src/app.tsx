@@ -27,6 +27,7 @@ import {
   type DeviceStore,
   type PlatformBlock,
 } from './lib/store-ops.js';
+import { PLATFORM_ALIAS } from '../../src/model/identity.js';
 import { termsFor } from './lib/terms.js';
 import { AddWizard } from './components/AddWizard.js';
 import { EditorView } from './components/EditorView.js';
@@ -53,6 +54,7 @@ const SAVED_BADGE_MS = 4000;
 interface AccessoryResponse {
   blocks: ThingConfig[];
   hash: string | null;
+  platform: { present: boolean; devices: number };
 }
 
 export function App() {
@@ -68,6 +70,7 @@ export function App() {
   const [loaded, setLoaded] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [legacyUnavailable, setLegacyUnavailable] = useState<string | null>(null);
+  const [schemaStale, setSchemaStale] = useState(false);
   const [view, setView] = useState<View>({ name: 'list' });
   const [legacyDirty, setLegacyDirty] = useState(false);
   const [platformDirty, setPlatformDirty] = useState(false);
@@ -80,22 +83,34 @@ export function App() {
       // plugin's own UI server), so both requests are in flight at once
       const platform = hb().getPluginConfig();
       const accessories = hb().request('/config/accessories');
+      let given: PlatformBlock | null;
       try {
         const blocks = await platform;
         // the schema is singular, so Homebridge only ever hands back one
-        store.platform = Array.isArray(blocks) && blocks.length > 0 ? (blocks[0] as PlatformBlock) : null;
+        given = Array.isArray(blocks) && blocks.length > 0 ? (blocks[0] as PlatformBlock) : null;
       } catch (e) {
         setLoadError(e instanceof Error ? e.message : String(e));
         return;
       }
+      // A block that is not the platform block means the Homebridge UI is
+      // reading a different part of config.json than this plugin declares.
+      let stale = given !== null && given.platform !== PLATFORM_ALIAS;
       try {
         const response = (await accessories) as AccessoryResponse;
         store.legacy = Array.isArray(response.blocks) ? response.blocks : [];
         legacyHash.current = response.hash;
+        // ... and so does being handed nothing while config.json holds one
+        stale ||= given === null && response.platform?.present === true;
       } catch (e) {
         // legacy blocks are optional: platform editing must keep working
         setLegacyUnavailable(requestErrorMessage(e));
       }
+      if (stale) {
+        setSchemaStale(true);
+        setLoaded(true);
+        return;
+      }
+      store.platform = given;
       setLoaded(true);
     })();
     return () => {
@@ -134,6 +149,23 @@ export function App() {
   }
   if (!loaded) {
     return <div class="text-center my-4">Loading configuration&hellip;</div>;
+  }
+  // Editing from this state would write to the wrong part of config.json, so
+  // the screen stops here rather than showing an empty device list.
+  if (schemaStale) {
+    return (
+      <div class="alert alert-warning">
+        <p>
+          <strong>Restart Homebridge to finish updating this plugin.</strong>
+        </p>
+        <p class="mb-0">
+          The Homebridge UI is still using this plugin&rsquo;s previous configuration schema, so it is looking in the
+          wrong part of <span class="mqx-mono">config.json</span> and would report your devices as missing. Nothing has
+          been lost and nothing has changed in your configuration — restart Homebridge (or the Homebridge UI service, if
+          you run it separately) and reopen this page.
+        </p>
+      </div>
+    );
   }
 
   const shape = configShape(store);
