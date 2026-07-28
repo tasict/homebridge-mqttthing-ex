@@ -19,4 +19,9 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run build
+      - run: npm run build:ui
+      - run: npm run generate:schema
+      # config.schema.json is generated but committed, so drift is a build
+      # failure rather than something discovered at publish time
+      - run: git diff --exit-code config.schema.json
       - run: npm test
