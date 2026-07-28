@@ -1,7 +1,7 @@
 {
   "name": "homebridge-mqttthing-ex",
   "displayName": "MQTT Thing EX",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Homebridge plugin supporting various HomeKit services over MQTT. A modern TypeScript rewrite of homebridge-mqttthing with a fully compatible configuration format.",
   "type": "module",
   "main": "dist/index.js",
@@ -29,6 +29,7 @@
   },
   "keywords": [
     "homebridge-plugin",
+    "supports-hap",
     "MQTT",
     "homekit",
     "Siri",
