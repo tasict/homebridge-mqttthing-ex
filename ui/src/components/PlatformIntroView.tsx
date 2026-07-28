@@ -2,7 +2,7 @@
 //
 // It is a page the user chooses to open, never something pushed in front of
 // them: accessory mode is a first-class, permanently supported choice.
-import { PenLine, Share2, Zap } from 'lucide-preact';
+import { PenLine, ShieldCheck, Share2 } from 'lucide-preact';
 import { useEffect } from 'preact/hooks';
 
 import { markIntroSeen } from '../lib/prefs.js';
@@ -58,12 +58,12 @@ export function PlatformIntroView({ store, onBack, onMigrate }: Props) {
           <div class="card h-100">
             <div class="card-body">
               <div class="mqx-benefit-icon mb-2">
-                <Zap size={20} />
+                <ShieldCheck size={20} />
               </div>
-              <div class="fw-semibold">Devices appear straight away</div>
+              <div class="fw-semibold">Mistakes cost less</div>
               <div class="mqx-desc mt-1">
-                Homebridge remembers platform devices, so they show up in HomeKit as soon as Homebridge starts, even
-                before the broker answers. Accessory blocks only appear once the connection is up.
+                Homebridge remembers platform devices, so one with a broken setting keeps its place in HomeKit while
+                you fix it. An accessory block that fails to load disappears, taking its room and automations with it.
               </div>
             </div>
           </div>

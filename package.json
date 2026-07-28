@@ -82,6 +82,7 @@
   },
   "homepage": "https://github.com/tasict/homebridge-mqttthing-ex#readme",
   "files": [
+    "CHANGELOG.md",
     "dist",
     "codecs",
     "homebridge-ui",

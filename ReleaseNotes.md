@@ -1,54 +1,81 @@
 # Homebridge MQTT-Thing EX: Release Notes
 
+What each release means for you, in prose. For the terse per-version list —
+which is also what the Homebridge UI shows under the plugin's changelog — see
+[CHANGELOG.md](CHANGELOG.md).
+
 ### Version 1.1.0
 
-Adds **platform mode**: the same devices can now be configured as a single
-`platforms` block with a `devices` array. Accessory mode is unchanged and
-stays fully supported — existing configurations keep working exactly as
-before.
+Adds **platform mode**: an optional second way to configure the same devices,
+built for setups that have outgrown one config block per device. Accessory
+mode is unchanged and stays fully supported — existing configurations keep
+working exactly as before, and the settings screen looks the same until you
+choose otherwise.
 
-+ Platform mode: one configuration block (`"platform": "mqttthing-ex"`) for
-  all devices, one shared MQTT connection per broker (instead of one per
-  device), Homebridge accessory caching so devices appear before the broker
-  is reachable, and start-up validation of every device. Accessory entries
-  keep `"accessory": "mqttthing"` unchanged
-+ New optional per-device `id` giving each device a stable HomeKit identity,
-  so devices can be renamed without HomeKit treating them as new. An `id`
-  that is a UUID is the HomeKit accessory itself; any other value is used the
-  way a name is
-+ Moving a device from `accessories` to the platform block preserves its
-  HomeKit identity: its `id` is set to the UUID Homebridge had already given
-  it, so rooms, scenes and automations survive and nothing has to be paired
-  again. The settings UI offers this per device and for all at once
-+ Custom UI now manages both configuration formats. If you only use accessory
-  blocks the settings screen is unchanged apart from one **About platform
-  mode** link at the bottom of the list — no banner, no badges, no renamed
-  buttons. Platform mode adds a settings page for the broker defaults and
-  flags any device configured in both places
-+ Moving accessories has its own screen: pick which ones to move, see how
-  many MQTT connections that saves, and see up front which accessories
-  cannot be moved and why
-+ While platform changes are pending, the Homebridge UI's own Save button is
-  disabled and a single **Save all changes** button writes both formats, so
-  there is never a save button on screen that would only save part of the
-  configuration
+#### Fewer MQTT connections
+
+Accessory mode opens one connection per device, because that is all a
+standalone accessory block can do. Platform mode groups devices by the broker
+they actually talk to and opens one connection per group.
+
+For 24 devices on a single broker that is 24 TCP connections, keepalive
+timers, reconnect loops and broker-side sessions replaced by one. Brokers that
+cap connections per user, and low-powered hosts where each socket costs real
+memory, both stop being a constraint. A device that overrides `url`,
+`username`, `password` or `mqttOptions` transparently gets its own connection,
+so nothing has to be uniform. Incoming messages are routed by topic lookup, so
+a shared connection dispatches them no more slowly than a private one.
+
+With a child bridge the saving compounds: the whole platform runs in one child
+bridge instead of needing a `_bridge` block, and a separate process, per
+accessory.
+
+#### Renaming stops being destructive
+
+In accessory mode the name *is* the identity: rename a device and HomeKit
+sees a new accessory, losing its room, scenes and automations. Platform
+devices carry a stable `id`, so the name becomes a label you can change at
+will.
+
+#### A configuration mistake no longer costs a device
+
+Homebridge caches platform accessories, so a device with a broken setting
+keeps its place in HomeKit — room and automations included — while you fix it.
+An accessory block that fails to load simply disappears. Platform devices are
+also validated at start-up, with problems named in the log instead of failing
+silently.
+
+#### Moving is safe, and the UI does it for you
+
+Open the plugin settings and follow **About platform mode** at the bottom of
+the list. You pick which accessories to move, see how many connections it
+saves, and see up front which ones cannot be moved and why. Each device's `id`
+is set to the UUID Homebridge had already given it, so **no re-pairing is
+needed and nothing is lost**. Nothing is written until you press **Save all
+changes**.
+
+The one exception: an accessory running in its own child bridge cannot be
+moved, because a platform runs in at most one child bridge and each is paired
+separately in HomeKit. The UI refuses those and says so.
+
+#### If you never migrate
+
+Nothing changes. The settings screen keeps its wording, its buttons and the
+Homebridge UI's own Save button; the only addition is a single link at the
+bottom of the device list. Accessory mode is frozen, not deprecated, and
+mixing both formats is fine.
+
+#### Also in this release
+
 + Fixed: confirmations now happen in the page. The Homebridge UI sandboxes
   plugin settings without native dialogs, so "Apply to all" and removing a
   service from a custom accessory silently did nothing in 1.0.x
 + A device configured both as an accessory and as a platform device is
   reported in the log (Homebridge publishes the accessory and skips the
   platform copy)
-
-Notes for platform mode: on a shared connection the last-will message names
-the platform rather than a single device, and `logMqtt` on any device logs
-the received messages of every device on that connection.
-
-Accessories running in their own child bridge cannot be moved to platform
-mode: a platform runs in at most one child bridge, and every child bridge is
-paired separately in HomeKit. The settings UI refuses to move these and
-explains why. To use a child bridge with platform mode, add `_bridge` to the
-platform block itself (by hand — the Homebridge UI does not offer
-child-bridge management for it here).
++ On a shared connection the last-will message names the platform rather than
+  a single device, and `logMqtt` on any device logs the received messages of
+  every device on that connection
 
 ### Version 1.0.1
 + Fixed: changes applied through the accessory "Edit as JSON" editor could

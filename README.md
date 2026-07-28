@@ -15,10 +15,15 @@ services over MQTT — a modern, actively maintained successor to
 
 - **Drop-in replacement** — your existing `config.json` works unchanged.
   Accessory entries keep using `"accessory": "mqttthing"`.
-- **Platform mode** — an optional second way to configure the same devices:
-  one config block, one shared MQTT connection per broker, and a stable
-  per-device identity so renaming a device no longer matters to HomeKit.
-  Moving a device there preserves its rooms, scenes and automations.
+- **One MQTT connection per broker, not per device** — the optional
+  [platform mode](#platform-mode) puts every device in one config block and
+  gives them a shared connection. Twenty-four accessories on one broker go
+  from twenty-four TCP connections, keepalive timers and reconnect loops to
+  one. Moving a device there keeps its HomeKit identity, so rooms, scenes and
+  automations survive and nothing has to be paired again.
+- **Renaming is no longer destructive** — platform devices carry a stable
+  `id`, so the name becomes a label. In accessory mode the name *is* the
+  identity, and renaming loses the device's room and automations.
 - **Homebridge v2 ready** — TypeScript, ES modules, modern HAP APIs
   (`onGet`/`onSet`), works on Homebridge 1.8+ and 2.x.
 - **Device protection** — optional outbound publish queue with throttling and
@@ -84,19 +89,30 @@ Platform mode is an alternative that puts every device in one block:
 }
 ```
 
-What it gives you:
+### What it changes
 
-- **One MQTT connection per broker** instead of one per device. Devices
-  sharing the same effective broker settings share a connection; a device
-  overriding `url`, `username`, `password` or `mqttOptions` gets its own.
-  With a child bridge, the whole platform runs in one child process rather
-  than one per device.
-- **Accessory caching** — devices appear in HomeKit at startup, before the
-  broker is reachable.
-- **A stable identity** — the optional `id` decides the HomeKit accessory, so
-  a device can be renamed freely. It is normally the accessory's UUID, which
-  is what the settings UI writes.
-- **Start-up validation** — configuration problems are reported in the log.
+| | Accessory mode | Platform mode |
+|---|---|---|
+| Configuration | one block per device in `accessories[]` | one block, with a `devices[]` array |
+| MQTT connections | one per device | one per distinct broker |
+| Child bridge | a `_bridge` block per accessory | one `_bridge` for the whole platform |
+| Device identity | the name — renaming makes a new accessory | the `id` — the name is only a label |
+| A device that fails to load | disappears from HomeKit | keeps its place while you fix it |
+| Configuration mistakes | silently ignored | reported in the log at start-up |
+
+The connection saving is the headline. Every MQTT connection carries its own
+socket, keepalive timer, reconnect logic and broker-side session, so a
+40-device setup on one broker holds 40 of each in accessory mode and one in
+platform mode — and brokers that cap connections per user stop being a
+problem. Devices sharing the same effective broker settings share a
+connection; a device overriding `url`, `username`, `password` or
+`mqttOptions` transparently gets its own. Incoming messages are routed by
+topic lookup, so a shared connection dispatches them no more slowly than a
+private one.
+
+Because Homebridge caches platform accessories, a device whose configuration
+is wrong keeps its HomeKit place — including its room and automations — while
+you correct it, instead of vanishing and coming back as a new accessory.
 
 A device entry is exactly an accessory block without `"accessory"`, plus the
 optional `"id"`. Broker settings given on the block are defaults that any
@@ -177,6 +193,7 @@ Notes:
 - [Accessory types](docs/Accessories.md)
 - [Codecs](docs/Codecs.md)
 - [Upstream issues fixed](docs/UpstreamIssues.md)
+- [Changelog](CHANGELOG.md) &middot; [Release notes](ReleaseNotes.md)
 
 ## Status
 
