@@ -1,15 +1,10 @@
-import os from 'node:os';
-
 import type { AccessoryConfig, AccessoryPlugin, API, Controller, Logging, Service } from 'homebridge';
 
-import { normalizeHistoryConfig, type ThingConfig } from './config.js';
-import { makeThingContext } from './hap/binding.js';
+import type { ThingConfig } from './config.js';
+import { applyAccessoryInformation, buildThingServices, publishStartPub } from './core/thing-builder.js';
 import type { Log } from './log.js';
 import { init as mqttInit } from './mqtt/client.js';
 import type { MqttContext } from './mqtt/context.js';
-import { publish as mqttPublish } from './mqtt/wiring.js';
-import { buildServicesForConfig } from './services/index.js';
-import { getPluginVersion } from './settings.js';
 
 export class MqttThingAccessory implements AccessoryPlugin {
   private readonly config: ThingConfig;
@@ -63,22 +58,18 @@ export class MqttThingAccessory implements AccessoryPlugin {
   // Equivalent of upstream createServices() (index.js:3555-3595).
   private createServices(): Service[] {
     const config = this.config;
-    let services: Service[] | null;
-
-    if (config.type === 'custom' && config.services) {
-      // multi-service/custom configuration...
-      services = [];
-      for (const svcCfg of config.services) {
-        const merged: ThingConfig = { ...config, ...svcCfg };
-        if (!Object.prototype.hasOwnProperty.call(merged, 'subtype')) {
-          merged.subtype = merged.name;
-        }
-        services = [...services, ...(this.configToServices(merged) ?? [])];
-      }
-    } else {
-      // single accessory
-      services = this.configToServices(config);
+    if (!this.ctx) {
+      return [];
     }
+
+    const services = buildThingServices({
+      ctx: this.ctx,
+      config,
+      log: this.log,
+      api: this.api,
+      controllers: this.controllers,
+      throttledCallTimers: this.throttledCallTimers,
+    });
 
     if (!services) {
       return [];
@@ -88,57 +79,14 @@ export class MqttThingAccessory implements AccessoryPlugin {
     services.push(this.makeAccessoryInformationService());
 
     // start-up publishing
-    if (config.startPub && this.ctx) {
-      if (Array.isArray(config.startPub)) {
-        // new format - [ { topic: x, message: y }, ... ]
-        for (const entry of config.startPub) {
-          if (entry.topic) {
-            mqttPublish(this.ctx, entry.topic, 'startPub', entry.message || '');
-          }
-        }
-      } else {
-        // old format - object of topic->message
-        for (const topic in config.startPub) {
-          if (Object.prototype.hasOwnProperty.call(config.startPub, topic)) {
-            mqttPublish(this.ctx, topic, 'startPub', config.startPub[topic]);
-          }
-        }
-      }
-    }
+    publishStartPub(this.ctx, config);
 
     return services;
   }
 
-  // Equivalent of upstream configToServices() for one (sub-)service config.
-  private configToServices(config: ThingConfig): Service[] | null {
-    if (!this.ctx) {
-      return null;
-    }
-    normalizeHistoryConfig(config);
-    const thing = makeThingContext({
-      mqttCtx: this.ctx,
-      config,
-      log: this.log,
-      hap: this.api.hap,
-      api: this.api,
-      controllers: this.controllers,
-      versionGreaterOrEqual: this.api.versionGreaterOrEqual
-        ? this.api.versionGreaterOrEqual.bind(this.api)
-        : undefined,
-      throttledCallTimers: this.throttledCallTimers,
-    });
-    return buildServicesForConfig(thing);
-  }
-
   private makeAccessoryInformationService(): Service {
-    const { Service, Characteristic } = this.api.hap;
-    const config = this.config;
-    const informationService = new Service.AccessoryInformation();
-    informationService
-      .setCharacteristic(Characteristic.Manufacturer, config.manufacturer || 'mqttthing')
-      .setCharacteristic(Characteristic.Model, config.model || config.type)
-      .setCharacteristic(Characteristic.SerialNumber, config.serialNumber || os.hostname() + '-' + config.name)
-      .setCharacteristic(Characteristic.FirmwareRevision, config.firmwareRevision || getPluginVersion());
+    const informationService = new this.api.hap.Service.AccessoryInformation();
+    applyAccessoryInformation(informationService, this.api.hap, this.config);
     return informationService;
   }
 }
