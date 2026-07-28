@@ -120,6 +120,21 @@ describe('readPlatformConfig', () => {
     await expect(readPlatformConfig(fs.deps.readFile, CONFIG_PATH)).rejects.toThrow('Refusing to touch it');
   });
 
+  it('explains a block that uses the accessory alias by mistake', async () => {
+    const fs = fakeFs({ platforms: [{ platform: 'mqttthing', devices: [{ name: 'Lamp' }] }] });
+    await expect(readPlatformConfig(fs.deps.readFile, CONFIG_PATH)).rejects.toThrow('"mqttthing" is the accessory alias');
+  });
+
+  it('leaves another plugin’s platform named mqttthing alone', async () => {
+    // no devices array, so it is not ours to complain about
+    const fs = fakeFs({ platforms: [{ platform: 'mqttthing', somethingElse: true }] });
+    await expect(readPlatformConfig(fs.deps.readFile, CONFIG_PATH)).resolves.toEqual({
+      exists: false,
+      block: null,
+      hash: null,
+    });
+  });
+
   it('explains a missing config path', async () => {
     const fs = fakeFs({});
     await expect(readPlatformConfig(fs.deps.readFile, '')).rejects.toThrow('newer homebridge-config-ui-x');
@@ -231,6 +246,14 @@ describe('writePlatformConfig', () => {
       'Refusing to touch it',
     );
     expect(fs.files.get(CONFIG_PATH)).toBe('{ broken');
+  });
+
+  it('refuses to write while a mistyped block is present', async () => {
+    const fs = fakeFs({ platforms: [{ platform: 'mqttthing', devices: [{ name: 'Lamp' }] }] });
+    await expect(writePlatformConfig(fs.deps, CONFIG_PATH, platformBlock(), null)).rejects.toThrow(
+      'is the accessory alias',
+    );
+    expect(fs.ops).toEqual([]);
   });
 
   it('refuses when platforms is not an array', async () => {

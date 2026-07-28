@@ -99,6 +99,30 @@ export function findMqttthingPlatformBlocks(config) {
   return found;
 }
 
+/**
+ * The accessory alias is "mqttthing" and the platform alias is
+ * "mqttthing-ex", which is easy to mix up. A platforms[] entry using the
+ * accessory alias is reported rather than ignored: Homebridge cannot load it,
+ * and silently showing "no platform block" would send the user round in
+ * circles. Only entries that look like ours (a devices array) are claimed.
+ */
+function assertNoMistypedBlock(config) {
+  const platforms = config === null || typeof config !== 'object' ? undefined : config.platforms;
+  if (!Array.isArray(platforms)) {
+    return;
+  }
+  const mistyped = platforms.some(
+    (block) => block && typeof block === 'object' && block.platform === 'mqttthing' && Array.isArray(block.devices),
+  );
+  if (mistyped) {
+    throw new Error(
+      'config.json has a platform block with "platform": "mqttthing", which Homebridge cannot load. ' +
+        `The platform alias is "${MQTTTHING_PLATFORM}" - "mqttthing" is the accessory alias. ` +
+        'Rename it in the JSON config editor.',
+    );
+  }
+}
+
 function tooManyBlocks(count) {
   return new Error(
     `config.json contains ${count} "${MQTTTHING_PLATFORM}" platform blocks. ` +
@@ -135,6 +159,7 @@ async function parseConfigFile(readFile, configPath) {
  */
 export async function readPlatformConfig(readFile, configPath) {
   const { config } = await parseConfigFile(readFile, configPath);
+  assertNoMistypedBlock(config);
   const blocks = findMqttthingPlatformBlocks(config);
   if (blocks.length > 1) {
     throw new Error(tooManyBlocks(blocks.length).message);
@@ -220,6 +245,7 @@ export function validatePlatformBlock(block) {
 export async function writePlatformConfig(fsDeps, configPath, block, baseHash) {
   const { readFile, writeFile, rename, copyFile, stat, chmod, unlink } = fsDeps;
   const { config } = await parseConfigFile(readFile, configPath);
+  assertNoMistypedBlock(config);
 
   const blocks = findMqttthingPlatformBlocks(config);
   if (blocks.length > 1) {
