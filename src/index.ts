@@ -1,7 +1,8 @@
 import type { API } from 'homebridge';
 
 import { MqttThingAccessory } from './accessory.js';
-import { ACCESSORY_NAME, PLUGIN_NAME } from './settings.js';
+import { MqttThingPlatform } from './platform.js';
+import { ACCESSORY_NAME, PLATFORM_NAME, PLUGIN_NAME } from './settings.js';
 
 export default (api: API): void => {
   try {
@@ -17,6 +18,19 @@ export default (api: API): void => {
         'another plugin (usually the original homebridge-mqttthing) has already registered it. ' +
         `Uninstall homebridge-mqttthing and restart Homebridge to activate ${PLUGIN_NAME}. ` +
         'Your configuration does not need any changes. ' +
+        `(${ex})`,
+    );
+  }
+
+  // Registered separately: Homebridge keeps accessories and platforms in
+  // different registries, so neither name collision can disable the other
+  // mode.
+  try {
+    api.registerPlatform(PLUGIN_NAME, PLATFORM_NAME, MqttThingPlatform);
+  } catch (ex) {
+    console.error(
+      `[${PLUGIN_NAME}] Could not register the "${PLATFORM_NAME}" platform - ` +
+        'another plugin has already registered it. Accessory mode is unaffected. ' +
         `(${ex})`,
     );
   }

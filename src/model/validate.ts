@@ -18,7 +18,7 @@ export interface ValidationResult {
  * '_bridge' is homebridge's child-bridge configuration key; 'subtype' is set
  * internally when expanding custom accessories.
  */
-const CORE_KEYS = new Set(['accessory', 'type', 'name', 'topics', 'services', 'subtype', '_bridge']);
+const CORE_KEYS = new Set(['accessory', 'type', 'name', 'topics', 'services', 'subtype', '_bridge', 'id']);
 
 /** Levenshtein edit distance (small inputs only). */
 function editDistance(a: string, b: string): number {

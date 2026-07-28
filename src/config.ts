@@ -31,6 +31,13 @@ export interface ThingConfig {
   type: string;
   name: string;
 
+  // HomeKit identity. The accessory UUID is generated from
+  // "mqttthing:" + (id || uuid_base || name), so setting one of these keeps
+  // the identity stable when the displayed name changes. `uuid_base` is read
+  // by Homebridge itself in accessory mode; `id` is the platform-mode field.
+  id?: string;
+  uuid_base?: string;
+
   // MQTT connection
   url?: string;
   username?: string;
@@ -84,6 +91,32 @@ export interface ThingConfig {
   subtype?: string;
 
   // everything else (type-specific options, codec options, ...)
+  [key: string]: unknown;
+}
+
+/**
+ * One entry of the platform's devices[] array: an accessory block without the
+ * "accessory" alias, plus the optional stable `id`.
+ */
+export type PlatformDeviceConfig = Omit<ThingConfig, 'accessory'> & { id?: string };
+
+/**
+ * The platform block. Broker settings given here are defaults for every
+ * device; a device setting its own url/username/password/mqttOptions
+ * overrides them (and, when the resulting settings differ, gets its own MQTT
+ * connection).
+ */
+export interface MqttThingPlatformConfig {
+  platform: string;
+  name?: string;
+
+  url?: string;
+  username?: string;
+  password?: string;
+  mqttOptions?: Record<string, unknown>;
+
+  devices?: PlatformDeviceConfig[];
+
   [key: string]: unknown;
 }
 
