@@ -20,10 +20,10 @@ import {
   type DeviceStore,
 } from '../lib/store-ops.js';
 import { termsFor } from '../lib/terms.js';
-import { useArmed } from '../lib/use-armed.js';
 import { summarizeConfig } from '../lib/validation.js';
 import type { Touch } from '../app.js';
 import { AdvancedSection } from './AdvancedSection.js';
+import { ConfirmButton } from './ConfirmAction.js';
 import { JsonEditor } from './JsonEditor.js';
 import { MqttSection } from './MqttSection.js';
 import { OptionField } from './OptionField.js';
@@ -43,23 +43,13 @@ interface Props {
 }
 
 export function EditorView({ config, store, platformAvailable, touch, onBack, onOpen }: Props) {
-  // Two-click confirmation: the first click arms the button, the second acts,
-  // and the armed state relaxes after a few seconds. Native dialogs never
-  // appear in the Homebridge UI's sandboxed iframe.
-  const deleteArm = useArmed();
-  const moveArm = useArmed();
   const [moved, setMoved] = useState<string | null>(null);
-  useEffect(() => {
-    deleteArm.reset();
-    moveArm.reset();
-    setMoved(null);
-  }, [config]);
+  useEffect(() => setMoved(null), [config]);
 
   const source = sourceOf(store, config);
   const shape = configShape(store);
   const terms = termsFor(shape);
-  const scope = source === 'platform' ? 'platform' : 'legacy';
-  const touchOwn = () => touch(scope);
+  const touchOwn = () => touch(source ?? 'accessory');
 
   const duplicate = () => {
     const copy = duplicateDevice(store, config);
@@ -71,11 +61,6 @@ export function EditorView({ config, store, platformAvailable, touch, onBack, on
   };
 
   const remove = () => {
-    if (!deleteArm.armed) {
-      deleteArm.arm();
-      return;
-    }
-    deleteArm.reset();
     if (removeDevice(store, config)) {
       touchOwn();
     }
@@ -83,17 +68,12 @@ export function EditorView({ config, store, platformAvailable, touch, onBack, on
   };
 
   const move = () => {
-    if (!moveArm.armed) {
-      moveArm.arm();
-      return;
-    }
-    moveArm.reset();
     const result = migrateDevice(store, config);
     if (!result.ok) {
       hb().toast.error(result.reason, `"${String(config.name ?? '')}" was not moved`);
       return;
     }
-    touch('legacy');
+    touch('accessory');
     touch('platform');
     setMoved(result.id);
   };
@@ -106,6 +86,7 @@ export function EditorView({ config, store, platformAvailable, touch, onBack, on
   const optionModels = (model?.options ?? []).filter((o) => !(isCustom && o.key === 'services'));
 
   const broker = effectiveBroker(store, config);
+  const eligibility = moveEligibility(store, config);
   const mqttSummary = `${broker.url !== undefined ? broker.url : 'default broker'}${
     broker.username !== undefined ? ` · ${broker.username}` : ''
   }`;
@@ -136,14 +117,12 @@ export function EditorView({ config, store, platformAvailable, touch, onBack, on
           >
             Duplicate
           </button>
-          <button
-            type="button"
-            class={`btn ${deleteArm.armed ? 'btn-danger' : 'btn-outline-danger'}`}
+          <ConfirmButton
+            label="Delete"
+            confirmLabel="Confirm delete?"
             title="Removed from the staged config; nothing is written until you save"
-            onClick={remove}
-          >
-            {deleteArm.armed ? 'Confirm delete?' : 'Delete'}
-          </button>
+            onConfirm={remove}
+          />
         </div>
       </div>
 
@@ -254,19 +233,17 @@ export function EditorView({ config, store, platformAvailable, touch, onBack, on
                 makes renaming it safe. Its HomeKit identity is preserved, so its room, scenes and automations are
                 kept. Nothing is written until you save.
               </div>
-              {moveEligibility(store, config).movable ? (
-                <button
-                  type="button"
-                  class={`btn btn-sm ${moveArm.armed ? 'btn-primary' : 'btn-outline-primary'}`}
-                  onClick={move}
-                >
-                  {moveArm.armed ? 'Confirm move?' : 'Move to platform mode'}
-                </button>
+              {eligibility.movable ? (
+                <ConfirmButton
+                  label="Move to platform mode"
+                  confirmLabel="Confirm move?"
+                  variant="btn-outline-primary"
+                  confirmVariant="btn-primary"
+                  className="btn-sm"
+                  onConfirm={move}
+                />
               ) : (
-                <div class="mqx-desc">
-                  This {terms.singular} cannot be moved: {(moveEligibility(store, config) as { reason: string }).reason}
-                  .
-                </div>
+                <div class="mqx-desc">This {terms.singular} cannot be moved: {eligibility.reason}.</div>
               )}
             </>
           )}

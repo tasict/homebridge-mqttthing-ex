@@ -7,6 +7,7 @@
 // which is unavailable when the Homebridge UI is served over plain HTTP.
 //
 // test/ui-hap-uuid.test.ts checks this against hap-nodejs itself.
+import { IDENTITY_PREFIX } from '../../../src/model/identity.js';
 
 /** SHA-1 of the UTF-8 encoding of `input`, as lowercase hex. */
 export function sha1Hex(input: string): string {
@@ -76,12 +77,6 @@ export function sha1Hex(input: string): string {
   return [h0, h1, h2, h3, h4].map((word) => word.toString(16).padStart(8, '0')).join('');
 }
 
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-export function isUuid(value: string): boolean {
-  return UUID_PATTERN.test(value);
-}
-
 /** hap-nodejs uuid.generate(): SHA-1 hex laid into the UUID shape. */
 export function hapUuidFrom(data: string): string {
   const hash = sha1Hex(data);
@@ -101,7 +96,7 @@ export function hapUuidFrom(data: string): string {
  * between the two configuration formats can keep its identity.
  */
 export function accessoryUuid(seed: string): string {
-  return hapUuidFrom('mqttthing:' + seed);
+  return hapUuidFrom(IDENTITY_PREFIX + seed);
 }
 
 /** A fresh random UUID (v4). crypto.getRandomValues needs no secure context. */

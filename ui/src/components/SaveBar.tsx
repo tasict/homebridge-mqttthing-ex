@@ -17,7 +17,7 @@ export type SaveState =
   | { kind: 'accessories-failed'; message: string };
 
 interface Props {
-  /** True when the platform block exists in the working copy. */
+  /** True while this page owns saving, i.e. platform changes are pending. */
   ownsSave: boolean;
   dirty: boolean;
   state: SaveState;

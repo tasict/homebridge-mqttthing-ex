@@ -4,6 +4,7 @@ import type { ThingConfig } from './config.js';
 import { applyAccessoryInformation, buildThingServices, publishStartPub } from './core/thing-builder.js';
 import type { Log } from './log.js';
 import { init as mqttInit } from './mqtt/client.js';
+import { makeTopicDispatch } from './mqtt/dispatch.js';
 import type { MqttContext } from './mqtt/context.js';
 
 export class MqttThingAccessory implements AccessoryPlugin {
@@ -24,7 +25,7 @@ export class MqttThingAccessory implements AccessoryPlugin {
         log: this.log,
         config: this.config,
         homebridgePath: api.user.storagePath(),
-        mqttDispatch: {},
+        mqttDispatch: makeTopicDispatch(),
         propDispatch: {},
         state: {},
       };

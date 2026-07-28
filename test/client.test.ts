@@ -6,6 +6,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { ThingConfig } from '../src/config.js';
 import { init } from '../src/mqtt/client.js';
 import type { MqttContext } from '../src/mqtt/context.js';
+import { makeTopicDispatch } from '../src/mqtt/dispatch.js';
 import { publish, subscribe } from '../src/mqtt/wiring.js';
 import { makeTestLog, upstreamTestDir } from './helpers.js';
 
@@ -41,7 +42,7 @@ function makeLiveCtx(config: Partial<ThingConfig> = {}) {
       ...config,
     } as ThingConfig,
     homebridgePath: upstreamTestDir,
-    mqttDispatch: {},
+    mqttDispatch: makeTopicDispatch(),
     propDispatch: {},
     state: {},
   };

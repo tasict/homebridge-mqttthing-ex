@@ -12,12 +12,11 @@
 // identity when it moves between containers.
 import type { ThingConfig } from '../../../src/config.js';
 import { deepClone, duplicateName, mostCommonOfBrokers, type BrokerSettings } from './config-ops.js';
-import { accessoryUuid, isUuid, randomUuid } from './hap-uuid.js';
+import { resolveEffectiveBroker } from '../../../src/model/broker-key.js';
+import { identitySeed, isUuid, PLATFORM_ALIAS, type DeviceSource } from '../../../src/model/identity.js';
+import { accessoryUuid, randomUuid } from './hap-uuid.js';
 
-export type DeviceSource = 'accessory' | 'platform';
-
-/** The alias of the platform block this plugin owns. */
-export const PLATFORM_ALIAS = 'mqttthing-ex';
+export type { DeviceSource };
 
 export interface PlatformBlock {
   platform: string;
@@ -60,14 +59,24 @@ function stringValue(value: unknown): string | undefined {
  * uuid_base or name - so its source decides how it is read.
  */
 export function identityUuid(config: ThingConfig, source: DeviceSource): string {
-  if (source === 'platform') {
-    const id = stringValue(config.id);
-    if (id !== undefined) {
-      return isUuid(id) ? id.toLowerCase() : accessoryUuid(id);
-    }
+  const seed = identitySeed(config, source);
+  if (isUuid(seed)) {
+    return seed.toLowerCase();
   }
-  return accessoryUuid(stringValue(config.uuid_base) ?? String(config.name ?? ''));
+  // Hashing is by far the most expensive thing the views do, and they call
+  // this for every device on every render (the working copy is mutated in
+  // place, so nothing else can be memoized). Keyed by the seed, so a renamed
+  // device is hashed again and a re-render with no change is free.
+  const cached = uuidCache.get(config);
+  if (cached !== undefined && cached.seed === seed) {
+    return cached.uuid;
+  }
+  const uuid = accessoryUuid(seed);
+  uuidCache.set(config, { seed, uuid });
+  return uuid;
 }
+
+const uuidCache = new WeakMap<ThingConfig, { seed: string; uuid: string }>();
 
 /** Identity for a newly created device: opaque, and unique by construction. */
 export function newDeviceId(): string {
@@ -218,17 +227,10 @@ export function childBridgeAccessories(store: DeviceStore): ThingConfig[] {
  * opens one per accessory, platform mode one per distinct broker.
  */
 export function connectionEstimate(configs: ThingConfig[]): { before: number; after: number } {
-  const brokers = new Set(
-    configs.map((config) =>
-      JSON.stringify([
-        stringValue(config.url) ?? '',
-        stringValue(config.username) ?? '',
-        stringValue(config.password) ?? '',
-        JSON.stringify(config.mqttOptions ?? null),
-      ]),
-    ),
-  );
-  return { before: configs.length, after: brokers.size };
+  // the runtime's own grouping rule, so the promise shown to the user is the
+  // number of connections it will actually open
+  const keys = new Set(configs.map((config) => resolveEffectiveBroker(config, {}, {}).key));
+  return { before: configs.length, after: keys.size };
 }
 
 /** The one broker all of these share, or null when they differ. */

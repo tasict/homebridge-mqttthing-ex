@@ -9,7 +9,8 @@
 // short, obvious actions), and a panel that explains what is about to happen
 // (for anything the user should read first).
 import type { ComponentChildren } from 'preact';
-import { useEffect, useRef, useState } from 'preact/hooks';
+
+import { useArmed } from '../lib/use-armed.js';
 
 interface ConfirmButtonProps {
   /** Label in the resting state. */
@@ -38,35 +39,14 @@ export function ConfirmButton({
   title,
   timeoutMs = 4000,
 }: ConfirmButtonProps) {
-  const [armed, setArmed] = useState(false);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(
-    () => () => {
-      if (timer.current !== null) {
-        clearTimeout(timer.current);
-      }
-    },
-    [],
-  );
+  const { armed, arm, reset } = useArmed(timeoutMs);
 
   const click = () => {
     if (!armed) {
-      setArmed(true);
-      if (timer.current !== null) {
-        clearTimeout(timer.current);
-      }
-      timer.current = setTimeout(() => {
-        timer.current = null;
-        setArmed(false);
-      }, timeoutMs);
+      arm();
       return;
     }
-    if (timer.current !== null) {
-      clearTimeout(timer.current);
-      timer.current = null;
-    }
-    setArmed(false);
+    reset();
     onConfirm();
   };
 

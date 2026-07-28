@@ -10,11 +10,13 @@ import { hb, requestErrorMessage } from '../homebridge.js';
 import { setOption } from '../lib/config-ops.js';
 import {
   applyBrokerToAllDevices,
+  configShape,
   deviceCounts,
   effectiveBroker,
   sourceOf,
   type DeviceStore,
 } from '../lib/store-ops.js';
+import { plural, termsFor } from '../lib/terms.js';
 import type { Touch } from '../app.js';
 import { ConfirmPanel } from './ConfirmAction.js';
 
@@ -28,6 +30,7 @@ export function MqttSection({ config, store, touch }: Props) {
   const [testing, setTesting] = useState(false);
   const [confirmingApplyToAll, setConfirmingApplyToAll] = useState(false);
 
+  const terms = termsFor(configShape(store));
   const source = sourceOf(store, config);
   const broker = effectiveBroker(store, config);
   const counts = deviceCounts(store);
@@ -37,7 +40,7 @@ export function MqttSection({ config, store, touch }: Props) {
 
   const commit = (key: 'url' | 'username' | 'password') => (e: Event) => {
     setOption(config, key, (e.currentTarget as HTMLInputElement).value.trim() || undefined);
-    touch(source === 'platform' ? 'platform' : 'legacy');
+    touch(source ?? 'accessory');
   };
 
   const test = async () => {
@@ -60,12 +63,12 @@ export function MqttSection({ config, store, touch }: Props) {
     setConfirmingApplyToAll(false);
     applyBrokerToAllDevices(store, config);
     if (counts.legacy > 0) {
-      touch('legacy');
+      touch('accessory');
     }
     if (counts.platform > 0) {
       touch('platform');
     }
-    hb().toast.success(`Broker settings copied to ${others} other ${others === 1 ? 'device' : 'devices'}`);
+    hb().toast.success(`Broker settings copied to ${others} other ${others === 1 ? terms.singular : terms.plural}`);
   };
 
   return (
@@ -106,19 +109,19 @@ export function MqttSection({ config, store, touch }: Props) {
         </button>
         {counts.total > 1 && !confirmingApplyToAll && (
           <button type="button" class="btn btn-outline-secondary btn-sm" onClick={() => setConfirmingApplyToAll(true)}>
-            Apply to all devices
+            Apply to all {terms.plural}
           </button>
         )}
       </div>
       {confirmingApplyToAll && (
         <div class="mt-2">
           <ConfirmPanel
-            title={`Apply this broker to ${counts.total - 1} other ${counts.total - 1 === 1 ? 'device' : 'devices'}?`}
+            title={`Apply this broker to ${plural(counts.total - 1, terms)}?`}
             confirmLabel="Apply to all"
             onConfirm={applyToAll}
             onCancel={() => setConfirmingApplyToAll(false)}
           >
-            The URL, username and password above replace the broker settings of every other device.
+            The URL, username and password above replace the broker settings of every other {terms.singular}.
             {counts.platform > 0 && ' The platform default settings are not changed.'} Nothing is written until you
             save.
           </ConfirmPanel>

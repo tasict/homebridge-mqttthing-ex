@@ -2,7 +2,7 @@
 // save lifecycle.
 //
 // Devices live in two containers. Accessory blocks are managed by the
-// Homebridge UI itself: every mutation goes through touch('legacy'), which
+// Homebridge UI itself: every mutation goes through touch('accessory'), which
 // pushes the full array to updatePluginConfig() throttled on the leading edge
 // — a click-driven change is staged immediately, so the Save button always
 // persists it, while typing bursts coalesce into a trailing push at most
@@ -19,7 +19,13 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 
 import type { ThingConfig } from '../../src/config.js';
 import { hb, requestErrorMessage } from './homebridge.js';
-import { configShape, containsDevice, type DeviceStore, type PlatformBlock } from './lib/store-ops.js';
+import {
+  configShape,
+  containsDevice,
+  type DeviceSource,
+  type DeviceStore,
+  type PlatformBlock,
+} from './lib/store-ops.js';
 import { termsFor } from './lib/terms.js';
 import { AddWizard } from './components/AddWizard.js';
 import { EditorView } from './components/EditorView.js';
@@ -37,9 +43,8 @@ export type View =
   | { name: 'platform-intro' }
   | { name: 'migrate' };
 
-/** Which container a change belongs to; decides how it is staged. */
-export type TouchScope = 'legacy' | 'platform';
-export type Touch = (scope: TouchScope) => void;
+/** Staging a change: which container it belongs to decides how it is saved. */
+export type Touch = (scope: DeviceSource) => void;
 
 const PUSH_DEBOUNCE_MS = 300;
 const SAVED_BADGE_MS = 4000;
@@ -69,15 +74,19 @@ export function App() {
 
   useEffect(() => {
     (async () => {
+      // two independent back-ends (the Homebridge UI's config API and this
+      // plugin's own UI server), so both requests are in flight at once
+      const accessories = hb().getPluginConfig();
+      const platform = hb().request('/config/platform');
       try {
-        const blocks = await hb().getPluginConfig();
+        const blocks = await accessories;
         store.legacy = Array.isArray(blocks) ? (blocks as ThingConfig[]) : [];
       } catch (e) {
         setLoadError(e instanceof Error ? e.message : String(e));
         return;
       }
       try {
-        const response = (await hb().request('/config/platform')) as PlatformResponse;
+        const response = (await platform) as PlatformResponse;
         store.platform = response.block;
         platformHash.current = response.hash;
       } catch (e) {
@@ -237,7 +246,7 @@ export function App() {
     <div>
       <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
         <h5 class="m-0">
-          MQTT Thing <span class="text-body-secondary fw-normal">{terms.headerNoun}</span>
+          MQTT Thing <span class="text-body-secondary fw-normal">{terms.plural}</span>
         </h5>
         <div class="d-flex align-items-center gap-2">
           <SaveBadge
@@ -259,7 +268,6 @@ export function App() {
       {view.name === 'list' && (
         <ListView
           store={store}
-          platformAvailable={platformAvailable}
           platformUnavailable={platformUnavailable}
           onEdit={openDevice}
           onAdd={() => setView({ name: 'add' })}
@@ -316,7 +324,7 @@ export function App() {
           store={store}
           onBack={() => setView({ name: 'list' })}
           onMigrated={() => {
-            touch('legacy');
+            touch('accessory');
             touch('platform');
           }}
         />

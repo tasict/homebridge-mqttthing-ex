@@ -30,7 +30,7 @@ type SortMode = 'config' | 'name' | 'type';
 
 interface Props {
   store: DeviceStore;
-  platformAvailable: boolean;
+  /** Why platform mode is unavailable, or null when it works. */
   platformUnavailable: string | null;
   onEdit: (config: ThingConfig) => void;
   onAdd: () => void;
@@ -49,7 +49,6 @@ function typeLabel(type: string | undefined): string {
 
 export function ListView({
   store,
-  platformAvailable,
   platformUnavailable,
   onEdit,
   onAdd,
@@ -90,7 +89,10 @@ export function ListView({
     entries = [...entries].sort((a, b) => typeLabel(a.config.type).localeCompare(typeLabel(b.config.type)));
   }
 
-  const jsonView =
+  const platformAvailable = platformUnavailable === null;
+  const platformLink = platformAvailable && (shape === 'accessory' || shape === 'mixed');
+
+  const buildJson = () =>
     shape === 'accessory'
       ? JSON.stringify(store.legacy, null, 2)
       : JSON.stringify(
@@ -101,7 +103,7 @@ export function ListView({
 
   const copyJson = async () => {
     try {
-      await navigator.clipboard.writeText(jsonView);
+      await navigator.clipboard.writeText(buildJson());
       hb().toast.success('Configuration copied to the clipboard');
     } catch {
       hb().toast.error('Could not access the clipboard');
@@ -195,14 +197,13 @@ export function ListView({
           </button>
         )}
         <button class="btn btn-primary" onClick={onAdd}>
-          {terms.addLabel}
+          + {terms.addLabel}
         </button>
       </div>
 
       {counts.total === 0 && (
         <div class="alert alert-info">
-          No mqttthing {terms.plural} configured yet. Use <strong>{terms.addLabel.replace('+ ', '')}</strong> to create
-          the first one.
+          No mqttthing {terms.plural} configured yet. Use <strong>{terms.addLabel}</strong> to create the first one.
         </div>
       )}
       {counts.total > 0 && entries.length === 0 && (
@@ -278,19 +279,19 @@ export function ListView({
               ? `${plural(counts.total, terms)} — ${counts.legacy} in accessory mode, ${counts.platform} in platform mode`
               : plural(counts.total, terms)}
         </span>
-        {platformAvailable && shape === 'accessory' && (
+        {platformLink && shape === 'accessory' && (
           <button class="btn btn-link btn-sm ms-auto p-0" onClick={onPlatformIntro}>
             About platform mode
             {!introSeen() && <span class="badge text-bg-secondary ms-1">New</span>}
           </button>
         )}
-        {platformAvailable && shape === 'mixed' && (
+        {platformLink && shape === 'mixed' && (
           <button class="btn btn-link btn-sm ms-auto p-0" onClick={onMigrate}>
             Move accessories to platform mode
           </button>
         )}
         <button
-          class={`btn btn-link btn-sm p-0${platformAvailable && shape !== 'platform' && shape !== 'empty' ? '' : ' ms-auto'}`}
+          class={`btn btn-link btn-sm p-0${platformLink ? '' : ' ms-auto'}`}
           onClick={() => setShowJson(!showJson)}
         >
           {showJson ? 'Hide JSON' : 'View JSON'}
@@ -301,7 +302,7 @@ export function ListView({
       )}
       {showJson && (
         <div class="mt-2">
-          <textarea class="form-control mqx-json-view" rows={16} readOnly value={jsonView} />
+          <textarea class="form-control mqx-json-view" rows={16} readOnly value={buildJson()} />
           <button class="btn btn-outline-secondary btn-sm mt-1" onClick={copyJson}>
             Copy to clipboard
           </button>

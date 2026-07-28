@@ -4,7 +4,8 @@ import { describe, expect, it } from 'vitest';
 
 import type { ThingConfig } from '../src/config.js';
 import { parsePlatformDeviceJson } from '../ui/src/lib/config-ops.js';
-import { accessoryUuid, isUuid } from '../ui/src/lib/hap-uuid.js';
+import { isUuid } from '../src/model/identity.js';
+import { accessoryUuid } from '../ui/src/lib/hap-uuid.js';
 import {
   allDevices,
   applyBrokerToAllDevices,
@@ -268,6 +269,15 @@ describe('move eligibility', () => {
 });
 
 describe('connection estimate', () => {
+  it('groups exactly as the runtime does, not by the raw url string', () => {
+    // the UI promises "N connections today -> M after"; a url without a
+    // scheme must not be counted as a second broker
+    expect(connectionEstimate([accessory('A', { url: 'host:1883' }), accessory('B', { url: 'mqtt://host:1883' })])).toEqual({
+      before: 2,
+      after: 1,
+    });
+  });
+
   it('counts one connection per accessory and one per distinct broker', () => {
     const configs = [
       accessory('A', { url: 'mqtt://one' }),

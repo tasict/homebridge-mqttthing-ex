@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveEffectiveBroker, type BrokerSettings } from '../src/mqtt/connection.js';
+import { resolveEffectiveBroker, type BrokerSettings } from '../src/model/broker-key.js';
 
-const noEnv = {} as NodeJS.ProcessEnv;
+const noEnv: Record<string, string | undefined> = {};
 
 function key(device: BrokerSettings, defaults: BrokerSettings = {}, env = noEnv): string {
   return resolveEffectiveBroker(device, defaults, env).key;
@@ -35,7 +35,7 @@ describe('resolveEffectiveBroker', () => {
   });
 
   it('groups a device relying on the environment with one configured explicitly', () => {
-    const env = { MQTTTHING_URL: 'mqtt://env-broker:1883', MQTTTHING_USERNAME: 'envuser' } as NodeJS.ProcessEnv;
+    const env = { MQTTTHING_URL: 'mqtt://env-broker:1883', MQTTTHING_USERNAME: 'envuser' };
     expect(key({}, {}, env)).toBe(key({ url: 'mqtt://env-broker:1883', username: 'envuser' }, {}, env));
   });
 

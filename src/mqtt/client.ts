@@ -11,17 +11,11 @@ import mqtt from 'mqtt';
 
 import { loadCodec } from '../codec/loader.js';
 import type { Log } from '../log.js';
-import type { MessageHandler, MqttContext } from './context.js';
+import type { BrokerSettings } from '../model/broker-key.js';
+import type { MqttContext } from './context.js';
+import { handlersFor, makeTopicDispatch, type TopicDispatch } from './dispatch.js';
 import { PublishQueue } from './queue.js';
-import { optimizedPublish, rawSend, topicFilterMatches } from './wiring.js';
-
-/** Broker settings as given by a device config or a platform block. */
-export interface BrokerSource {
-  url?: string;
-  username?: string;
-  password?: string;
-  mqttOptions?: Record<string, unknown>;
-}
+import { optimizedPublish, rawSend } from './wiring.js';
 
 /** Last-will message used unless the user configured their own. */
 export interface WillSpec {
@@ -102,7 +96,7 @@ export function initDeviceContext(ctx: MqttContext): void {
  * would serve several devices) pass a copy.
  */
 export function assembleBrokerOptions(
-  source: BrokerSource,
+  source: BrokerSettings,
   clientId: string,
   defaultWill: WillSpec,
 ): AssembledBroker {
@@ -173,7 +167,7 @@ export function createDispatchingClient(
   options: Record<string, unknown>,
   log: Log,
   logMqtt: boolean,
-  dispatch: Record<string, MessageHandler[]>,
+  dispatch: TopicDispatch,
 ): mqtt.MqttClient {
   // log MQTT settings
   if (logMqtt) {
@@ -207,14 +201,7 @@ export function createDispatchingClient(
     if (logMqtt) {
       log('Received MQTT: ' + topic + ' = ' + message);
     }
-    // exact-topic handlers, plus wildcard subscriptions matched per the MQTT
-    // spec (issue #500: wildcard subscriptions never dispatched upstream)
-    const handlers = [...(dispatch[topic] ?? [])];
-    for (const filter of Object.keys(dispatch)) {
-      if (filter !== topic && (filter.includes('+') || filter.includes('#')) && topicFilterMatches(filter, topic)) {
-        handlers.push(...dispatch[filter]);
-      }
-    }
+    const handlers = handlersFor(dispatch, topic);
     if (handlers.length > 0) {
       for (let i = 0; i < handlers.length; i++) {
         handlers[i](topic, message);
@@ -234,7 +221,7 @@ export function createDispatchingClient(
  */
 export function init(ctx: MqttContext): mqtt.MqttClient {
   // MQTT message dispatch
-  const mqttDispatch = (ctx.mqttDispatch = {} as MqttContext['mqttDispatch']);
+  const mqttDispatch = (ctx.mqttDispatch = makeTopicDispatch());
   ctx.propDispatch = {};
 
   const { config, log } = ctx;

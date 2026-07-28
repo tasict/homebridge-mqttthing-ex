@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import type { ThingConfig } from '../src/config.js';
 import type { Log } from '../src/log.js';
 import type { MqttContext } from '../src/mqtt/context.js';
+import { makeTopicDispatch } from '../src/mqtt/dispatch.js';
 import { PublishQueue } from '../src/mqtt/queue.js';
 import { rawSend } from '../src/mqtt/wiring.js';
 
@@ -73,7 +74,7 @@ export function makeCtx(config: Partial<ThingConfig> = {}): TestCtx {
     log,
     config: fullConfig,
     homebridgePath: upstreamTestDir,
-    mqttDispatch: {},
+    mqttDispatch: makeTopicDispatch(),
     propDispatch: {},
     state: {},
     mqttClient: client as unknown as MqttContext['mqttClient'],
@@ -91,7 +92,7 @@ export function makeCtx(config: Partial<ThingConfig> = {}): TestCtx {
     );
   }
   const dispatch = (topic: string, message: unknown) => {
-    const handlers = ctx.mqttDispatch[topic];
+    const handlers = ctx.mqttDispatch.handlers[topic];
     if (handlers) {
       for (const handler of [...handlers]) {
         handler(topic, message);

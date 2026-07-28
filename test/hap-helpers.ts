@@ -137,3 +137,23 @@ export function closeAccessories(): void {
   }
   openAccessories.length = 0;
 }
+
+/**
+ * Polls until `cond` holds. Shared by the broker-backed tests, which cannot
+ * await anything meaningful between publishing and the characteristic update.
+ */
+export function waitFor(cond: () => boolean, ms = 5000): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const start = Date.now();
+    const poll = () => {
+      if (cond()) {
+        return resolve();
+      }
+      if (Date.now() - start > ms) {
+        return reject(new Error('waitFor timeout'));
+      }
+      setTimeout(poll, 20);
+    };
+    poll();
+  });
+}

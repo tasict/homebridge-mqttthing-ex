@@ -3,6 +3,7 @@ import type { MqttClient } from 'mqtt';
 import type { ThingConfig } from '../config.js';
 import type { Log } from '../log.js';
 import type { Codec } from '../codec/loader.js';
+import type { TopicDispatch } from './dispatch.js';
 import type { PublishQueue } from './queue.js';
 
 /** Handler receiving raw or decoded MQTT payloads. */
@@ -21,8 +22,8 @@ export interface MqttContext {
   homebridgePath: string;
 
   mqttClient?: MqttClient;
-  /** map of topic -> handlers */
-  mqttDispatch: Record<string, MessageHandler[]>;
+  /** subscriptions of the connection this device uses */
+  mqttDispatch: TopicDispatch;
   /** map of property -> raw handlers, used by codec notify() */
   propDispatch: Record<string, MessageHandler[]>;
   /** last published value per topic, present when optimizePublishing is on */

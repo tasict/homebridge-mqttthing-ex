@@ -5,7 +5,7 @@ import * as hapNodeJs from '@homebridge/hap-nodejs';
 import Aedes from 'aedes';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { closePlatforms, makePlatform, makePlatformApi, type PlatformHarness } from './hap-helpers.js';
+import { closePlatforms, makePlatform, makePlatformApi, waitFor, type PlatformHarness } from './hap-helpers.js';
 
 const { Characteristic, Service } = hapNodeJs;
 
@@ -58,21 +58,6 @@ function brokerPublish(topic: string, payload: string): Promise<void> {
   );
 }
 
-function waitFor(cond: () => boolean, ms = 5000): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const start = Date.now();
-    const poll = () => {
-      if (cond()) {
-        return resolve();
-      }
-      if (Date.now() - start > ms) {
-        return reject(new Error('waitFor timeout'));
-      }
-      setTimeout(poll, 20);
-    };
-    poll();
-  });
-}
 
 /** Polls until reading the characteristic rejects, i.e. the device is offline. */
 async function waitForOffline(characteristic: unknown, ms = 5000): Promise<void> {

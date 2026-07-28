@@ -85,7 +85,7 @@ export function AddWizard({ store, platformAvailable, touch, onCancel, onCreated
     if (asLegacy) {
       entry.accessory = 'mqttthing';
       store.legacy.push(entry);
-      touch('legacy');
+      touch('accessory');
     } else {
       const block = ensurePlatformBlock(store);
       entry.id = newDeviceId();

@@ -25,15 +25,14 @@ import type { MqttThingPlatformConfig, ThingConfig } from './config.js';
 import { applyAccessoryInformation, buildThingServices, publishStartPub } from './core/thing-builder.js';
 import { makePrefixedLog, type Log } from './log.js';
 import { initDeviceContext } from './mqtt/client.js';
+import { openConnection, type MqttConnection } from './mqtt/connection.js';
+import type { MqttContext } from './mqtt/context.js';
 import {
-  closeConnection,
-  openConnection,
   resolveEffectiveBroker,
   type BrokerSettings,
   type EffectiveBroker,
-  type MqttConnection,
-} from './mqtt/connection.js';
-import type { MqttContext } from './mqtt/context.js';
+} from './model/broker-key.js';
+import { identitySeed, isUuid, IDENTITY_PREFIX } from './model/identity.js';
 import { validateThingConfig } from './model/validate.js';
 import { ACCESSORY_NAME, getPluginVersion, PLATFORM_NAME, PLUGIN_NAME } from './settings.js';
 
@@ -203,14 +202,8 @@ export class MqttThingPlatform implements DynamicPlatformPlugin {
             'platform device. Move the whole platform into a child bridge instead.',
         );
       }
-      // An id that is already a UUID *is* the HomeKit accessory: that is what
-      // moving a device from accessories[] writes, so the accessory it was
-      // stays the accessory it is. Anything else is a seed, hashed exactly as
-      // Homebridge hashes an accessory block's name.
-      const seed = config.id || config.uuid_base || config.name;
-      const uuid = this.api.hap.uuid.isValid(seed)
-        ? seed.toLowerCase()
-        : this.api.hap.uuid.generate(ACCESSORY_NAME + ':' + seed);
+      const seed = identitySeed(config, 'platform');
+      const uuid = this.accessoryUuid(seed);
 
       const clash = seenUuids.get(uuid);
       if (clash !== undefined) {
@@ -226,7 +219,7 @@ export class MqttThingPlatform implements DynamicPlatformPlugin {
         config,
         seed,
         uuid,
-        effective: resolveEffectiveBroker(config, defaults),
+        effective: resolveEffectiveBroker(config, defaults, process.env),
         log: makePrefixedLog(this.log, `[${config.name}] `),
       });
     });
@@ -259,11 +252,11 @@ export class MqttThingPlatform implements DynamicPlatformPlugin {
       if (!entry || entry.accessory !== ACCESSORY_NAME) {
         continue;
       }
-      const seed = (entry.uuid_base as string) || (entry.name as string);
-      if (typeof seed !== 'string' || seed === '') {
+      const seed = identitySeed(entry, 'accessory');
+      if (seed === '') {
         continue;
       }
-      const clash = byUuid.get(this.api.hap.uuid.generate(ACCESSORY_NAME + ':' + seed));
+      const clash = byUuid.get(this.accessoryUuid(seed));
       if (clash) {
         this.log.warn(
           `Device "${clash.config.name}" is also configured as an accessory in accessories[]. ` +
@@ -294,8 +287,7 @@ export class MqttThingPlatform implements DynamicPlatformPlugin {
         this.connections.set(
           key,
           openConnection(members[0].effective, {
-            clientBase: name,
-            willName: name,
+            name,
             log: this.log,
             // logging is a property of the connection, so any member asking
             // for it turns it on for the whole group
@@ -394,6 +386,15 @@ export class MqttThingPlatform implements DynamicPlatformPlugin {
   }
 
   /**
+   * The accessory a seed names: a seed that is already a UUID is used as-is
+   * (that is what moving a device from accessories[] writes), anything else
+   * is hashed exactly as Homebridge hashes an accessory block's name.
+   */
+  private accessoryUuid(seed: string): string {
+    return isUuid(seed) ? seed.toLowerCase() : this.api.hap.uuid.generate(IDENTITY_PREFIX + seed);
+  }
+
+  /**
    * HomeKit category. Accessory mode gets this from Homebridge; here only
    * televisions need one, the rest are fine as the default.
    */
@@ -403,7 +404,7 @@ export class MqttThingPlatform implements DynamicPlatformPlugin {
 
   private shutdown(): void {
     for (const connection of this.connections.values()) {
-      closeConnection(connection);
+      connection.client.end(true);
     }
     this.connections.clear();
   }

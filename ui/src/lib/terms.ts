@@ -13,29 +13,23 @@ import type { ConfigShape } from './store-ops.js';
 export interface Terms {
   singular: string;
   plural: string;
-  /** Capitalised singular, for headings and badges. */
-  Singular: string;
+  /** Wording of the create action, without the leading "+". */
   addLabel: string;
   backLabel: string;
-  headerNoun: string;
 }
 
-export const ACCESSORY_TERMS: Terms = {
+const ACCESSORY_TERMS: Terms = {
   singular: 'accessory',
   plural: 'accessories',
-  Singular: 'Accessory',
-  addLabel: '+ Add accessory',
+  addLabel: 'Add accessory',
   backLabel: '← All accessories',
-  headerNoun: 'accessories',
 };
 
-export const DEVICE_TERMS: Terms = {
+const DEVICE_TERMS: Terms = {
   singular: 'device',
   plural: 'devices',
-  Singular: 'Device',
-  addLabel: '+ Add device',
+  addLabel: 'Add device',
   backLabel: '← All devices',
-  headerNoun: 'devices',
 };
 
 export function termsFor(shape: ConfigShape): Terms {

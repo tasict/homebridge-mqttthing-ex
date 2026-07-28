@@ -162,7 +162,7 @@ export async function readPlatformConfig(readFile, configPath) {
   assertNoMistypedBlock(config);
   const blocks = findMqttthingPlatformBlocks(config);
   if (blocks.length > 1) {
-    throw new Error(tooManyBlocks(blocks.length).message);
+    throw tooManyBlocks(blocks.length);
   }
   if (blocks.length === 0) {
     return { exists: false, block: null, hash: null };

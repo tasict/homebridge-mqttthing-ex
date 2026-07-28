@@ -18,8 +18,8 @@ afterAll(() => {
 
 // deliver an MQTT message to an accessory without a broker
 function dispatchTo(accessory: unknown, topic: string, message: string): void {
-  const ctx = (accessory as { ctx: { mqttDispatch: Record<string, Array<(t: string, m: unknown) => void>> } }).ctx;
-  for (const handler of ctx.mqttDispatch[topic] ?? []) {
+  const ctx = (accessory as { ctx: { mqttDispatch: { handlers: Record<string, Array<(t: string, m: unknown) => void>> } } }).ctx;
+  for (const handler of ctx.mqttDispatch.handlers[topic] ?? []) {
     handler(topic, Buffer.from(message));
   }
 }

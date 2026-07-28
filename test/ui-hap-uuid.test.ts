@@ -6,7 +6,8 @@ import { createHash } from 'node:crypto';
 import * as hapNodeJs from '@homebridge/hap-nodejs';
 import { describe, expect, it } from 'vitest';
 
-import { accessoryUuid, hapUuidFrom, isUuid, randomUuid, sha1Hex } from '../ui/src/lib/hap-uuid.js';
+import { isUuid } from '../src/model/identity.js';
+import { accessoryUuid, hapUuidFrom, randomUuid, sha1Hex } from '../ui/src/lib/hap-uuid.js';
 
 const SAMPLES = [
   '',

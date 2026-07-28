@@ -8,6 +8,7 @@ import jsonpath from 'jsonpath';
 import { getCodecFunction } from '../codec/loader.js';
 import type { TopicSpec, ExtendedTopic } from '../config.js';
 import { getApplyState, type MessageHandler, type MqttContext } from './context.js';
+import { addHandler } from './dispatch.js';
 
 /**
  * MQTT topic filter matching per spec, so wildcard subscriptions dispatch
@@ -177,13 +178,8 @@ export function subscribe(ctx: MqttContext, topicSpec: TopicSpec, property: stri
     };
   }
 
-  // register MQTT dispatch and subscribe
-  if (Object.prototype.hasOwnProperty.call(mqttDispatch, topic)) {
-    // new handler for existing topic
-    mqttDispatch[topic].push(handler);
-  } else {
-    // new topic
-    mqttDispatch[topic] = [handler];
+  // register MQTT dispatch, subscribing the first time a topic is seen
+  if (addHandler(mqttDispatch, topic, handler)) {
     mqttClient.subscribe(topic);
   }
 }
