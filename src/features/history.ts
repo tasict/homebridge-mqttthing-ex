@@ -37,12 +37,14 @@ type HistoryServiceClass = new (
 /** fakegato-history exports `function(homebridge) { ... return FakeGatoHistory; }`. */
 type FakegatoFactory = (homebridge: API) => HistoryServiceClass;
 
-// fakegato-history is a CommonJS module; require it lazily from this ESM
-// module so a broken installation degrades to "no history" instead of
-// failing to import the whole plugin.
+// fakegato-history is a CommonJS module vendored under vendor/ (see the
+// README there for why); require it lazily from this ESM module so a broken
+// installation degrades to "no history" instead of failing to import the
+// whole plugin. The relative path holds for both src/features (tests) and
+// dist/features (runtime), which sit at the same depth.
 const defaultFakegatoLoader = (): FakegatoFactory => {
   const req = createRequire(import.meta.url);
-  return req('fakegato-history') as FakegatoFactory;
+  return req('../../vendor/fakegato-history/fakegato-history.js') as FakegatoFactory;
 };
 
 let fakegatoLoader: () => FakegatoFactory = defaultFakegatoLoader;

@@ -294,7 +294,7 @@ For further details, please see [Codecs.md](Codecs.md).
 
 ### JSONPath
 
-[JSONPath syntax](https://github.com/dchester/jsonpath#jsonpath-syntax) may now be used to extract values from JSON format messages. JSONPath syntax is introduced with a `$` character in the topic name. MQTT-Thing subscribes to the topic before the `$`, and decodes the received JSON using the JSONPath syntax following the `$`.
+[JSONPath syntax](https://github.com/JSONPath-Plus/JSONPath#syntax-through-examples) may now be used to extract values from JSON format messages (evaluated by [jsonpath-plus](https://github.com/JSONPath-Plus/JSONPath), which supports a superset of the original JSONPath syntax). JSONPath syntax is introduced with a `$` character in the topic name. MQTT-Thing subscribes to the topic before the `$`, and decodes the received JSON using the JSONPath syntax following the `$`.
 
 For example, using the following configuration:
 

@@ -111,6 +111,18 @@ describe('subscribe pipeline', () => {
     expect(received).toEqual([21.5]);
   });
 
+  it('supports JSONPath array indexing, recursive descent and filters', () => {
+    const { ctx, dispatch } = makeCtx();
+    const received: unknown[] = [];
+    subscribe(ctx, 'a$.values[1]', 'p1', (_t, m) => received.push(m));
+    subscribe(ctx, 'b$..Temperature', 'p2', (_t, m) => received.push(m));
+    subscribe(ctx, "c$.sensors[?(@.id=='t1')].value", 'p3', (_t, m) => received.push(m));
+    dispatch('a', Buffer.from('{"values":[10,20,30]}'));
+    dispatch('b', Buffer.from('{"outer":{"inner":{"Temperature":18.25}}}'));
+    dispatch('c', Buffer.from('{"sensors":[{"id":"t0","value":1},{"id":"t1","value":2}]}'));
+    expect(received).toEqual([20, 18.25, 2]);
+  });
+
   it('debounces received messages when debounceRecvms is set', () => {
     vi.useFakeTimers();
     try {

@@ -3,7 +3,7 @@
 // Pipeline order is compatibility-critical:
 //   receive: debounce (outermost) -> apply decode -> codec decode -> jsonpath
 //   publish: apply encode -> codec encode -> optimizedPublish
-import jsonpath from 'jsonpath';
+import { JSONPath } from 'jsonpath-plus';
 
 import { getCodecFunction } from '../codec/loader.js';
 import type { TopicSpec, ExtendedTopic } from '../config.js';
@@ -169,7 +169,7 @@ export function subscribe(ctx: MqttContext, topicSpec: TopicSpec, property: stri
     const lastHandler = handler;
     handler = (_intopic, message) => {
       const json = JSON.parse(String(message));
-      const values = jsonpath.query(json, jsonpathQuery);
+      const values = JSONPath({ path: jsonpathQuery, json }) as unknown[];
       const output = values.shift();
       if (config.logMqtt) {
         log(`jsonpath ${jsonpathQuery} decoded message to [${output}]`);

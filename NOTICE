@@ -13,3 +13,8 @@ Copyright Erik Baauw, licensed under the Apache License 2.0.
 
 The custom config UI bundles icons from Lucide (https://lucide.dev),
 Copyright Lucide Contributors, licensed under the ISC License.
+
+The vendor/fakegato-history directory contains fakegato-history
+(https://github.com/simont77/fakegato-history), Copyright simont77 and
+contributors, licensed under the MIT License, with its optional Google Drive
+storage backend removed (see vendor/fakegato-history/README.md).

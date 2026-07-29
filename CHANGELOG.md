@@ -1,5 +1,30 @@
 # Changelog
 
+## 1.3.0
+
+### Changed
+
+- **`npm audit` is now clean — zero known vulnerabilities of any severity.**
+  The two dependencies responsible for every reported advisory were replaced:
+  - **JSONPath expressions are now evaluated by
+    [jsonpath-plus](https://github.com/JSONPath-Plus/JSONPath)** instead of
+    the unmaintained `jsonpath`, which pinned a known-vulnerable `underscore`
+    release with no fixed version reachable. `jsonpath-plus` is actively
+    maintained and supports a superset of the original syntax, so existing
+    `topic$.path` expressions keep working.
+  - **`fakegato-history` (Eve history support) is now vendored** under
+    `vendor/fakegato-history` with its optional Google Drive storage backend
+    removed. The npm release hard-depends on an old `googleapis` for that
+    backend — this plugin only ever stores history on the filesystem, yet the
+    unused dependency carried six known-vulnerable transitive packages that
+    `overrides` cannot fix from inside a published plugin. The vendored files
+    are otherwise byte-for-byte identical to upstream 0.6.7 (MIT, attribution
+    in `NOTICE`, details in `vendor/fakegato-history/README.md`).
+- **All `MQTTTHING_URL` / `MQTTTHING_USERNAME` / `MQTTTHING_PASSWORD`
+  environment lookups now live in one module** (`src/env.ts`), so it is easy
+  to verify that nothing else in the plugin touches the environment.
+  Behaviour is unchanged.
+
 ## 1.2.1
 
 ### Fixed

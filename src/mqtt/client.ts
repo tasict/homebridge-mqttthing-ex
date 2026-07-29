@@ -10,6 +10,7 @@ import fs from 'node:fs';
 import mqtt from 'mqtt';
 
 import { loadCodec } from '../codec/loader.js';
+import { brokerEnv } from '../env.js';
 import type { Log } from '../log.js';
 import type { BrokerSettings } from '../model/broker-key.js';
 import type { MqttContext } from './context.js';
@@ -103,6 +104,9 @@ export function assembleBrokerOptions(
   // start with any configured options object
   const options: Record<string, unknown> = source.mqttOptions || {};
 
+  // MQTTTHING_* fallbacks (see env.ts)
+  const env = brokerEnv();
+
   // standard options set by mqtt-thing
   const myOptions: Record<string, unknown> = {
     keepalive: 10,
@@ -113,8 +117,8 @@ export function assembleBrokerOptions(
     reconnectPeriod: 1000,
     connectTimeout: 30 * 1000,
     will: defaultWill,
-    username: source.username || process.env.MQTTTHING_USERNAME,
-    password: source.password || process.env.MQTTTHING_PASSWORD,
+    username: source.username || env.MQTTTHING_USERNAME,
+    password: source.password || env.MQTTTHING_PASSWORD,
     rejectUnauthorized: false,
   };
 
@@ -148,7 +152,7 @@ export function assembleBrokerOptions(
 
   // add protocol to url string, if not yet available; default to a local
   // broker instead of passing an empty string to mqtt.connect (issue #606)
-  let brokerUrl = source.url || process.env.MQTTTHING_URL || 'mqtt://localhost:1883';
+  let brokerUrl = source.url || env.MQTTTHING_URL || 'mqtt://localhost:1883';
   if (brokerUrl && !brokerUrl.includes('://')) {
     brokerUrl = 'mqtt://' + brokerUrl;
   }

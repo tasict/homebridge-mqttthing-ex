@@ -23,6 +23,7 @@ import type {
 
 import type { MqttThingPlatformConfig, ThingConfig } from './config.js';
 import { applyAccessoryInformation, buildThingServices, publishStartPub } from './core/thing-builder.js';
+import { brokerEnv } from './env.js';
 import { makePrefixedLog, type Log } from './log.js';
 import { initDeviceContext } from './mqtt/client.js';
 import { openConnection, type MqttConnection } from './mqtt/connection.js';
@@ -219,7 +220,7 @@ export class MqttThingPlatform implements DynamicPlatformPlugin {
         config,
         seed,
         uuid,
-        effective: resolveEffectiveBroker(config, defaults, process.env),
+        effective: resolveEffectiveBroker(config, defaults, brokerEnv()),
         log: makePrefixedLog(this.log, `[${config.name}] `),
       });
     });

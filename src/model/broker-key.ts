@@ -15,7 +15,7 @@ export interface BrokerSettings {
   mqttOptions?: Record<string, unknown>;
 }
 
-/** Environment fallbacks, as `process.env` provides them. */
+/** Environment fallbacks, as provided by `brokerEnv()` in env.ts. */
 export type BrokerEnv = Record<string, string | undefined>;
 
 export interface EffectiveBroker {
