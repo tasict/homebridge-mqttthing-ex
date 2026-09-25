@@ -4,6 +4,30 @@ What each release means for you, in prose. For the terse per-version list —
 which is also what the Homebridge UI shows under the plugin's changelog — see
 [CHANGELOG.md](CHANGELOG.md).
 
+### Version 1.2.2
+
+A dependency cleanup: `npm audit` now reports **zero known vulnerabilities**
+of any severity. Nothing in your `config.json` needs to change, and nothing
+behaves differently.
+
+Two dependencies were behind every advisory. JSONPath expressions
+(`topic$.path`) are now evaluated by the actively maintained
+[jsonpath-plus](https://github.com/JSONPath-Plus/JSONPath) instead of the
+unmaintained `jsonpath`, which pinned a vulnerable `underscore` release with no
+fix available. `jsonpath-plus` supports a superset of the original syntax, so
+existing expressions keep working.
+
+Eve history support now uses a vendored copy of `fakegato-history` 0.6.7 with
+its optional Google Drive storage backend removed. That backend was never used
+— this plugin always stores history on the filesystem — but it made the npm
+package depend on an old `googleapis` whose vulnerable transitive packages a
+published plugin has no way to override. The rest of the code is unchanged
+from upstream; `vendor/fakegato-history/README.md` lists exactly what differs.
+
+The `MQTTTHING_URL`, `MQTTTHING_USERNAME` and `MQTTTHING_PASSWORD` environment
+fallbacks are now read in a single module, so it is easy to confirm that
+nothing else in the plugin touches the environment.
+
 ### Version 1.2.1
 
 Fixes an alarming — but harmless — thing 1.2.0 could do on the settings

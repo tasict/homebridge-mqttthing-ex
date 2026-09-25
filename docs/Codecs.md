@@ -1,7 +1,5 @@
-[![npm](https://badgen.net/npm/v/homebridge-mqttthing/latest)](https://www.npmjs.com/package/homebridge-mqttthing)
-[![npm](https://badgen.net/npm/dt/homebridge-mqttthing)](https://www.npmjs.com/package/homebridge-mqttthing)
-[![Discord](https://img.shields.io/discord/432663330281226270?color=728ED5&logo=discord&label=discord)](https://discord.gg/MTpeMC)
-[![verified-by-homebridge](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
+[![npm](https://badgen.net/npm/v/homebridge-mqttthing-ex/latest)](https://www.npmjs.com/package/homebridge-mqttthing-ex)
+[![npm](https://badgen.net/npm/dt/homebridge-mqttthing-ex)](https://www.npmjs.com/package/homebridge-mqttthing-ex)
 
 # Homebridge MQTT-Thing: Codecs
 
@@ -10,7 +8,7 @@
 A codec can be used to apply transformations to incoming and outgoing data. Unlike apply functions, a codec is written
 in a separate JavaScript file which is referenced by the configuration.
 
-To use a codec, configure the path to its JavaScript file using the `codec` configuration setting. The codec will then be called to encode data before
+To use a codec, configure the path to its JavaScript file using the `codec` configuration setting (an absolute path, or a path relative to the Homebridge storage directory, which contains `config.json`). The codec will then be called to encode data before
 publishing and to decode received data for all configured topics. The codec can decide which topics and properties to process, and can suppress messages
 and generate additional messages as required.
 
@@ -102,7 +100,7 @@ function init() {
 }
 ```
 
-The allows different encoding/decoding logic for each property. The default `encode()`/`decode()` functions are called for properties for which no property-specific function is defined.
+This allows different encoding/decoding logic for each property. The default `encode()`/`decode()` functions are called for properties for which no property-specific function is defined.
 
 ### `encode( message, info, output )`
 
@@ -115,7 +113,7 @@ The `encode()` function is called to encode a message before publishing it to MQ
       * `info.extendedTopic` - the whole object passed in the configuration (`null` if topic was a string)
    * `output` is a function which may be called to deliver the encoded value asynchronously
 
-The `encode()` function may either return the encoded message, or it may deliver it asynchronously by passing it as a parameter to the provided `output` function. It if does neither, no value will be published.
+The `encode()` function may either return the encoded message, or it may deliver it asynchronously by passing it as a parameter to the provided `output` function. If it does neither (or returns `null`), no value will be published.
 
 ### `decode( message, info, output )`
 
@@ -128,7 +126,7 @@ The `decode`() function is called to decode a message received from MQTT before 
       * `info.extendedTopic` - the whole object passed in the configuration (`null` if topic was a string)
    * `output` is a function which may be called to deliver the decoded value asynchronously
 
-The `decode()` function may either return the decoded message, or it may deliver it asynchronously by passing it as a parameter to the provided `output` function. If it does neither, no notification will be passed on to MQTT-Thing.
+The `decode()` function may either return the decoded message, or it may deliver it asynchronously by passing it as a parameter to the provided `output` function. If it does neither (or returns `null`), no notification will be passed on to MQTT-Thing.
 
 ### `publish( topic, message )`
 
@@ -137,7 +135,7 @@ The `publish()` function provided in `init()`'s `params` may be used to publish 
    * `topic` is the MQTT topic to publish
    * `message` is the message to publish to MQTT
 
-The message is published directly to MQTT, ignoring any apply function usually with the topic and not passing through the Codec's `encode()` function.
+The message is published directly to MQTT, ignoring any apply function usually associated with the topic and not passing through the Codec's `encode()` function.
 
 ### `notify( property, message )`
 
@@ -156,17 +154,37 @@ This section lists the properties available for each accessory type. All accesso
 
 `airPressure`, `statusActive`, `statusFault`, `statusTampered`, `statusLowBattery`
 
+### Air Purifier
+
+`active`, `currentAirPurifierState`, `targetAirPurifierState`, `rotationSpeed`, `swingMode`, `lockPhysicalControls`, `filterChangeIndication`, `filterLifeLevel`, `resetFilterIndication`
+
 ### Air Quality Sensor
 
-`airQuality`, `statusActive`, `statusFault`, `statusTampered`, `statusLowBattery`, `carbonDioxideLevel`, `pm10density`, `pm2_5density`, `ozonedensity`, `nitrogenDioxideDensity`, `sulphurDioxideDensity`, `VOCDensity`, `carbonMonoxideLevel`, `airQualityPPM`, `currentTemperature`, `currentRelativeHumidity`
+`airQuality`, `statusActive`, `statusFault`, `statusTampered`, `statusLowBattery`, `carbonDioxideLevel`, `pm10density`, `pm2_5density`, `ozoneDensity`, `nitrogenDioxideDensity`, `sulphurDioxideDensity`, `VOCDensity`, `carbonMonoxideLevel`, `airQualityPPM`, `currentTemperature`, `temperatureDisplayUnits`, `currentRelativeHumidity`
+
+### Battery
+
+`batteryLevel`, `chargingState`, `statusLowBattery`
 
 ### Carbon Dioxide Sensor
 
 `carbonDioxideDetected`, `carbonDioxideLevel`, `carbonDioxidePeakLevel`, `statusActive`, `statusFault`, `statusTampered`, `statusLowBattery`
 
+### Carbon Monoxide Sensor
+
+`carbonMonoxideDetected`, `carbonMonoxideLevel`, `carbonMonoxidePeakLevel`, `statusActive`, `statusFault`, `statusTampered`, `statusLowBattery`
+
 ### Contact Sensor
 
 `contactSensorState`, `statusActive`, `statusFault`, `statusTampered`, `statusLowBattery`
+
+### Dehumidifier
+
+`active`, `currentRelativeHumidity`, `currentHumidifierDehumidifierState`, `targetHumidifierDehumidifierState`, `relativeHumidityDehumidifierThreshold`, `waterLevel`
+
+### Door
+
+`currentPosition`, `targetPosition`, `positionState`, `holdPosition`, `obstructionDetected`
 
 ### Doorbell
 
@@ -175,6 +193,10 @@ This section lists the properties available for each accessory type. All accesso
 ### Fan
 
 `on`, `rotationDirection`, `rotationSpeed`
+
+### Fanv2
+
+`active`, `currentFanState`, `targetFanState`, `rotationSpeed`, `rotationDirection`, `swingMode`, `lockPhysicalControls`
 
 ### Garage door opener
 
@@ -188,9 +210,13 @@ This section lists the properties available for each accessory type. All accesso
 
 `currentRelativeHumidity`, `statusActive`, `statusFault`, `statusTampered`, `statusLowBattery`
 
+### Irrigation System
+
+`active`, `inUse`, `statusFault`, `remainingDuration`; per zone N (1, 2, ...): `active-N`, `inUse-N`, `setDuration-N`
+
 ### Leak Sensor
 
-`leakDetected`, `statusActive`, `statusFault`, `statusTampered`, `statusLowBattery`
+`leakDetected`, `waterLevel`, `statusActive`, `statusFault`, `statusTampered`, `statusLowBattery`
 
 ### Light bulb
 
@@ -222,7 +248,11 @@ This section lists the properties available for each accessory type. All accesso
 
 ### Security System
 
-`targetState`, `currentState`, `statusFault`, `statusTampered`
+`targetState`, `currentState`, `statusFault`, `statusTampered`, `AltSensorState`
+
+### Smoke Sensor
+
+`smokeDetected`, `statusActive`, `statusFault`, `statusTampered`, `statusLowBattery`
 
 ### Speaker
 
@@ -238,7 +268,7 @@ This section lists the properties available for each accessory type. All accesso
 
 ### Television
 
-`active`, `input`XX
+`active`, `activeIdentifier`, `remoteKey`
 
 ### Temperature Sensor
 
@@ -246,15 +276,15 @@ This section lists the properties available for each accessory type. All accesso
 
 ### Thermostat
 
-`currentHeatingCoolingState`, `targetHeatingCoolingState`, `currentTemperature`, `targetTemperature`, `temperatureDisplayUnits`, `currentRelativeHumidity`, `targetRelativeHumidity`, `coolingThresholdTemperature`, `heatingThresholdTemperature`, `statusFault`
+`active`, `currentHeatingCoolingState`, `targetHeatingCoolingState`, `currentTemperature`, `targetTemperature`, `temperatureDisplayUnits`, `currentRelativeHumidity`, `targetRelativeHumidity`, `coolingThresholdTemperature`, `heatingThresholdTemperature`, `statusFault`
 
 ### Valve (Sprinkler, Shower, Faucet)
 
-`active`, `inUse`, `setDuration`, `remainingDuration`
+`active`, `inUse`, `setDuration`, `remainingDuration`, `statusActive`, `statusFault`, `statusTampered`, `statusLowBattery`
 
 ### Weather Station
 
-`currentTemperature`, `statusActive`, `statusFault`, `statusTampered`, `statusLowBattery`, `currentRelativeHumidity`, `airPressure`, `weatherCondition`, `rain1h`, `rain24h`, `uvIndex`, `visibility`, `windDirection`, `windSpeed`, `maxwindSpeed`, `Dewpoint`
+`currentTemperature`, `statusActive`, `statusFault`, `statusTampered`, `statusLowBattery`, `currentRelativeHumidity`, `airPressure`, `currentAmbientLightLevel`, `weatherCondition`, `rain1h`, `rain24h`, `uvIndex`, `visibility`, `windDirection`, `windSpeed`, `maxWind`, `DewPoint`
 
 ### Window
 
@@ -266,9 +296,9 @@ This section lists the properties available for each accessory type. All accesso
 
 ## Examples
 
-When writing a codec, you may find it helpful to start with the no-op implementation in [`test/empty-codec.js`](../test/empty-codec.js).
+When writing a codec, you may find it helpful to start with the no-op implementation in [`test/fixtures/upstream/empty-codec.js`](../test/fixtures/upstream/empty-codec.js).
 
-Test examples of codec capabilities can be found in [`test/test-codec.js`](../test/test-codec.js).
+Test examples of codec capabilities can be found in [`test/fixtures/upstream/test-codec.js`](../test/fixtures/upstream/test-codec.js).
 
 ### Toggle switch
 
@@ -326,7 +356,7 @@ Codec state is declared within _init()_. The codec targets only the **on** prope
 
 ### Keep-alive Codec
 
-Codecs can be used to run arbitrary JavaScript code from within MQTT-Thing, not necessarily related to encoding/decoding messages. For example, the codec below sends a 'keep-alive' message at regular intervals. The message and send interval can be configured within the accessory configuration, in `keepAliveMessage` and `keepAliveInterval` respectively.
+Codecs can be used to run arbitrary JavaScript code from within MQTT-Thing, not necessarily related to encoding/decoding messages. For example, the codec below sends a 'keep-alive' message at regular intervals. The topic, message and send interval (in seconds) can be configured within the accessory configuration, in `keepAliveTopic`, `keepAliveMessage` and `keepAlivePeriod` respectively.
 
 ```javascript
 /**
@@ -365,7 +395,7 @@ Built-in Codecs are provided with MQTT-Thing, and can be referenced without a pa
 
 ### JSON Codec (json)
 
-The JSON Codec aims to make JSON encoding and decoding, often implemented with _apply()_ functions, easier to configure. If is intended for accessories which encode multiple properties as a JSON object sent over a single topic, instead of sending separate parameters in separate topics.
+The JSON Codec aims to make JSON encoding and decoding, often implemented with _apply()_ functions, easier to configure. It is intended for accessories which encode multiple properties as a JSON object sent over a single topic, instead of sending separate parameters in separate topics.
 
 Mapping to and from JSON is configured using a jsonCodec object in the accessory configuration:
 
@@ -377,7 +407,7 @@ Mapping to and from JSON is configured using a jsonCodec object in the accessory
     },
     "fixed": { "fixed properties": "object (global/default)" },
     "fixedByTopic": {
-        "topic1": { "fixed properties": "object for topic1",
+        "topic1": { "fixed properties": "object for topic1" },
         "topic2": { "fixed properties": "object for topic2" }
     },
     "retain": true|false
@@ -386,7 +416,7 @@ Mapping to and from JSON is configured using a jsonCodec object in the accessory
 
 The `jsonCodec` configuration object should contain a `properties` object containing strings indicating the JSON location of each property (as listed in [Properties](#properties), above).
 
-By default, the JSON codec only publishes properties which have updated. To collect all published properties for each published topic, set `"retain": true`.
+By default, the JSON codec only publishes properties which have updated. To collect all published properties for each published topic, set `"retain": true`. Set `"diag": true` to log every `encode()`/`decode()` call.
 
 Fixed values (published with every message) may be specified in a `fixed` object. If multiple topics are published which should have different fixed values, these may be specified through `fixedByTopic`. Fixed values are not required in received messages; only mapped properties are extracted.
 
@@ -426,7 +456,7 @@ For example, the following accessory configuration:
 
 ### Shelly AMAX Codec (shellyAMAX)
 
-The shellyAMAX Codec, created by Ferme de Pommerieux, allows the use of a Bosch AMAX alarm system with Shelly switches.
+The shellyAMAX Codec, created by Ferme de Pommerieux, allows the use of a Bosch AMAX alarm system with Shelly switches. The codec builds the accessory's `topics` itself from the `AMAX` object (the Shelly device `name` and input/relay `id` for each state), replacing any configured topics. `"ShellyGen": 1` selects the Shelly Gen 1 topic layout. `AMAX.ArmingDelay` should be set to the alarm's arming delay in seconds: the armed input turning off is only reported as disarmed once this delay plus 5 seconds has passed since the last arm/disarm request, and never if `ArmingDelay` is missing.
 
 Example configuration:
 

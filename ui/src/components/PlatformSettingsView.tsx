@@ -99,7 +99,7 @@ export function PlatformSettingsView({ store, block, touch, onBack }: Props) {
           type="text"
           class="form-control form-control-sm"
           value={typeof block.name === 'string' ? block.name : ''}
-          placeholder="MQTT Thing"
+          placeholder="mqttthing-ex"
           onChange={commit('name')}
         />
         <div class="mqx-desc mt-1">Shown in the Homebridge log and used to name the MQTT client.</div>

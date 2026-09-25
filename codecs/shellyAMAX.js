@@ -1,10 +1,12 @@
 /**
-A codec to control an Bosch AMAX with Shellies switchs
+A codec to control a Bosch AMAX with Shelly switches
 based on ikeaBlindZ2M codec by J.D. Smith
 (c) Ferme de Pommerieux
 License: Apache 2.0
-Place this file alongside your
-config.json file, and add the following config:
+This is a built-in codec: reference it as "shellyAMAX" (no path or .js suffix)
+and add the following config. The topics are built by the codec from the AMAX
+object. Set AMAX.ArmingDelay (seconds) as well - without it, a disarm is never
+reported through getTargetState:
        {
             "name": "AMAX",
             "accessory": "mqttthing",
@@ -12,7 +14,7 @@ config.json file, and add the following config:
             "username": "user",
             "password": "passwd",
             "type": "securitySystem",
-            "codec": "ShellyAMAX.js",
+            "codec": "shellyAMAX",
             "ShellyGen": 1,
             "AMAX": {
                 "setState": {

@@ -9,6 +9,7 @@ import type { ThingConfig } from '../../../src/config.js';
 import { getTypeModel } from '../../../src/model/types.js';
 import {
   commonBrokerOf,
+  configShape,
   connectionEstimate,
   hoistBrokerToPlatform,
   migrateSelected,
@@ -16,6 +17,7 @@ import {
   type DeviceStore,
   type MigrateAllResult,
 } from '../lib/store-ops.js';
+import { termsFor } from '../lib/terms.js';
 import { TypeIcon } from './TypeIcon.js';
 
 interface Props {
@@ -38,6 +40,7 @@ export function MigrationView({ store, onBack, onMigrated }: Props) {
   const shared = commonBrokerOf(chosen);
   const canHoist = shared !== null && (store.platform === null || store.platform.url === undefined);
   const blocked = candidates.filter((c) => !c.eligibility.movable);
+  const terms = termsFor(configShape(store));
 
   const toggle = (config: ThingConfig) => {
     const next = new Set(selected);
@@ -99,7 +102,7 @@ export function MigrationView({ store, onBack, onMigrated }: Props) {
     <div>
       <div class="mb-3">
         <button type="button" class="btn btn-link btn-sm p-0" onClick={onBack}>
-          ← All accessories
+          {terms.backLabel}
         </button>
         <h5 class="m-0 mt-1">Move to platform mode</h5>
         <div class="mqx-desc mt-1">

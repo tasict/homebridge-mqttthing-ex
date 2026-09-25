@@ -105,8 +105,8 @@
   has to be paired again.
 - **Start-up validation** of every platform device, reported in the log.
 - A device configured both as an accessory and as a platform device is
-  reported in the log, as is a platform block that mistakenly uses the
-  accessory alias.
+  reported in the log, and a platform block that mistakenly uses the
+  accessory alias is reported by the settings UI.
 
 ### Changed
 

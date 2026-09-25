@@ -144,7 +144,7 @@ async function parseConfigFile(readFile, configPath) {
   if (typeof configPath !== 'string' || configPath === '') {
     throw new Error(
       'The Homebridge UI did not provide the config.json path; ' +
-        'editing legacy accessory blocks requires a newer homebridge-config-ui-x.',
+        'editing accessory blocks requires a newer homebridge-config-ui-x.',
     );
   }
   let raw;

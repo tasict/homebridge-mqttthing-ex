@@ -1,9 +1,9 @@
 // Configuration validation against the declarative accessory-type model.
 //
 // Implements the F13 checks from docs/UpstreamIssues.md (upstream #403, #677,
-// #366) as a pure function. It is NOT wired into the accessory runtime yet,
-// so runtime behavior is unchanged; the custom config UI and a future
-// startup validation pass will consume it.
+// #366) as a pure function. It only reports: the custom config UI shows its
+// findings and platform mode logs them at start-up, but it never changes
+// runtime behavior.
 import type { ThingConfig } from '../config.js';
 import { GLOBAL_OPTIONS, GLOBAL_TOPICS, type AccessoryTypeModel } from './model-types.js';
 import { getTypeModel } from './types.js';
@@ -165,7 +165,7 @@ export function validateThingConfig(
     // against a single type model. Validate each sub-service instead.
     const services = config.services;
     if (!Array.isArray(services) || services.length === 0) {
-      result.errors.push("custom accessory has no 'services' array");
+      result.errors.push("custom accessory has no services");
       return result;
     }
     services.forEach((serviceConfig, index) => {

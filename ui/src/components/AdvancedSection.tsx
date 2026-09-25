@@ -104,7 +104,7 @@ function CodecPicker({ config, touch }: Props) {
       </div>
       <div class="col-sm-8 offset-sm-4 mqx-desc">
         JavaScript codec encoding/decoding all MQTT messages of this accessory. Names without .js refer to bundled
-        codecs; other paths resolve against the Homebridge storage path.
+        codecs; other relative paths resolve against the Homebridge storage path.
       </div>
     </div>
   );

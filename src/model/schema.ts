@@ -164,7 +164,7 @@ function deviceProperties(typeChoices: TypeChoice[]): Record<string, unknown> {
     caption: {
       type: 'string',
       title: 'Caption',
-      description: 'HomeKit caption/label.',
+      description: 'HomeKit caption/label (documented upstream; ignored by the runtime).',
     },
   };
 }

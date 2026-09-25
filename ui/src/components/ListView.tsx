@@ -202,7 +202,7 @@ export function ListView({
 
       {counts.total === 0 && (
         <div class="alert alert-info">
-          No mqttthing {terms.plural} configured yet. Use <strong>{terms.addLabel}</strong> to create the first one.
+          No MQTT Thing {terms.plural} configured yet. Use <strong>{terms.addLabel}</strong> to create the first one.
         </div>
       )}
       {counts.total > 0 && entries.length === 0 && (
@@ -249,7 +249,7 @@ export function ListView({
                         {showSource && sourceLabel(source)}
                         {serviceCount > 0 && (
                           <span class="badge text-bg-secondary" title="Grouped services">
-                            {serviceCount} services
+                            {serviceCount} {serviceCount === 1 ? 'service' : 'services'}
                           </span>
                         )}
                         {issues > 0 && (
@@ -297,7 +297,7 @@ export function ListView({
         </button>
       </div>
       {legacyUnavailable !== null && (
-        <div class="mqx-desc mt-1">Legacy accessory blocks are unavailable: {legacyUnavailable}</div>
+        <div class="mqx-desc mt-1">Accessory blocks are unavailable: {legacyUnavailable}</div>
       )}
       {showJson && (
         <div class="mt-2">

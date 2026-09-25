@@ -15,8 +15,9 @@ release whose transitive tree carries several known-vulnerable packages
 ## Changes relative to upstream 0.6.7
 
 - `fakegato-storage.js`: removed the `googleDrive` require and the
-  `case 'googleDrive':` branches from `addWriter`/`write`/`read`/`remove`.
-  This plugin only ever passes `storage: 'fs'`.
+  `case 'googleDrive':` branches from `addWriter`/`write`/`read`/`remove`,
+  and added a header comment saying so. This plugin only ever passes
+  `storage: 'fs'`.
 - `lib/googleDrive.js` and `quickstartGoogleDrive.js` are not included.
 - Added `package.json` with `"type": "commonjs"` so Node treats these files
   as CommonJS inside this ESM package.

@@ -1,7 +1,5 @@
-[![npm](https://badgen.net/npm/v/homebridge-mqttthing/latest)](https://www.npmjs.com/package/homebridge-mqttthing)
-[![npm](https://badgen.net/npm/dt/homebridge-mqttthing)](https://www.npmjs.com/package/homebridge-mqttthing)
-[![Discord](https://img.shields.io/discord/432663330281226270?color=728ED5&logo=discord&label=discord)](https://discord.gg/MTpeMC)
-[![verified-by-homebridge](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
+[![npm](https://badgen.net/npm/v/homebridge-mqttthing-ex/latest)](https://www.npmjs.com/package/homebridge-mqttthing-ex)
+[![npm](https://badgen.net/npm/dt/homebridge-mqttthing-ex)](https://www.npmjs.com/package/homebridge-mqttthing-ex)
 
 # Homebridge MQTT-Thing: Supported Accessories
 
@@ -10,6 +8,7 @@ The following Homekit accessory types are supported by MQTT-Thing:
    * [Air Pressure Sensor](#air-pressure-sensor)
    * [Air Purifier](#air-purifier)
    * [Air Quality Sensor](#air-quality-sensor)
+   * [Battery](#battery)
    * [Carbon Dioxide Sensor](#carbon-dioxide-sensor)
    * [Carbon Monoxide Sensor](#carbon-monoxide-sensor)
    * [Contact Sensor](#contact-sensor)
@@ -31,6 +30,7 @@ The following Homekit accessory types are supported by MQTT-Thing:
    * [Occupancy Sensor](#occupancy-sensor)
    * [Outlet](#outlet)
    * [Security System](#security-system)
+   * [Smoke Sensor](#smoke-sensor)
    * [Speaker](#speaker)
    * [StatelessProgrammableSwitch](#statelessprogrammableswitch)
    * [Switch](#switch)
@@ -46,7 +46,7 @@ For general details on configuration, please see [Configuration.md](Configuratio
 
 ## Tested Configurations
 
-Tested and working configurations for devices are available on the [Wiki](https://github.com/arachnetech/homebridge-mqttthing/wiki/Tested-Configurations).  Please add your working configurations for others.
+Tested and working configurations for devices are available on the original homebridge-mqttthing [Wiki](https://github.com/arachnetech/homebridge-mqttthing/wiki/Tested-Configurations). As the configuration format is unchanged, they can be used as they are.
 
 ## Air Pressure Sensor
 
@@ -88,7 +88,7 @@ Lock physical controls state may be **DISABLED** or **ENABLED**. To use differen
 
 Swing mode state may be **DISABLED** or **ENABLED**. To use different values, specify an array of strings in **swingModeValues**.
 
-The filter life level is used to indicate remaining filter life level in percent. The value should be a integer between 0 and 100 with no decimal places. Related to this is the filter change indication which is used to indicate if it is time to replace the filter. It is a boolean value and true indicates that a replacement is needed. After a filter replacement this should be set to false. If the hardware device does not have a way to indicate that the filter has been replaced, the reset filter indication can be used. It is currently only supported in the Eve app. When triggered (by the user after a filter change), the MQTT device should reset FilterChangeIndication to false and FilterLifeTime to 100.
+The filter life level is used to indicate remaining filter life level in percent. The value should be an integer between 0 and 100 with no decimal places. Related to this is the filter change indication which is used to indicate if it is time to replace the filter. It is a boolean value and true indicates that a replacement is needed. After a filter replacement this should be set to false. If the hardware device does not have a way to indicate that the filter has been replaced, the reset filter indication can be used. It is currently only supported in the Eve app. When triggered (by the user after a filter change), the MQTT device should reset FilterChangeIndication to false and FilterLifeTime to 100.
 
 ```javascript
 {
@@ -106,7 +106,7 @@ The filter life level is used to indicate remaining filter life level in percent
         "setTargetAirPurifierState":    "<topic used to control 'target air purifier state'>",
         "getTargetAirPurifierState":    "<topic used to report 'target air purifier state'>",
         "setRotationSpeed":             "<topic used to control 'rotation speed' (optional)>",
-        "getRotationSpeed":             "<topic used to report 'rotation speed' (optional)>"
+        "getRotationSpeed":             "<topic used to report 'rotation speed' (optional)>",
         "setSwingMode":                 "<topic used to control 'swing mode' (optional)>",
         "getSwingMode":                 "<topic used to report 'swing mode' (optional)>",
         "setLockPhysicalControls":      "<topic used to control 'lock physical controls' (optional)>",
@@ -130,7 +130,7 @@ The filter life level is used to indicate remaining filter life level in percent
 
 Air quality state can be `UNKNOWN`, `EXCELLENT`, `GOOD`, `FAIR`, `INFERIOR` or `POOR`. To use different values, specify them in **airQualityValues** in that order.
 
-For Air Quality History (in the Eve-App) you have to use `getVOCDensity` (Eve Room 2) or `getAirQualityPPM` (Eve Room 1).
+For Air Quality History (in the Eve-App) you have to use `getVOCDensity` (Eve Room 2) or `getAirQualityPPM` (Eve Room 1). `getAirQualityPPM` is only used when `history` is enabled without `room2`.
 
 History records need to be cleared when Migrating from Room 1 to Room 2 because they are not compatible.
 
@@ -140,12 +140,13 @@ History records need to be cleared when Migrating from Room 1 to Room 2 because 
     "type": "airQualitySensor",
     "name": "<name of device>",
     "serviceNames": {
+        "airQuality":  "<name for air quality service (optional)>",
         "temperature": "<name for temperature service (optional)>",
         "humidity":    "<name for humidity service (optional)>"
     },
     "topics":
     {
-        "getAirQuality":              "<topic used to report air quality",
+        "getAirQuality":              "<topic used to report air quality>",
         "getCarbonDioxideLevel":      "<topic used to report carbon dioxide level (optional)>",
         "getPM10Density":             "<topic used to report PM10 Density (optional)>",
         "getPM2_5Density":            "<topic used to report PM2.5 Density (optional)>",
@@ -160,11 +161,36 @@ History records need to be cleared when Migrating from Room 1 to Room 2 because 
         "getStatusTampered":          "<topic used to provide 'tampered' status (optional)>",
         "getStatusLowBattery":        "<topic used to provide 'low battery' status (optional)>",
         "getCurrentTemperature":      "<topic used to provide 'current temperature' (optional)>",
-        "getCurrentRelativeHumidity": "<topic used to provide 'current relative humidity' (optional)>"
+        "getCurrentRelativeHumidity": "<topic used to provide 'current relative humidity' (optional)>",
+        "getTemperatureDisplayUnits": "<topic used to report 'temperature display units' (optional, with getCurrentTemperature)>",
+        "setTemperatureDisplayUnits": "<topic used to control 'temperature display units' (optional, with getCurrentTemperature)>"
     },
+    "temperatureDisplayUnitsValues": "<array of values to be used to represent Celsius and Fahrenheit respectively (optional)>",
     "airQualityValues": [ "unknown-value", "excellent-value", "good-value", "fair-value", "inferior-value", "poor-value" ],
     "history": "<true to enable History service for Eve App (optional)>",
     "room2": "<true to enable Room 2 support for Eve App (optional)>"
+}
+```
+
+
+## Battery
+
+Standalone battery service. Configuring any of these topics on another accessory type adds a battery service to that accessory automatically (see [MQTT Topics](Configuration.md#mqtt-topics)).
+
+Charging state can be `NOT_CHARGING`, `CHARGING` or `NOT_CHARGEABLE`. To use different values, specify them in **chargingStateValues** in that order.
+
+```javascript
+{
+    "accessory": "mqttthing",
+    "type": "battery",
+    "name": "<name of battery>",
+    "topics":
+    {
+        "getBatteryLevel":      "<topic used to provide 'battery level' (0-100) (optional)>",
+        "getChargingState":     "<topic used to provide 'charging state' (optional)>",
+        "getStatusLowBattery":  "<topic used to provide 'low battery' status (optional)>"
+    },
+    "chargingStateValues": [ "not-charging-value", "charging-value", "not-chargeable-value" ]
 }
 ```
 
@@ -180,9 +206,9 @@ Carbon dioxide detected state can be `NORMAL` or `ABNORMAL`. To use different va
     "name": "<name of device>",
     "topics":
     {
-        "getCarbonDioxideDetected":     "<topic used to report carbon dioxide detected",
+        "getCarbonDioxideDetected":     "<topic used to report carbon dioxide detected>",
         "getCarbonDioxideLevel":        "<topic used to report carbon dioxide level (optional)>",
-        "getCarbonDioxidePeakLevel":    "<topic used to report carbon dioxide level (optional)>",
+        "getCarbonDioxidePeakLevel":    "<topic used to report carbon dioxide peak level (optional)>",
         "getStatusActive":              "<topic used to provide 'active' status (optional)>",
         "getStatusFault":               "<topic used to provide 'fault' status (optional)>",
         "getStatusTampered":            "<topic used to provide 'tampered' status (optional)>",
@@ -196,6 +222,8 @@ Carbon dioxide detected state can be `NORMAL` or `ABNORMAL`. To use different va
 
 Carbon Monoxide detected state can be `NORMAL` or `ABNORMAL`. To use different values, specify them in **carbonMonoxideDetectedValues** in that order.
 
+Note that the level topics of this accessory are spelled with a lower-case 'c' (`getcarbonMonoxideLevel`, `getcarbonMonoxidePeakLevel`), unlike `getCarbonMonoxideLevel` in the [Air Quality Sensor](#air-quality-sensor).
+
 ```javascript
 {
     "accessory": "mqttthing",
@@ -203,9 +231,9 @@ Carbon Monoxide detected state can be `NORMAL` or `ABNORMAL`. To use different v
     "name": "<name of device>",
     "topics":
     {
-        "getCarbonMonoxideDetected":     "<topic used to report carbon Monoxide detected",
-        "getCarbonMonoxideLevel":        "<topic used to report carbon Monoxide level (optional)>",
-        "getCarbonMonoxidePeakLevel":    "<topic used to report carbon Monoxide level (optional)>",
+        "getCarbonMonoxideDetected":     "<topic used to report carbon Monoxide detected>",
+        "getcarbonMonoxideLevel":        "<topic used to report carbon Monoxide level (optional)>",
+        "getcarbonMonoxidePeakLevel":    "<topic used to report carbon Monoxide peak level (optional)>",
         "getStatusActive":              "<topic used to provide 'active' status (optional)>",
         "getStatusFault":               "<topic used to provide 'fault' status (optional)>",
         "getStatusTampered":            "<topic used to provide 'tampered' status (optional)>",
@@ -248,11 +276,11 @@ If `history` is enabled, this plugin will count the number of openings and offer
 }
 ```
 ## Dehumidifier
-Active state is set with a boolean value (see Boolean Value Settings).
+Active state is set with a boolean value (see [Boolean Value Settings](../docs/Configuration.md#boolean-value-settings)).
 
-Target dehumidifier state can be HUMIDIFIER_OR_DEHUMIDIFIER, HUMIDIFIER or DEHUMIDIFIER.
+Target dehumidifier state can be HUMIDIFIER_OR_DEHUMIDIFIER, HUMIDIFIER or DEHUMIDIFIER. To use different values, specify an array of strings in **targetHumidifierDehumidifierState**.
 
-Current dehumidifier state can be INACTIVE, IDLE, HUMIDIFYING or DEHUMIDIFYING.
+Current dehumidifier state can be INACTIVE, IDLE, HUMIDIFYING or DEHUMIDIFYING. To use different values, specify an array of strings in **currentHumidifierDehumidifierState**.
 
 The water level is used to indicate the amount of water in the bucket.
 
@@ -270,13 +298,15 @@ The water level is used to indicate the amount of water in the bucket.
     "getActive": "<topic used to report 'active' state>",
     "getWaterLevel": "<topic used to report the water level>",
     "setWaterLevel": "<topic used to control the water level>",
-    "getRelativeHumidityDehumidifierThreshold": "<topic used to report the the humidity threshold>",
-    "setRelativeHumidityDehumidifierThreshold": "<topic used to control the the humidity threshold>",
+    "getRelativeHumidityDehumidifierThreshold": "<topic used to report the humidity threshold>",
+    "setRelativeHumidityDehumidifierThreshold": "<topic used to control the humidity threshold>",
     "getTargetHumidifierDehumidifierState": "<topic used to report the target state>",
     "setTargetHumidifierDehumidifierState": "<topic used to control the target state>",
     "getCurrentHumidifierDehumidifierState": "<topic used to report the current state>",
-    "getCurrentRelativeHumidity": "<topic used to report the the humidity threshold>"
-  }
+    "getCurrentRelativeHumidity": "<topic used to report the current relative humidity>"
+  },
+  "targetHumidifierDehumidifierState": "<array of values to be used to represent HUMIDIFIER_OR_DEHUMIDIFIER, HUMIDIFIER, DEHUMIDIFIER respectively (optional)>",
+  "currentHumidifierDehumidifierState": "<array of values to be used to represent INACTIVE, IDLE, HUMIDIFYING, DEHUMIDIFYING respectively (optional)>"
 }
 ```
 
@@ -309,7 +339,7 @@ The optional `minPosition` and `maxPosition` allow the minimum and maximum posit
 
 ## Doorbell
 
-Doorbell ring switch state can be be `SINGLE_PRESS`, `DOUBLE_PRESS` or `LONG_PRESS`. By default, these events are raised when values of `1`, `2` and `L` respectively are published to the **getSwitch** topic. However, these values may be overridden by specifying an alternative array in the **switchValues** setting.
+Doorbell ring switch state can be `SINGLE_PRESS`, `DOUBLE_PRESS` or `LONG_PRESS`. By default, these events are raised when values of `1`, `2` and `L` respectively are published to the **getSwitch** topic. However, these values may be overridden by specifying an alternative array in the **switchValues** setting.
 
 ```javascript
 {
@@ -322,14 +352,15 @@ Doorbell ring switch state can be be `SINGLE_PRESS`, `DOUBLE_PRESS` or `LONG_PRE
     "caption": "<label (optional)>",
     "topics":
     {
-        "getSwitch":         "<topic used to provide doorbell switch state>"
+        "getSwitch":         "<topic used to provide doorbell switch state>",
         "getBrightness":     "<topic used to get brightness (optional)>",
         "setBrightness":     "<topic used to set brightness (optional)>",
         "getVolume":         "<topic used to get volume (optional)>",
         "setVolume":         "<topic used to set volume (optional)>",
         "getMotionDetected": "<topic used to provide 'motion detected' status (optional, if exposing motion sensor)>"
     },
-    "switchValues": "<array of 3 switch values corresponding to single-press, double-press and long-press respectively (optional)>"
+    "switchValues": "<array of 3 switch values corresponding to single-press, double-press and long-press respectively (optional)>",
+    "restrictSwitchValues": "<array of allowed events, where 0 represents single-press, 1 double-press and 2 long-press (optional)>"
 }
 ```
 
@@ -339,7 +370,7 @@ Fan running state ('on') is true or false, or 1 or 0 if `integerValue: true` spe
 
 Fan rotation direction is 0 for clockwise or 1 for anticlockwise.
 
-Fan rotation speed is an integer between 0 (off) and 100 (full speed).
+Fan rotation speed is an integer between 0 (off) and 100 (full speed). The range can be changed with `minRotationSpeed` and `maxRotationSpeed` (also for Fanv2, Air Purifier and Heater Cooler).
 
 Set `confirmationPeriodms` to enable publishing confirmation for `setOn`/`getOn`. The accessory must echo messages it receives through the `setOn` subject to the `getOn` subject, otherwise homebridge-mqttthing will mark it as unresponsive and republish on the `setOn` subject.
 
@@ -371,9 +402,9 @@ Set `confirmationPeriodms` to enable publishing confirmation for `setOn`/`getOn`
 
 Active state is set with a boolean value (see [Boolean Value Settings](../docs/Configuration.md#boolean-value-settings)).
 
-Target fan state can be **MANUAL** or **AUTO**. To use different values, specify an array of strings in **targetFanValues**. 
+Target fan state can be **MANUAL** or **AUTO**. To use different values, specify an array of strings in **targetFanStateValues**. 
 
-Current fan state can be **INACTIVE**, **IDLE** or **BLOWING_AIR**. To use different values, specify an array of strings in **currentFanStateValues**. **INACTIVE** should be used in response if "Active" is set to false. **IDLE** or **BLOWING_AIR** should be used in response if "Active" is set to true.
+Current fan state can be **INACTIVE**, **IDLE** or **BLOWING_AIR**. To use different values, specify an array of strings in **currentFanValues**. **INACTIVE** should be used in response if "Active" is set to false. **IDLE** or **BLOWING_AIR** should be used in response if "Active" is set to true.
 
 Lock physical controls state may be **DISABLED** or **ENABLED**. To use different values, specify an array of strings in **lockPhysicalControlsValues**.
 
@@ -397,19 +428,19 @@ Fan rotation direction is 0 for clockwise or 1 for anticlockwise.
         "setTargetFanState":        "<topic used to control 'target fan state' (optional)>",
         "getTargetFanState":        "<topic used to report 'target fan state'(optional)>",
         "setRotationSpeed":         "<topic used to control 'rotation speed' (optional)>",
-        "getRotationSpeed":         "<topic used to report 'rotation speed' (optional)>"
+        "getRotationSpeed":         "<topic used to report 'rotation speed' (optional)>",
         "getRotationDirection":     "<topic used to report 'rotation direction' (optional)>",
         "setRotationDirection":     "<topic used to control 'rotation direction' (optional)>",
         "setSwingMode":             "<topic used to control 'swing mode' (optional)>",
         "getSwingMode":             "<topic used to report 'swing mode' (optional)>",
         "setLockPhysicalControls":  "<topic used to control 'lock physical controls' (optional)>",
-        "getLockPhysicalControls":  "<topic used to report 'lock physical controls' (optional)>",
+        "getLockPhysicalControls":  "<topic used to report 'lock physical controls' (optional)>"
     },
     "integerValue":                 "true to use 1|0 instead of true|false default onValue and offValue",
     "onValue":                      "<value representing on (optional)>",
     "offValue":                     "<value representing off (optional)>",
     "targetFanStateValues":         "<array of values to be used to represent MANUAL, AUTO respectively (optional)>",
-    "currentFanStateValues":        "<array of values to be used to represent INACTIVE, IDLE, BLOWING_AIR respectively (optional)>",
+    "currentFanValues":             "<array of values to be used to represent INACTIVE, IDLE, BLOWING_AIR respectively (optional)>",
     "swingModeValues":              "<array of values to be used to represent DISABLED and ENABLED respectively (optional)>",
     "lockPhysicalControlsValues":   "<array of values to be used to represent DISABLED and ENABLED respectively (optional)>"
 }
@@ -417,7 +448,7 @@ Fan rotation direction is 0 for clockwise or 1 for anticlockwise.
 
 ## Garage Door Opener
 
-Garage door opener *target* state can be **OPEN** or **CLOSED**. By default, values of `O` and `C` are used respectively (unless changed through **doorTargetValues**). Homekit always assumes that the door is moving towards is target state, so to control it externally you must publish the getTargetDoorState topic to notify Homekit of the new target state. (You may also wish to publish the setTargetDoorState topic to notify your accessory of the new target state.) The same topic may be used for both to simplify this.
+Garage door opener *target* state can be **OPEN** or **CLOSED**. By default, values of `O` and `C` are used respectively (unless changed through **doorTargetValues**). Homekit always assumes that the door is moving towards its target state, so to control it externally you must publish the getTargetDoorState topic to notify Homekit of the new target state. (You may also wish to publish the setTargetDoorState topic to notify your accessory of the new target state.) The same topic may be used for both to simplify this.
 
 Garage door opener *current* door state can be **OPEN**, **CLOSED**, **OPENING**, **CLOSING**, **STOPPED**. By default, these use values of `O`, `C`, `o`, `c` and `S` respectively; these defaults can be changed using the **doorCurrentValues** setting. As a simpler alternative, `getDoorMoving` may be used to specify a Boolean topic indicating whether or not the garage door is currently moving. Mqttthing will generate an appropriate current state automatically, assuming that the door is moving towards its target state or stopped at its target state.
 
@@ -441,6 +472,7 @@ Lock target state can be **UNSECURED** or **SECURED**. By default, these use val
         "setTargetDoorState":       "<topic used to set 'target door state'>",
         "getTargetDoorState":       "<topic used to report 'target door state'>",
         "getCurrentDoorState":      "<topic used to report 'current door state'>",
+        "getDoorMoving":            "<topic used to report whether the door is moving (Boolean) - alternative to getCurrentDoorState (optional)>",
         "setLockTargetState":       "<topic used to set 'lock target state' (optional)>",
         "getLockTargetState":       "<topic used to report 'lock target state' (optional)>",
         "getLockCurrentState":      "<topic used to report 'lock current state' (optional)>",
@@ -495,7 +527,7 @@ Swing mode state may be **DISABLED** or **ENABLED**. To use different values, sp
 
 Temperature display units can be **CELSIUS** or **FAHRENHEIT**. To use different values, specify an array of strings in `temperatureDisplayUnitsValues`.
 
-`minTemperature` and `maxTemperature` may optionally be used to change the minimum and maximum heating and cooling target and temperatures that can be set from Homekit (and also affect current temperature range).
+`minTemperature` and `maxTemperature` may optionally be used to change the minimum and maximum heating and cooling threshold temperatures that can be set from Homekit. They do not restrict the current temperature, which accepts -100 to 100 C (and can only be widened by these settings).
 
 Configure `restrictHeaterCoolerState` to an array of integers to restrict the target heating/cooling states made available by Homekit, where 0 represents AUTO, 1 HEAT and 2 COOL, for example:
 
@@ -526,8 +558,8 @@ Configure cooling threshold temperature unless target heater/cooler states exclu
         "getHeatingThresholdTemperature":   "<topic used to report 'heating threshold temperature'>",
         "setTemperatureDisplayUnits":       "<topic used to control 'temperature display units'>",
         "getTemperatureDisplayUnits":       "<topic used to report 'temperature display units'>",
-        "setRotationMode":                  "<topic used to control 'rotation mode' (optional)>",
-        "getRotationMode":                  "<topic used to report 'rotation mode' (optional)>",
+        "setLockPhysicalControls":          "<topic used to control 'lock physical controls' (optional)>",
+        "getLockPhysicalControls":          "<topic used to report 'lock physical controls' (optional)>",
         "setSwingMode":                     "<topic used to control 'swing mode' (optional)>",
         "getSwingMode":                     "<topic used to report 'swing mode' (optional)>",
         "setRotationSpeed":                 "<topic used to control 'rotation speed' (optional)>",
@@ -630,7 +662,8 @@ The default run time defaults to between 5 minutes and 1 hour (in 5 minute incre
     "offValue":      "<value representing off (optional)>",
     "durationTimer": "<true to enable duration timer (recommended)>",
     "minDuration":   "<minimum duration (in seconds) (optional)>",
-    "maxDuration":   "<maximum duration (in seconds) (optional)>"
+    "maxDuration":   "<maximum duration (in seconds) (optional)>",
+    "noAutoInactive": "<true to keep the system active when all zones become inactive (optional)>"
 }
 ```
 
@@ -640,6 +673,8 @@ The default run time defaults to between 5 minutes and 1 hour (in 5 minute incre
 Leak sensor state is exposed as a Boolean. True (or 1 with integer values) maps to `LEAK_DETECTED`
 and False (or 0) maps to `LEAK_NOT_DETECTED`. To use different MQTT values, configure `onValue` and `offValue`.
 
+The optional water level is a percentage (0-100).
+
 ```javascript
 {
     "accessory": "mqttthing",
@@ -648,6 +683,12 @@ and False (or 0) maps to `LEAK_NOT_DETECTED`. To use different MQTT values, conf
     "topics":
     {
         "getLeakDetected":              "<topic used to provide 'leak detected' state (Boolean)>",
+        "getWaterLevel":                "<topic used to provide 'water level' (optional)>",
+        "setWaterLevel":                "<topic used to control 'water level' (optional)>",
+        "getStatusActive":              "<topic used to provide 'active' status (optional)>",
+        "getStatusFault":               "<topic used to provide 'fault' status (optional)>",
+        "getStatusTampered":            "<topic used to provide 'tampered' status (optional)>",
+        "getStatusLowBattery":          "<topic used to provide 'low battery' status (optional)>"
     },
     "resetStateAfterms": "<milliseconds after which to reset state automatically (optional)>"
 }
@@ -656,7 +697,7 @@ and False (or 0) maps to `LEAK_NOT_DETECTED`. To use different MQTT values, conf
 
 ## Light bulb
 
-Light bulb can either use separate topics (for on, brightness, hue and saturation), or it can be configured to use a combined value holding comma-separated hue,sat,val or red,green,blue. Using a topic with combined values disables most of the other topics according to this [line](https://github.com/arachnetech/homebridge-mqttthing/blob/c2abf22dbef27bd329a038bd394a6ab112681fd6/index.js#L2462).
+Light bulb can either use separate topics (for on, brightness, hue and saturation), or it can be configured to use a combined value holding comma-separated hue,sat,val or red,green,blue. Using a topic with combined values disables most of the other topics, as described below.
 
 Hue is 0-360. Saturation is 0-100. Brightness is 0-100. Red, green and blue are 0-255. Colour temperature ranges from 140 (cold white) to 500 (warm white), centred at about 151.
 
@@ -672,7 +713,7 @@ If `topics.setRGBWW` is populated, a combined value is used in the format red,gr
 
 Set `confirmationPeriodms` to enable publishing confirmation for `setOn`/`getOn`. The accessory must echo messages it receives through the `setOn` subject to the `getOn` subject, otherwise homebridge-mqttthing will mark it as unresponsive and republish on the `setOn` subject.
 
-When using colour temperature directly (through the `setColorTemperature` topic), `minColorTemperature` and `maxColorTemperature` may be configured to change Homekits default range of 140-500.
+When using colour temperature directly (through the `setColorTemperature` topic), `minColorTemperature` and `maxColorTemperature` may be configured to change Homekit's default range of 140-500.
 
 ```javascript
 {
@@ -699,8 +740,8 @@ When using colour temperature directly (through the `setColorTemperature` topic)
         "setRGB":           "<in RGB mode, topic to set comma-separated red, green, blue>",
         "getRGBW":          "<in RGBW mode, topic to get comma-separated red, green, blue, white>",
         "setRGBW":          "<in RGBW mode, topic to set comma-separated red, green, blue, white>",
-        "getRGBWW":         "<in RWGWW mode, topic to get comma-separated red, green, blue, warm_white, cold_white>",
-        "setRGBWW":         "<in RWGWW mode, topic to set comma-separated red, green, blue, warm_white, cold_white>",
+        "getRGBWW":         "<in RGBWW mode, topic to get comma-separated red, green, blue, warm_white, cold_white>",
+        "setRGBWW":         "<in RGBWW mode, topic to set comma-separated red, green, blue, warm_white, cold_white>",
         "getWhite":         "<topic to get white level (0-255)> - used with getRGB for RGBW with separately-published white level",
         "setWhite":         "<topic to set white level (0-255)> - used with setRGB for RGBW with separately-published white level",
         "getColorTemperature": "<topic to report color temperature (140-500) (optional)>",
@@ -721,7 +762,7 @@ When using colour temperature directly (through the `setColorTemperature` topic)
 
 Coloured lights and lights with a setColorTemperature topic support adaptive lighting by default. This may change behaviour when setting colour temperature manually on a bulb without a setColorTemperature topic, as calculation of appropriate hue and saturation values must be done within Homebridge instead of by Homekit. Adaptive lighting support can be disabled by setting `adaptiveLighting` to `false`.
 
-When using config-ui-x, multiple lightbulb types are available. The generic 'lightbulb' allows all possible settings to be entered. Serveral sub-types ('lightbulb-OnOff', 'lightbulb-Dimmable' etc.) show the configuration settings relevant for specific light types only. This can greatly simplify the configuration process.
+When using config-ui-x, multiple lightbulb types are available. The generic 'lightbulb' allows all possible settings to be entered. Several sub-types ('lightbulb-OnOff', 'lightbulb-Dimmable' etc.) show the configuration settings relevant for specific light types only. This can greatly simplify the configuration process.
 
 ## Light Sensor
 
@@ -865,7 +906,7 @@ and False (or 0) maps to `OCCUPANCY_NOT_DETECTED` (not triggered). To use differ
 An outlet can be configured as a light or as a fan in the Home app.
 
 If `history` is enabled and no `getTotalConsumption` topic is defined, this plugin will count the total consumption (kWh) by itself and offers the possibility to reset the counter from the Eve app.
-The interval of `getWatts` data updates should be less then 10min and at best periodic, in order to avoid averaging errors for the history entries.
+The interval of `getWatts` data updates should be less than 10min and at best periodic, in order to avoid averaging errors for the history entries.
 
 Set `confirmationPeriodms` to enable publishing confirmation for `setOn`/`getOn`. The accessory must echo messages it receives through the `setOn` subject to the `getOn` subject, otherwise homebridge-mqttthing will mark it as unresponsive and republish on the `setOn` subject.
 
@@ -893,7 +934,7 @@ Set `confirmationPeriodms` to enable publishing confirmation for `setOn`/`getOn`
     "offValue": "<value representing off (optional)>",
     "turnOffAfterms": "<milliseconds after which to turn off automatically (optional)>",
     "history": "<true to enable History service for Eve App (optional)>",
-    "minVolts": "<minumum voltage (optional)>",
+    "minVolts": "<minimum voltage (optional)>",
     "maxVolts": "<maximum voltage (optional)>"
 }
 ```
@@ -901,15 +942,15 @@ Set `confirmationPeriodms` to enable publishing confirmation for `setOn`/`getOn`
 
 ## Security System
 
-Security System current state can be **STAY_ARM**, **AWAY_ARM**, **NIGHT_ARM**, **DISARMED** or **ALARM_TRIGGERED**. By default, these events are raised when values of `SA`, `AA`, `NA`, `D` and `T` respectively are published to the **getCurrentState** topic. However, these values may be overriden by specifying an alternative array in the **currentStateValues** setting.
+Security System current state can be **STAY_ARM**, **AWAY_ARM**, **NIGHT_ARM**, **DISARMED** or **ALARM_TRIGGERED**. By default, these events are raised when values of `SA`, `AA`, `NA`, `D` and `T` respectively are published to the **getCurrentState** topic. However, these values may be overridden by specifying an alternative array in the **currentStateValues** setting.
 
-Security System target state can be **STAY_ARM**, **AWAY_ARM**, **NIGHT_ARM** or **DISARM**. By default, these states correspond to values of `SA`, `AA`, `NA` and `D`. Homebridge expects to control the target state (causing one of these values to be published to the **setTargetState** topic), and to receive confirmation from the security system that the state has been achieved through a change in the current state (received through the **getCurrentState** topic). The values used for target state can be specified as an an array in the **targetStateValues** setting.
+Security System target state can be **STAY_ARM**, **AWAY_ARM**, **NIGHT_ARM** or **DISARM**. By default, these states correspond to values of `SA`, `AA`, `NA` and `D`. Homebridge expects to control the target state (causing one of these values to be published to the **setTargetState** topic), and to receive confirmation from the security system that the state has been achieved through a change in the current state (received through the **getCurrentState** topic). The values used for target state can be specified as an array in the **targetStateValues** setting.
 
 Homebridge publishes a value to the **setTargetState** topic to indicate the state that the HomeKit user wishes the alarm to be in. The alarm system must echo this state back to the **getCurrentState** topic to confirm that it has set the alarm state appropriately. The alarm system may also publish the ALARM_TRIGGERED value (`T` by default) to the **getCurrentState** topic in order to indicate that the alarm has been triggered. While homekit is waiting for the state change to be confirmed, it will display 'Arming...' or 'Disarming...'.
 
 Additionally, the alarm system may change its own target state by publishing to **getTargetState**. As with a homekit-controlled state change, this must be followed by a publish to **getCurrentState** to confirm that the change is complete. It is possible to set **getTargetState** and **getCurrentState** to the same MQTT topic, allowing the alarm system to change the target state and confirm that it has been achieved with a single MQTT message.
 
-If your system need an aditionnal sensor to detect the current states, you could set the **getAltSensorState** to the required sensor, and make your own rules in a codec.
+If your system needs an additional sensor to detect the current states, you could set the **getAltSensorState** to the required sensor, and make your own rules in a codec (as property `AltSensorState`).
 
 Configure `restrictTargetState` to an array of integers to restrict the target states made available by Homekit, where 0 represents STAY_ARM, 1 AWAY_ARM, 2 NIGHT_ARM and 3 DISARM, for example:
 
@@ -929,7 +970,8 @@ Configure `restrictTargetState` to an array of integers to restrict the target s
         "getTargetState":    "<topic used to get 'target state'>",
         "getCurrentState":   "<topic used to get 'current state'>",
         "getStatusFault":    "<topic used to provide 'fault' status (optional)>",
-        "getStatusTampered": "<topic used to provide 'tampered' status (optional)>"
+        "getStatusTampered": "<topic used to provide 'tampered' status (optional)>",
+        "getAltSensorState": "<topic used to provide an alternate sensor state for codec rules (optional)>"
     },
     "targetStateValues": [ "StayArm", "AwayArm", "NightArm", "Disarmed" ],
     "currentStateValues": [ "StayArm", "AwayArm", "NightArm", "Disarmed", "Triggered" ],
@@ -945,9 +987,9 @@ Configure `restrictTargetState` to an array of integers to restrict the target s
 
 `getCurrentState` - Topic published to notify HomeKit that an alarm state has been achieved. HomeKit will expect current state to end up matching target state. Values are `currentStateValues`.
 
-### Addition topics
+### Additional topics
 
-`getAltSensorState` - Topic published to help discovery alarm states. Values are the alternate sensor values see the ShellyAMAX codec to know how to use it.
+`getAltSensorState` - Topic published to help discover alarm states. Values are the alternate sensor values; see the [Shelly AMAX codec](Codecs.md#shelly-amax-codec-shellyamax) to know how to use it.
 
 
 ### Values
@@ -973,7 +1015,7 @@ and False (or 0) maps to `SMOKE_NOT_DETECTED`. To use different MQTT values, con
     "caption": "<label (optional)>",
     "topics":
     {
-        "getSmokeDetected":      "<topic used to provide smoke sensor state>"
+        "getSmokeDetected":      "<topic used to provide smoke sensor state>",
         "getStatusActive":       "<topic used to provide 'active' status (optional)>",
         "getStatusFault":        "<topic used to provide 'fault' status (optional)>",
         "getStatusTampered":     "<topic used to provide 'tampered' status (optional)>",
@@ -1007,7 +1049,7 @@ and False (or 0) maps to `SMOKE_NOT_DETECTED`. To use different MQTT values, con
 
 ## StatelessProgrammableSwitch
 
-Like a doorbell (which is based on it), the state of a stateless programmable switch can be be `SINGLE_PRESS`, `DOUBLE_PRESS` or `LONG_PRESS`. By default, these events are raised when values of `1`, `2` and `L` respectively are published to the **getSwitch** topic. However, these values may be overridden by specifying an alternative array in the **switchValues** setting.
+Like a doorbell (which is based on it), the state of a stateless programmable switch can be `SINGLE_PRESS`, `DOUBLE_PRESS` or `LONG_PRESS`. By default, these events are raised when values of `1`, `2` and `L` respectively are published to the **getSwitch** topic. However, these values may be overridden by specifying an alternative array in the **switchValues** setting.
 
 The states can be restricted to a subset of these three values available in HomeKit by the **restrictSwitchValues** setting, where 0 represents `SINGLE_PRESS`, 1 `DOUBLE_PRESS`, and 2 `LONG_PRESS`, for example:
 
@@ -1017,7 +1059,7 @@ Additionally, multiple buttons (each potentially with a single, double, and long
 
 * `"getSwitch": ["<button topic 1>", "<button topic 2>", "<button topic 3>"]` - for a 3 button switch
 
-The **switchValues** and **restrictSwitchValues** options also support an array of values such that each switch may different switch values and different allowed button press sequences. A single array of values (like that used for a single) will result in that value being applied to all buttons.
+The **switchValues** and **restrictSwitchValues** options also support an array of values such that each switch may have different switch values and different allowed button press sequences. A single array of values (like that used for a single button) will result in that value being applied to all buttons.
 
 ```javascript
 {
@@ -1032,7 +1074,7 @@ The **switchValues** and **restrictSwitchValues** options also support an array 
     {
         "getSwitch":            "<topic used to provide switch state>"
     },
-    "switchValues": "<array of 3 switch values corresponding to single-press, double-press and long-press respectively (optional)>"
+    "switchValues": "<array of 3 switch values corresponding to single-press, double-press and long-press respectively (optional)>",
     "restrictSwitchValues": [ 0, 1 ] // optional
 }
 
@@ -1060,7 +1102,6 @@ The **switchValues** and **restrictSwitchValues** options also support an array 
             "<array of 3 switch values corresponding to single-press, double-press and long-press respectively for switch 2 (optional)>",
             "<array of 3 switch values corresponding to single-press, double-press and long-press respectively for switch 3 (optional)>"
         ],
-    "switchValues": "<array of 3 switch values corresponding to single-press, double-press and long-press respectively (optional)>",
     "restrictSwitchValues": [ 0, 2 ] // optional and applied to all buttons
 }
 ```
@@ -1070,7 +1111,7 @@ The **switchValues** and **restrictSwitchValues** options also support an array 
 
 On/off switch.
 
-Configuring `turnOffAfter` causes the switch to turn off automatically the specified number of milliseconds after it is turned on by homekit.
+Configuring `turnOffAfterms` causes the switch to turn off automatically the specified number of milliseconds after it is turned on by homekit.
 
 Configuring `resetStateAfterms` causes the switch state as reported through the `getOn` topic to be reset to off after the specified number of milliseconds. Use when there is no `setOn` topic.
 
@@ -1104,7 +1145,7 @@ Set `confirmationPeriodms` to enable publishing confirmation for `setOn`/`getOn`
 
 Different input sources (Live TV, HDMI1, HDMI2, ...) can be defined within the array `inputs` (optional). If this is not used, `setActiveInput` and `getActiveInput` have no effect.
 
-To send remote key commands (`setRemoteKey`), you can use the remote control within the (iOS) control center.
+To send remote key commands (`setRemoteKey`), you can use the remote control within the (iOS) control center. The values published default to `VOLUME_UP`, `VOLUME_DOWN`, `NEXT_TRACK`, `PREVIOUS_TRACK`, `UP`, `DOWN`, `LEFT`, `RIGHT`, `SELECT`, `BACK`, `EXIT`, `PLAY_PAUSE`, `12`, `13`, `14` and `INFO` (indexed by the HomeKit remote key value); a different array may be specified in `remoteKeyValues`.
 
 ```javascript
 {
@@ -1136,7 +1177,7 @@ To send remote key commands (`setRemoteKey`), you can use the remote control wit
     ],
     "integerValue":     "<true to use 1|0 instead of true|false default onValue and offValue>",
     "onValue":          "<value representing on (optional)>",
-    "offValue":         "<value representing off (optional)>",
+    "offValue":         "<value representing off (optional)>"
 }
 ```
 
@@ -1164,11 +1205,11 @@ Current temperature is specified in degrees Celsius, to a maximum of 1dp.
     },
     "history": "<true to enable History service for Eve App (optional)>",
     "minTemperature": minimum_target_temperature,
-    "maxTemperature": maximum_taret_temperature
+    "maxTemperature": maximum_target_temperature
 }
 ```
 
-`minTemperature` and `maxTemperature` may optionally be used to change the minimum and maximum temperature allowed by Homekit from its default range of 0-100 C. If neither option is specified, mqttthing lowers the minimum temperature to -100 C (for compatibility with earlier versions of mqttthing).
+The current temperature range accepted by Homekit is -100 to 100 C. `minTemperature` and `maxTemperature` may optionally be used to widen this range; they cannot narrow it.
 
 
 ## Thermostat
@@ -1209,12 +1250,14 @@ Configure `restrictHeatingCoolingState` to an array of integers to restrict the 
         "getCoolingThresholdTemperature": "<topic used to report 'cooling threshold temperature' (optional)>",
         "setHeatingThresholdTemperature": "<topic used to control 'heating threshold temperature' (optional)>",
         "getHeatingThresholdTemperature": "<topic used to report 'heating threshold temperature' (optional)>",
+        "setActive":                      "<topic used to control 'active' state (optional)>",
+        "getActive":                      "<topic used to report 'active' state (optional)>",
         "getStatusFault":                 "<topic used to provide 'fault' status (optional)>"
     },
     "heatingCoolingStateValues": "<array of values to be used to represent Off, Heat, Cool and Auto respectively (optional)>",
     "temperatureDisplayUnitsValues": "<array of values to be used to represent Celsius and Fahrenheit respectively (optional)>",
     "minTemperature": minimum_target_temperature,
-    "maxTemperature": maximum_taret_temperature,
+    "maxTemperature": maximum_target_temperature,
     "restrictHeatingCoolingState": "<array of allowed values - see notes above (optional)>"
 }
 ```
@@ -1268,7 +1311,7 @@ Configuring `turnOffAfterms` causes the valve to turn off automatically the spec
 
 ## Weather Station
 
-Current temperature must be in the range 0 to 100 degrees Celsius to a maximum of 1dp.
+Current temperature must be in the range -100 to 100 degrees Celsius to a maximum of 1dp.
 
 Current relative humidity must be in the range 0 to 100 percent with no decimal places.
 
@@ -1287,6 +1330,7 @@ Weather condition and wind direction are custom string values.
         "temperature": "<name for temperature service (optional)>",
         "humidity":    "<name for humidity service (optional)>",
         "airPressure": "<name for air pressure service (optional)>",
+        "ambientLightLevel": "<name for light sensor service (optional)>",
         "weather":     "<name for weather service (optional)>"
     },
     "url": "<url of MQTT server (optional)>",
@@ -1306,6 +1350,8 @@ Weather condition and wind direction are custom string values.
         "getVisibility":                "<topic used to provide 'visibility [km]' (optional, Eve-only)>",
         "getWindDirection":             "<topic used to provide 'wind direction' (optional, Eve-only)>",
         "getWindSpeed":                 "<topic used to provide 'wind speed [km/h]' (optional, Eve-only)>",
+        "getmaxWind":                   "<topic used to provide 'maximum wind speed' (optional, Eve-only)>",
+        "getDewPoint":                  "<topic used to provide 'dew point [°C]' (optional, Eve-only)>",
         "getStatusActive":              "<topic used to provide 'active' status (optional)>",
         "getStatusFault":               "<topic used to provide 'fault' status (optional)>",
         "getStatusTampered":            "<topic used to provide 'tampered' status (optional)>",

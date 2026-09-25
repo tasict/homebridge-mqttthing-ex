@@ -16,7 +16,7 @@ export type SaveState =
   | { kind: 'accessories-failed'; message: string };
 
 interface Props {
-  /** True while this page owns saving, i.e. platform changes are pending. */
+  /** True while this page owns saving, i.e. accessory changes are pending. */
   ownsSave: boolean;
   dirty: boolean;
   state: SaveState;

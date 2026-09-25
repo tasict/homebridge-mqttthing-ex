@@ -13,11 +13,13 @@
  *         "topic1": { fixed properties object for topic1 },
  *         "topic2": { fixed properties object for topic2 }
  *     },
- *     "retain": true|false
+ *     "retain": true|false,
+ *     "diag": true|false
  * }
  * 
  * Set retain: true in order to retain the object published for each topic, so that unchanged properties are published. 
  * (Default is retain: false, recreating object from fixed properties on every publish.)
+ * Set diag: true to log every encode()/decode() call.
  */
 
 'use strict';

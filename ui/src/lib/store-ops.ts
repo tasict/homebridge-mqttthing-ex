@@ -386,7 +386,7 @@ export function duplicateIdentityFindings(store: DeviceStore): Map<ThingConfig, 
   for (const device of store.platform.devices ?? []) {
     const clash = legacyByUuid.get(identityUuid(device, 'platform'));
     if (clash) {
-      findings.set(device, 'Also configured as a legacy accessory, which is the copy Homebridge publishes.');
+      findings.set(device, 'Also configured as an accessory block, which is the copy Homebridge publishes.');
       findings.set(clash, 'Also configured as a platform device, which Homebridge skips in favour of this one.');
     }
   }

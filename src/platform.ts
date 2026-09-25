@@ -1,6 +1,6 @@
 // Platform mode.
 //
-// A single "mqttthing" platform block holds a devices[] array using the same
+// A single "mqttthing-ex" platform block holds a devices[] array using the same
 // per-device configuration as accessory blocks. Compared to accessory mode it
 // shares one MQTT connection per broker, keeps accessories in Homebridge's
 // cache (so they appear before the broker is reachable) and gives each device
@@ -57,7 +57,7 @@ interface ParsedDevice {
 }
 
 /**
- * Homebridge instantiates one platform per config block. Two "mqttthing"
+ * Homebridge instantiates one platform per config block. Two "mqttthing-ex"
  * blocks would share the accessory cache and unregister each other's
  * accessories, so only the first block of a Homebridge instance is active.
  */

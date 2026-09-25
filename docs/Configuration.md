@@ -1,21 +1,20 @@
-[![npm](https://badgen.net/npm/v/homebridge-mqttthing/latest)](https://www.npmjs.com/package/homebridge-mqttthing)
-[![npm](https://badgen.net/npm/dt/homebridge-mqttthing)](https://www.npmjs.com/package/homebridge-mqttthing)
-[![Discord](https://img.shields.io/discord/432663330281226270?color=728ED5&logo=discord&label=discord)](https://discord.gg/MTpeMC)
-[![verified-by-homebridge](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
+[![npm](https://badgen.net/npm/v/homebridge-mqttthing-ex/latest)](https://www.npmjs.com/package/homebridge-mqttthing-ex)
+[![npm](https://badgen.net/npm/dt/homebridge-mqttthing-ex)](https://www.npmjs.com/package/homebridge-mqttthing-ex)
 
 # Homebridge MQTT-Thing: Configuration
 
 ## Introduction
 
-Configure the plugin in your homebridge `config.json` file. Most configuration settings can now also be entered using
-[Homebridge Config UI X](https://www.npmjs.com/package/homebridge-config-ui-x).
+Configure the plugin in your homebridge `config.json` file. Configuration settings can also be entered using the plugin's
+own settings screen in [Homebridge Config UI X](https://www.npmjs.com/package/homebridge-config-ui-x), including apply
+functions and `custom` accessories.
 
 MQTT topics used fall into two categories:
 
    * Control topics, of the form `setXXX`, are published by MQTT-Thing in order to control device state (e.g. to turn on a light).
    * Status/notification topics, of the form `getXXX`, are published by the device to notify MQTT-Thing that something has occurred (e.g. that a sensor has detected something or a control topic action has been performed).
 
-**All values shown below (often within <>) are comments/descriptions, and should not be copied into your configuration file. For an example of an actual configuration file, please see `test/config.json`.**
+**All values shown below (often within <>) are comments/descriptions, and should not be copied into your configuration file. For examples of actual configurations, please see [Grouped Accessories](#grouped-accessories) and [Platform Mode](#platform-mode).**
 
    * [General Settings](#general-settings)
    * [MQTT Settings](#mqtt-settings)
@@ -81,7 +80,7 @@ the `devices` array — without `accessory`, and with an optional `id`.
 
 `name` - name of accessory, as displayed in HomeKit
 
-`caption` - HomeKit caption/label (optional)
+`caption` - HomeKit caption/label (optional; accepted for compatibility but currently unused)
 
 ### MQTT Settings
 
@@ -161,14 +160,14 @@ MQTT Topics are configured within a `topics` object. Most topics are optional (i
 
 ### Apply Functions
 
-User functions may be applied to MQTT messages for custom payload encoding/decoding. Apply functions do this within the main configuration file, but are not supported by config-ui-x. Alternatively, an external codec may be used (see [Codecs](#codecs)). When parsing JSON from messages, the [JSONPath](#jsonpath) support
+User functions may be applied to MQTT messages for custom payload encoding/decoding. Apply functions do this within the main configuration file, and can be edited in the plugin's settings screen. Alternatively, an external codec may be used (see [Codecs](#codecs)). When parsing JSON from messages, the [JSONPath](#jsonpath) support
 may be useful.
 
 If an MQTT message is not a simple value or does not match the expected syntax, it is possible to specify a JavaScript function that is called for the message every time it is received/published. For this, the topic string in the configuration can be replaced with an object with these properties:
 
 `topic` - Topic string
 
-`apply` - Javascript function to apply (must be a complete function body that `return`s a value). The function is called with one arguments: `message`, holding the original message, and `state` (optional).
+`apply` - Javascript function to apply (must be a complete function body that `return`s a value). The function is called with two arguments: `message`, holding the original message, and `state` (optional).
 
 Returning `undefined` or `null` from an apply function suppresses the
 message: nothing is forwarded to HomeKit (when receiving) and nothing is
@@ -199,11 +198,11 @@ e.g. Scaling brightness from its internal 0-100 range to an external 0-255 range
 
 The `state` parameter holds an object which may be used to store local state used by the apply function. Additionally, `state.global` points at an object shared between all topics.
 
-This functionality is not currently available when editing MQTT topics using config-ui-x.
+Apply functions can be edited from the topic table in the plugin's settings screen, which also checks their syntax.
 
 ### Boolean Value Settings
 
-Homekit Boolean types like on/off use strings "true" and "false" in MQTT messages unless `"integerValue": true` is configured, in which case they use to "1" and "0". Alternatively, specific values can be configured using `onValue` and `offValue` (in which case `integerValue` is ignored). Other Homekit types (integer, string, etc.) are not affected by these settings.
+Homekit Boolean types like on/off use strings "true" and "false" in MQTT messages unless `"integerValue": true` is configured, in which case they use "1" and "0". Alternatively, specific values can be configured using `onValue` and `offValue` (in which case `integerValue` is ignored). Other Homekit types (integer, string, etc.) are not affected by these settings.
 
 `integerValue` - set to **true** to use the values **1** and **0** to represent Boolean values instead of the strings **"true"** and **"false"** (optional, defaults to false)
 
@@ -256,6 +255,7 @@ History is currently supported for:
 * Humidity Sensor
 * Air Pressure Sensor
 * Air Quality Sensor
+* Weather Station
 * Motion Sensor
 * Contact Sensor
 * Outlet (power consumption)
@@ -273,7 +273,7 @@ History options may be specified in a `historyOptions` object containing one or 
 
 `mergeInterval` - set merge interval [minutes] for events, which are very close in time (optional, for motion sensor only, not in combination with autoTimer/autoRepeat), default: 0
 
-`persistencePath` - full path of directory in which to store history data (defaults to homebridge user storage path)
+`persistencePath` - full path of directory in which to store history data, or a path relative to the homebridge user storage path (defaults to homebridge user storage path)
 
 Avoid the use of "/" in characteristics of the Information Service (e.g. serial number, manufacturer, etc.), since this may cause data to not appear in the history. Note that if your Eve.app is controlling more than one accessory for each type, the serial number should be unique, otherwise Eve.app will merge the histories.
 
@@ -333,11 +333,11 @@ Sonoff-sv-temperature: 19
 
 ### Validation
 
-Following recent advice from Homebridge, MQTT-Thing attempts to validate that properties are only set to values of the correct types. Attempting to set a value to the wrong type or outside valid ranges will result in it being rejected with an error like "Ignoring invalid values [x] for <property> - not an integer".
+Following recent advice from Homebridge, MQTT-Thing attempts to validate that properties are only set to values of the correct types. Attempting to set a value to the wrong type or outside valid ranges will result in it being rejected with an error like "Ignoring invalid value [x] for <property> - not an integer".
 
-You may also see validation messages like "Unable to validate x, format [y]" which indicate gaps in the validation logic. Please report these through Github issues or on the Discord channel.
+You may also see validation messages like "Unable to validate x, format [y]" which indicate gaps in the validation logic. Please report these through GitHub issues.
 
-If validation causes issues for your configuration, it can be disabled for an accessory by setting set `validate` configuration setting to `false`.
+If validation causes issues for your configuration, it can be disabled for an accessory by setting the `validate` configuration setting to `false`.
 
 ```json
     {
@@ -399,7 +399,7 @@ Any settings which apply to all services may be defined within the custom-type a
 
 Custom accessories are only intended for use with simple services, not with accessories like 'weather station' which already combine multiple services.
 
-Custom accessories cannot be configured through Config UI X.
+Custom accessories can be configured in the plugin's settings screen.
 
 ## Platform Mode
 

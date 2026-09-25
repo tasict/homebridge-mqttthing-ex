@@ -375,7 +375,7 @@ describe('duplicate identity findings', () => {
 
     const findings = duplicateIdentityFindings(s);
     expect(findings.get(legacy)).toContain('platform device');
-    expect(findings.get(platformDevice)).toContain('legacy accessory');
+    expect(findings.get(platformDevice)).toContain('accessory block');
     expect(findings.size).toBe(2);
   });
 

@@ -155,7 +155,7 @@ export function subscribe(ctx: MqttContext, topicSpec: TopicSpec, property: stri
       // new property
       propDispatch[property] = [rawHandler];
       if (config.logMqtt) {
-        log('Avalable codec notification property: ' + property);
+        log('Available codec notification property: ' + property);
       }
     }
   }
