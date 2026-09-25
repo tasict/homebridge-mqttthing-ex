@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MQTT Thing EX：透過 Homebridge 把 MQTT 裝置接上 Apple「家庭」</title>
+<meta name="description" content="免費的 Homebridge 外掛，把 MQTT 裝置帶進 Apple「家庭」。可直接取代 homebridge-mqttthing：現有設定照用，不必重新配對。">
+<link rel="canonical" href="https://tasict.github.io/homebridge-mqttthing-ex/zh-TW/">
+<link rel="alternate" hreflang="en" href="https://tasict.github.io/homebridge-mqttthing-ex/">
+<link rel="alternate" hreflang="zh-TW" href="https://tasict.github.io/homebridge-mqttthing-ex/zh-TW/">
+<link rel="alternate" hreflang="ja" href="https://tasict.github.io/homebridge-mqttthing-ex/ja/">
+<link rel="alternate" hreflang="x-default" href="https://tasict.github.io/homebridge-mqttthing-ex/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="MQTT Thing EX：透過 Homebridge 把 MQTT 裝置接上 Apple「家庭」">
+<meta property="og:description" content="免費的 Homebridge 外掛，把 MQTT 裝置帶進 Apple「家庭」。可直接取代 homebridge-mqttthing：現有設定照用，不必重新配對。">
+<meta property="og:url" content="https://tasict.github.io/homebridge-mqttthing-ex/zh-TW/">
+<meta property="og:image" content="https://tasict.github.io/homebridge-mqttthing-ex/assets/og.png">
+<meta property="og:locale" content="zh_TW">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#f8f5f9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#150d17" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../assets/icon.png">
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+<header class="wrap masthead">
+  <a class="wordmark" href="./"><img src="../assets/icon.svg" alt="" width="30" height="30">MQTT Thing EX</a>
+  <a href="https://github.com/tasict/homebridge-mqttthing-ex">原始碼</a>
+  <a class="tip head-tip" href="https://tasict.bobaboba.me" aria-label="請我喝珍奶"><img src="../assets/boba.png" alt="" width="24" height="24"><span>請我喝珍奶</span></a>
+  <details class="lang">
+    <summary aria-label="語言"><svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="7.5"/><path d="M2.5 10h15M10 2.5c2.2 2.3 3.2 4.8 3.2 7.5s-1 5.2-3.2 7.5c-2.2-2.3-3.2-4.8-3.2-7.5s1-5.2 3.2-7.5z"/></svg><span>繁體中文</span></summary>
+    <ul><li><a href="../" hreflang="en" lang="en">English</a></li><li><a href="../zh-TW/" hreflang="zh-TW" lang="zh-Hant-TW" aria-current="page">繁體中文</a></li><li><a href="../ja/" hreflang="ja" lang="ja">日本語</a></li></ul>
+  </details>
+</header>
+
+<main>
+<div class="wrap">
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="hero-copy">
+      <h1 id="hero-title">你的 MQTT 裝置，<br>直接進「家庭」App。</h1>
+      <p class="lede">一個 Homebridge 外掛，把 MQTT 主題變成 HomeKit 配件：燈、感應器、門鎖、恆溫器等等。它是 homebridge-mqttthing 持續維護的後繼版本，現有設定不用改就能用。</p>
+      <div class="actions">
+        <a class="btn" href="#start">在 Homebridge 安裝</a>
+        <a href="https://github.com/tasict/homebridge-mqttthing-ex">在 GitHub 查看</a>
+      </div>
+      <p class="fine">免費、開放原始碼。支援 Homebridge 1.8 以上，包括 2.x。</p>
+    </div>
+    <div class="stage" data-demo data-t='{&quot;name&quot;:&quot;客廳檯燈&quot;,&quot;power&quot;:&quot;電源&quot;,&quot;brightness&quot;:&quot;亮度&quot;,&quot;on&quot;:&quot;開啟，{b}%&quot;,&quot;off&quot;:&quot;關閉&quot;,&quot;log&quot;:&quot;MQTT 訊息&quot;,&quot;out&quot;:&quot;送往裝置&quot;,&quot;in&quot;:&quot;來自裝置&quot;,&quot;tally&quot;:&quot;「家庭」App 變更 {changes} 次，送往裝置 {sent} 則訊息&quot;,&quot;hint&quot;:&quot;試試看：分別開啟和關閉發布佇列，再拖動亮度滑桿。&quot;,&quot;topics&quot;:{&quot;setOn&quot;:&quot;living/lamp/setOn&quot;,&quot;getOn&quot;:&quot;living/lamp/getOn&quot;,&quot;setBrightness&quot;:&quot;living/lamp/setBrightness&quot;,&quot;getBrightness&quot;:&quot;living/lamp/getBrightness&quot;},&quot;queueMs&quot;:300}'>
+      <div class="tile" data-on>
+        <div class="tile-head">
+          <span class="tile-icon"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21.5h4M12 2.5a6.5 6.5 0 0 0-4 11.6c.7.6 1 1.3 1 2.1V17h6v-.8c0-.8.4-1.5 1-2.1a6.5 6.5 0 0 0-4-11.6z"/></svg></span>
+          <div class="tile-name"><strong>客廳檯燈</strong><span data-status aria-live="polite"></span></div>
+          <button type="button" class="power" role="switch" aria-checked="true" aria-label="電源" data-power><span></span></button>
+        </div>
+        <label class="bright">
+          <span class="bright-label">亮度</span>
+          <input type="range" min="1" max="100" value="70" data-bright>
+        </label>
+      </div>
+      <div class="wire-log">
+        <div class="log-head">
+          <span>MQTT 訊息</span>
+          <label class="queue"><input type="checkbox" data-queue checked><span class="mini-switch" aria-hidden="true"></span><code>publishMinIntervalms: 300</code></label>
+        </div>
+        <ol class="log" data-log aria-live="off"></ol>
+        <p class="tally" data-tally aria-live="polite"></p>
+      </div>
+      <p class="hint">試試看：分別開啟和關閉發布佇列，再拖動亮度滑桿。</p>
+    </div>
+  </section>
+
+  <section class="band" aria-labelledby="h-same">
+    <div class="split">
+      <div class="intro">
+        <h2 id="h-same">直接換過來，不必從頭再來</h2>
+        <p>從 homebridge-mqttthing 轉過來嗎？<code>config.json</code> 完全不用動。配件區塊照樣寫 <code>&quot;accessory&quot;: &quot;mqttthing&quot;</code>，codec 檔案和 <code>apply</code> 運算式也都照常運作。</p>
+        <ol class="moves"><li><h3>移除 homebridge-mqttthing</h3><p>兩個外掛都使用 mqttthing 這個名稱，同時只能安裝其中一個。</p></li><li><h3>安裝 MQTT Thing EX</h3><p>從 Homebridge UI 安裝，或使用 npm。</p></li><li><h3>重新啟動 Homebridge 一次</h3><p>一次做完，只重新啟動一次。配件的身分不變，房間、場景和自動化都會保留。</p></li></ol>
+        <p class="back">不需要重新配對。Homebridge 是以配件名稱來辨識配件，而不是外掛，名稱沒變，配件就還是同一個。</p>
+      </div>
+      <figure class="code">
+        <figcaption>config.json</figcaption>
+        <pre><code>{
+  <span class="k">"accessory"</span>: <span class="s">"mqttthing"</span>,
+  <span class="k">"type"</span>: <span class="s">"lightbulb"</span>,
+  <span class="k">"name"</span>: <span class="s">"Living Room Lamp"</span>,
+  <span class="k">"url"</span>: <span class="s">"mqtt://broker.local:1883"</span>,
+  <span class="k">"topics"</span>: {
+    <span class="k">"setOn"</span>: <span class="s">"living/lamp/setOn"</span>,
+    <span class="k">"getOn"</span>: <span class="s">"living/lamp/getOn"</span>,
+    <span class="k">"setBrightness"</span>: <span class="s">"living/lamp/setBrightness"</span>,
+    <span class="k">"getBrightness"</span>: <span class="s">"living/lamp/getBrightness"</span>
+  }
+}</code></pre>
+      </figure>
+    </div>
+  </section>
+
+  <section class="band" aria-labelledby="h-platform">
+    <div class="intro">
+      <h2 id="h-platform">每個 broker 一條連線，而不是每個裝置一條</h2>
+      <p>原本的外掛會替每個配件各開一條 MQTT 連線。選用的平台模式把所有裝置放進同一個區塊，共用一條連線：同一個 broker 上的二十四盞燈，只要一條連線，而不是二十四條。</p>
+    </div>
+    <div class="modes">
+      <figure class="mode">
+        <figcaption><h3>配件模式</h3><p class="count">12 個裝置，12 條連線</p></figcaption>
+        <svg class="conns" viewBox="0 0 360 310" role="img" aria-label="十二個裝置，各自有一條連到 MQTT broker 的連線。"><path class="conn" d="M40 22C180 22 210 154 290 154"/><path class="conn" d="M40 46C180 46 210 154 290 154"/><path class="conn" d="M40 70C180 70 210 154 290 154"/><path class="conn" d="M40 94C180 94 210 154 290 154"/><path class="conn" d="M40 118C180 118 210 154 290 154"/><path class="conn" d="M40 142C180 142 210 154 290 154"/><path class="conn" d="M40 166C180 166 210 154 290 154"/><path class="conn" d="M40 190C180 190 210 154 290 154"/><path class="conn" d="M40 214C180 214 210 154 290 154"/><path class="conn" d="M40 238C180 238 210 154 290 154"/><path class="conn" d="M40 262C180 262 210 154 290 154"/><path class="conn" d="M40 286C180 286 210 154 290 154"/><rect class="dev" x="14" y="15" width="26" height="14" rx="4"/><rect class="dev" x="14" y="39" width="26" height="14" rx="4"/><rect class="dev" x="14" y="63" width="26" height="14" rx="4"/><rect class="dev" x="14" y="87" width="26" height="14" rx="4"/><rect class="dev" x="14" y="111" width="26" height="14" rx="4"/><rect class="dev" x="14" y="135" width="26" height="14" rx="4"/><rect class="dev" x="14" y="159" width="26" height="14" rx="4"/><rect class="dev" x="14" y="183" width="26" height="14" rx="4"/><rect class="dev" x="14" y="207" width="26" height="14" rx="4"/><rect class="dev" x="14" y="231" width="26" height="14" rx="4"/><rect class="dev" x="14" y="255" width="26" height="14" rx="4"/><rect class="dev" x="14" y="279" width="26" height="14" rx="4"/><circle class="broker" cx="316" cy="154" r="26"/><text x="316" y="159" text-anchor="middle">MQTT</text></svg>
+      </figure>
+      <figure class="mode is-platform">
+        <figcaption><h3>平台模式</h3><p class="count">12 個裝置，1 條連線</p></figcaption>
+        <svg class="conns" viewBox="0 0 360 310" role="img" aria-label="十二個裝置共用一條連到 MQTT broker 的連線。"><path class="wire" d="M40 22C105 22 110 154 156 154"/><path class="wire" d="M40 46C105 46 110 154 156 154"/><path class="wire" d="M40 70C105 70 110 154 156 154"/><path class="wire" d="M40 94C105 94 110 154 156 154"/><path class="wire" d="M40 118C105 118 110 154 156 154"/><path class="wire" d="M40 142C105 142 110 154 156 154"/><path class="wire" d="M40 166C105 166 110 154 156 154"/><path class="wire" d="M40 190C105 190 110 154 156 154"/><path class="wire" d="M40 214C105 214 110 154 156 154"/><path class="wire" d="M40 238C105 238 110 154 156 154"/><path class="wire" d="M40 262C105 262 110 154 156 154"/><path class="wire" d="M40 286C105 286 110 154 156 154"/><path class="conn" d="M184 154H290"/><circle class="hub" cx="170" cy="154" r="14"/><rect class="dev" x="14" y="15" width="26" height="14" rx="4"/><rect class="dev" x="14" y="39" width="26" height="14" rx="4"/><rect class="dev" x="14" y="63" width="26" height="14" rx="4"/><rect class="dev" x="14" y="87" width="26" height="14" rx="4"/><rect class="dev" x="14" y="111" width="26" height="14" rx="4"/><rect class="dev" x="14" y="135" width="26" height="14" rx="4"/><rect class="dev" x="14" y="159" width="26" height="14" rx="4"/><rect class="dev" x="14" y="183" width="26" height="14" rx="4"/><rect class="dev" x="14" y="207" width="26" height="14" rx="4"/><rect class="dev" x="14" y="231" width="26" height="14" rx="4"/><rect class="dev" x="14" y="255" width="26" height="14" rx="4"/><rect class="dev" x="14" y="279" width="26" height="14" rx="4"/><circle class="broker" cx="316" cy="154" r="26"/><text x="316" y="159" text-anchor="middle">MQTT</text></svg>
+      </figure>
+    </div>
+    <ul class="feats compact"><li><h3>放心改名</h3><p>每個裝置都有固定的 <code>id</code>，名稱只是標籤，想改就改。</p></li><li><h3>設定出錯也不會弄丟配置</h3><p>設定有誤的裝置，會在 HomeKit 中保留原本的位置，房間和自動化都在，等你修好。錯誤會在啟動時寫進日誌。</p></li><li><h3>準備好再搬</h3><p>設定頁面會替你把配件搬到平台模式，並保留它們在 HomeKit 中的身分。配件模式也會持續完整支援。</p></li></ul>
+  </section>
+
+  <section class="band" aria-labelledby="h-feat">
+    <div class="intro">
+      <h2 id="h-feat">你會得到什麼</h2>
+      <p>homebridge-mqttthing 能做的都在，用 TypeScript 為 Homebridge 2 重新打造，並修好長久以來的問題。</p>
+    </div>
+    <ul class="feats"><li><h3>為大量裝置設計的設定頁面</h3><p>可搜尋的裝置清單、懂得每種類型有哪些主題的編輯器、可以安全編輯的 <code>apply</code> 函式、連線測試，以及即時主題探測。</p></li><li><h3>對小型裝置更溫和</h3><p>選用的發布佇列會控制訊息節奏，每個主題只保留最新的值，場景切換或拖動滑桿時，不會把低功耗裝置淹沒。</p></li><li><h3>訊息格式隨你</h3><p>codec 檔案、<code>apply</code> 運算式和 JSONPath（<code>topic$.path</code>）都照常運作，格式特殊的裝置也不必另外寫橋接程式。</p></li><li><h3>Eve App 歷史紀錄</h3><p>溫度、濕度、氣壓、用電量等數據會記錄下來，顯示在 Eve App 的歷史圖表中。</p></li><li><h3>修好上游的問題</h3><p>啟動時多送的顏色訊息、自適應照明把燈打開、萬用字元訂閱、空訊息造成當機等等。</p></li><li><h3>為 Homebridge 2 準備好了</h3><p>採用新版 HomeKit API 與 ES 模組。可在 Homebridge 1.8 以上與 2.x 執行，npm audit 零弱點。</p></li></ul>
+  </section>
+
+  <section class="band" aria-labelledby="h-types">
+    <div class="intro">
+      <h2 id="h-types">HomeKit 有的，幾乎都能接</h2>
+      <p>37 種配件類型，從單一開關，到把多個服務組合在一起的自訂配件。</p>
+    </div>
+    <dl class="types"><div><dt>燈光</dt><dd><span>燈泡，支援亮度、彩色、白光與色溫，以及自適應照明</span></dd></div><div><dt>開關與插座</dt><dd><span>開關</span><span>插座</span><span>無狀態可程式化開關</span></dd></div><div><dt>感應器</dt><dd><span>動作</span><span>有人偵測</span><span>光線</span><span>溫度</span><span>濕度</span><span>氣壓</span><span>氣象站</span><span>接觸</span><span>煙霧</span><span>漏水</span><span>空氣品質</span><span>二氧化碳</span><span>一氧化碳</span></dd></div><div><dt>空調</dt><dd><span>恆溫器</span><span>冷暖氣機</span><span>除濕機</span><span>風扇</span><span>風扇 v2</span><span>空氣清淨機</span></dd></div><div><dt>安全與門禁</dt><dd><span>保全系統</span><span>門鈴</span><span>車庫門</span><span>門鎖</span><span>窗簾</span><span>窗戶</span><span>門</span></dd></div><div><dt>用水</dt><dd><span>閥門</span><span>灑水系統</span></dd></div><div><dt>影音與其他</dt><dd><span>電視</span><span>麥克風</span><span>揚聲器</span><span>電池</span><span>自訂：一個配件包含多個服務</span></dd></div></dl>
+    <p class="fine">每種類型的主題與選項都列在說明文件中。 <a href="https://github.com/tasict/homebridge-mqttthing-ex/blob/master/docs/Accessories.md">所有配件類型（英文）</a></p>
+  </section>
+
+  <section class="band" id="start" aria-labelledby="h-start">
+    <h2 id="h-start">幾分鐘就能設定好</h2>
+    <ol class="steps"><li><h3>安裝外掛</h3><p>在 Homebridge UI 開啟外掛頁面，搜尋 MQTT Thing EX 並安裝。</p></li><li><h3>加入裝置</h3><p>開啟外掛設定，選擇新增，挑選裝置類型，填入 broker 和主題，當場就能測試連線。</p></li><li><h3>重新啟動 Homebridge</h3><p>裝置會出現在「家庭」App 中，可以分配房間、加入場景，也能用 Siri 控制。</p></li></ol>
+    <p class="fine">需要 Homebridge 1.8 以上（支援 2.x）與 Node.js 18.17 以上。 <a href="https://github.com/tasict/homebridge-mqttthing-ex/blob/master/docs/Configuration.md">完整設定說明（英文）</a></p>
+  </section>
+
+  <section class="band" aria-labelledby="h-support">
+    <div class="tipjar">
+      <img src="../assets/boba.png" alt="" width="120" height="120">
+      <div>
+        <h2 id="h-support">讓它維持免費</h2>
+        <p>這個外掛沒有廣告，也沒有付費版。如果它讓你的裝置順利接上 Apple「家庭」，一杯珍奶或一點贊助，能幫我持續跟上 Homebridge 的新版本，也更快處理大家回報的問題。</p>
+        <div class="actions">
+          <a class="btn" href="https://tasict.bobaboba.me"><img src="../assets/boba.png" alt="" width="22" height="22">請我喝珍奶</a>
+          <a class="tip" href="https://paypal.me/tasict">用 PayPal 贊助</a>
+        </div>
+        <p class="fine">珍奶贊助直接刷卡，不需要 PayPal 帳號。</p>
+      </div>
+    </div>
+  </section>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot">
+      <div>
+        <p>由 tasict 製作，以 Apache-2.0 授權釋出。改寫自 <a href="https://github.com/arachnetech/homebridge-mqttthing">David Miller 與貢獻者的 homebridge-mqttthing。</a></p>
+        <ul>
+          <li><a href="https://github.com/tasict/homebridge-mqttthing-ex">原始碼</a></li>
+          <li><a href="https://www.npmjs.com/package/homebridge-mqttthing-ex">npm 套件</a></li>
+          <li><a href="https://github.com/tasict/homebridge-mqttthing-ex/blob/master/CHANGELOG.md">更新紀錄</a></li>
+          <li><a href="https://github.com/tasict/homebridge-mqttthing-ex/issues">回報問題</a></li>
+        </ul>
+      </div>
+      <ul class="langs"><li><a href="../" hreflang="en" lang="en">English</a></li><li><a href="../zh-TW/" hreflang="zh-TW" lang="zh-Hant-TW" aria-current="page">繁體中文</a></li><li><a href="../ja/" hreflang="ja" lang="ja">日本語</a></li></ul>
+    </div>
+    <p class="tm">Apple Home（家庭）與 HomeKit 是 Apple Inc. 的商標；MQTT 是 OASIS 標準；Eve 是 Eve Systems GmbH 的商標。本外掛為非官方專案，與上述組織無關，也未獲其背書。</p>
+  </div>
+</footer>
+<script src="../assets/site.js"></script>
+</body>
+</html>

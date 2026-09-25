@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MQTT Thing EX：Homebridge で MQTT デバイスを Apple「ホーム」に</title>
+<meta name="description" content="MQTT デバイスを Apple「ホーム」に取り込む無料の Homebridge プラグイン。homebridge-mqttthing の後継として置き換えるだけで、設定はそのまま、ペアリングのやり直しも不要です。">
+<link rel="canonical" href="https://tasict.github.io/homebridge-mqttthing-ex/ja/">
+<link rel="alternate" hreflang="en" href="https://tasict.github.io/homebridge-mqttthing-ex/">
+<link rel="alternate" hreflang="zh-TW" href="https://tasict.github.io/homebridge-mqttthing-ex/zh-TW/">
+<link rel="alternate" hreflang="ja" href="https://tasict.github.io/homebridge-mqttthing-ex/ja/">
+<link rel="alternate" hreflang="x-default" href="https://tasict.github.io/homebridge-mqttthing-ex/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="MQTT Thing EX：Homebridge で MQTT デバイスを Apple「ホーム」に">
+<meta property="og:description" content="MQTT デバイスを Apple「ホーム」に取り込む無料の Homebridge プラグイン。homebridge-mqttthing の後継として置き換えるだけで、設定はそのまま、ペアリングのやり直しも不要です。">
+<meta property="og:url" content="https://tasict.github.io/homebridge-mqttthing-ex/ja/">
+<meta property="og:image" content="https://tasict.github.io/homebridge-mqttthing-ex/assets/og.png">
+<meta property="og:locale" content="ja_JP">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#f8f5f9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#150d17" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../assets/icon.png">
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+<header class="wrap masthead">
+  <a class="wordmark" href="./"><img src="../assets/icon.svg" alt="" width="30" height="30">MQTT Thing EX</a>
+  <a href="https://github.com/tasict/homebridge-mqttthing-ex">ソースコード</a>
+  <a class="tip head-tip" href="https://tasict.bobaboba.me" aria-label="タピオカをおごる"><img src="../assets/boba.png" alt="" width="24" height="24"><span>タピオカをおごる</span></a>
+  <details class="lang">
+    <summary aria-label="言語"><svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="7.5"/><path d="M2.5 10h15M10 2.5c2.2 2.3 3.2 4.8 3.2 7.5s-1 5.2-3.2 7.5c-2.2-2.3-3.2-4.8-3.2-7.5s1-5.2 3.2-7.5z"/></svg><span>日本語</span></summary>
+    <ul><li><a href="../" hreflang="en" lang="en">English</a></li><li><a href="../zh-TW/" hreflang="zh-TW" lang="zh-Hant-TW">繁體中文</a></li><li><a href="../ja/" hreflang="ja" lang="ja" aria-current="page">日本語</a></li></ul>
+  </details>
+</header>
+
+<main>
+<div class="wrap">
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="hero-copy">
+      <h1 id="hero-title">MQTT デバイスを、<br>そのまま「ホーム」App へ。</h1>
+      <p class="lede">MQTT のトピックを HomeKit のアクセサリにする Homebridge プラグインです。照明、センサー、ドアロック、サーモスタットなどに対応。homebridge-mqttthing の後継として開発が続いており、今の設定を変えずに使えます。</p>
+      <div class="actions">
+        <a class="btn" href="#start">Homebridge にインストール</a>
+        <a href="https://github.com/tasict/homebridge-mqttthing-ex">GitHub で見る</a>
+      </div>
+      <p class="fine">無料のオープンソース。Homebridge 1.8 以降（2.x を含む）で動作します。</p>
+    </div>
+    <div class="stage" data-demo data-t='{&quot;name&quot;:&quot;リビングのランプ&quot;,&quot;power&quot;:&quot;電源&quot;,&quot;brightness&quot;:&quot;明るさ&quot;,&quot;on&quot;:&quot;オン、{b}%&quot;,&quot;off&quot;:&quot;オフ&quot;,&quot;log&quot;:&quot;MQTT メッセージ&quot;,&quot;out&quot;:&quot;デバイスへ&quot;,&quot;in&quot;:&quot;デバイスから&quot;,&quot;tally&quot;:&quot;「ホーム」App での変更 {changes} 回、デバイスへのメッセージ {sent} 件&quot;,&quot;hint&quot;:&quot;試してみてください。パブリッシュキューのオンとオフで、スライダーを動かしてみましょう。&quot;,&quot;topics&quot;:{&quot;setOn&quot;:&quot;living/lamp/setOn&quot;,&quot;getOn&quot;:&quot;living/lamp/getOn&quot;,&quot;setBrightness&quot;:&quot;living/lamp/setBrightness&quot;,&quot;getBrightness&quot;:&quot;living/lamp/getBrightness&quot;},&quot;queueMs&quot;:300}'>
+      <div class="tile" data-on>
+        <div class="tile-head">
+          <span class="tile-icon"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21.5h4M12 2.5a6.5 6.5 0 0 0-4 11.6c.7.6 1 1.3 1 2.1V17h6v-.8c0-.8.4-1.5 1-2.1a6.5 6.5 0 0 0-4-11.6z"/></svg></span>
+          <div class="tile-name"><strong>リビングのランプ</strong><span data-status aria-live="polite"></span></div>
+          <button type="button" class="power" role="switch" aria-checked="true" aria-label="電源" data-power><span></span></button>
+        </div>
+        <label class="bright">
+          <span class="bright-label">明るさ</span>
+          <input type="range" min="1" max="100" value="70" data-bright>
+        </label>
+      </div>
+      <div class="wire-log">
+        <div class="log-head">
+          <span>MQTT メッセージ</span>
+          <label class="queue"><input type="checkbox" data-queue checked><span class="mini-switch" aria-hidden="true"></span><code>publishMinIntervalms: 300</code></label>
+        </div>
+        <ol class="log" data-log aria-live="off"></ol>
+        <p class="tally" data-tally aria-live="polite"></p>
+      </div>
+      <p class="hint">試してみてください。パブリッシュキューのオンとオフで、スライダーを動かしてみましょう。</p>
+    </div>
+  </section>
+
+  <section class="band" aria-labelledby="h-same">
+    <div class="split">
+      <div class="intro">
+        <h2 id="h-same">最初からやり直さずに乗り換え</h2>
+        <p>homebridge-mqttthing から移行しますか？ <code>config.json</code> はそのままで大丈夫です。アクセサリブロックは <code>&quot;accessory&quot;: &quot;mqttthing&quot;</code> のまま、コーデックファイルや <code>apply</code> 式もそのまま動きます。</p>
+        <ol class="moves"><li><h3>homebridge-mqttthing をアンインストール</h3><p>どちらのプラグインも mqttthing という名前を使うため、同時にはひとつしかインストールできません。</p></li><li><h3>MQTT Thing EX をインストール</h3><p>Homebridge UI から、または npm でインストールします。</p></li><li><h3>Homebridge を 1 回だけ再起動</h3><p>再起動 1 回でまとめて行ってください。アクセサリの識別情報は変わらないので、部屋・シーン・オートメーションもそのまま残ります。</p></li></ol>
+        <p class="back">ペアリングのやり直しは不要です。Homebridge はアクセサリをプラグインではなく名前で識別するので、名前が同じなら同じアクセサリのままです。</p>
+      </div>
+      <figure class="code">
+        <figcaption>config.json</figcaption>
+        <pre><code>{
+  <span class="k">"accessory"</span>: <span class="s">"mqttthing"</span>,
+  <span class="k">"type"</span>: <span class="s">"lightbulb"</span>,
+  <span class="k">"name"</span>: <span class="s">"Living Room Lamp"</span>,
+  <span class="k">"url"</span>: <span class="s">"mqtt://broker.local:1883"</span>,
+  <span class="k">"topics"</span>: {
+    <span class="k">"setOn"</span>: <span class="s">"living/lamp/setOn"</span>,
+    <span class="k">"getOn"</span>: <span class="s">"living/lamp/getOn"</span>,
+    <span class="k">"setBrightness"</span>: <span class="s">"living/lamp/setBrightness"</span>,
+    <span class="k">"getBrightness"</span>: <span class="s">"living/lamp/getBrightness"</span>
+  }
+}</code></pre>
+      </figure>
+    </div>
+  </section>
+
+  <section class="band" aria-labelledby="h-platform">
+    <div class="intro">
+      <h2 id="h-platform">接続はデバイスごとではなく、ブローカーごとに 1 本</h2>
+      <p>元のプラグインはアクセサリごとに MQTT 接続を開きます。オプションのプラットフォームモードでは、すべてのデバイスをひとつのブロックにまとめて接続を共有するので、同じブローカーにつながる 24 個の照明も接続 1 本で済みます。</p>
+    </div>
+    <div class="modes">
+      <figure class="mode">
+        <figcaption><h3>アクセサリモード</h3><p class="count">デバイス 12 台、接続 12 本</p></figcaption>
+        <svg class="conns" viewBox="0 0 360 310" role="img" aria-label="12 台のデバイスが、それぞれ MQTT ブローカーへの接続を持っている図。"><path class="conn" d="M40 22C180 22 210 154 290 154"/><path class="conn" d="M40 46C180 46 210 154 290 154"/><path class="conn" d="M40 70C180 70 210 154 290 154"/><path class="conn" d="M40 94C180 94 210 154 290 154"/><path class="conn" d="M40 118C180 118 210 154 290 154"/><path class="conn" d="M40 142C180 142 210 154 290 154"/><path class="conn" d="M40 166C180 166 210 154 290 154"/><path class="conn" d="M40 190C180 190 210 154 290 154"/><path class="conn" d="M40 214C180 214 210 154 290 154"/><path class="conn" d="M40 238C180 238 210 154 290 154"/><path class="conn" d="M40 262C180 262 210 154 290 154"/><path class="conn" d="M40 286C180 286 210 154 290 154"/><rect class="dev" x="14" y="15" width="26" height="14" rx="4"/><rect class="dev" x="14" y="39" width="26" height="14" rx="4"/><rect class="dev" x="14" y="63" width="26" height="14" rx="4"/><rect class="dev" x="14" y="87" width="26" height="14" rx="4"/><rect class="dev" x="14" y="111" width="26" height="14" rx="4"/><rect class="dev" x="14" y="135" width="26" height="14" rx="4"/><rect class="dev" x="14" y="159" width="26" height="14" rx="4"/><rect class="dev" x="14" y="183" width="26" height="14" rx="4"/><rect class="dev" x="14" y="207" width="26" height="14" rx="4"/><rect class="dev" x="14" y="231" width="26" height="14" rx="4"/><rect class="dev" x="14" y="255" width="26" height="14" rx="4"/><rect class="dev" x="14" y="279" width="26" height="14" rx="4"/><circle class="broker" cx="316" cy="154" r="26"/><text x="316" y="159" text-anchor="middle">MQTT</text></svg>
+      </figure>
+      <figure class="mode is-platform">
+        <figcaption><h3>プラットフォームモード</h3><p class="count">デバイス 12 台、接続 1 本</p></figcaption>
+        <svg class="conns" viewBox="0 0 360 310" role="img" aria-label="12 台のデバイスが、MQTT ブローカーへの接続 1 本を共有している図。"><path class="wire" d="M40 22C105 22 110 154 156 154"/><path class="wire" d="M40 46C105 46 110 154 156 154"/><path class="wire" d="M40 70C105 70 110 154 156 154"/><path class="wire" d="M40 94C105 94 110 154 156 154"/><path class="wire" d="M40 118C105 118 110 154 156 154"/><path class="wire" d="M40 142C105 142 110 154 156 154"/><path class="wire" d="M40 166C105 166 110 154 156 154"/><path class="wire" d="M40 190C105 190 110 154 156 154"/><path class="wire" d="M40 214C105 214 110 154 156 154"/><path class="wire" d="M40 238C105 238 110 154 156 154"/><path class="wire" d="M40 262C105 262 110 154 156 154"/><path class="wire" d="M40 286C105 286 110 154 156 154"/><path class="conn" d="M184 154H290"/><circle class="hub" cx="170" cy="154" r="14"/><rect class="dev" x="14" y="15" width="26" height="14" rx="4"/><rect class="dev" x="14" y="39" width="26" height="14" rx="4"/><rect class="dev" x="14" y="63" width="26" height="14" rx="4"/><rect class="dev" x="14" y="87" width="26" height="14" rx="4"/><rect class="dev" x="14" y="111" width="26" height="14" rx="4"/><rect class="dev" x="14" y="135" width="26" height="14" rx="4"/><rect class="dev" x="14" y="159" width="26" height="14" rx="4"/><rect class="dev" x="14" y="183" width="26" height="14" rx="4"/><rect class="dev" x="14" y="207" width="26" height="14" rx="4"/><rect class="dev" x="14" y="231" width="26" height="14" rx="4"/><rect class="dev" x="14" y="255" width="26" height="14" rx="4"/><rect class="dev" x="14" y="279" width="26" height="14" rx="4"/><circle class="broker" cx="316" cy="154" r="26"/><text x="316" y="159" text-anchor="middle">MQTT</text></svg>
+      </figure>
+    </div>
+    <ul class="feats compact"><li><h3>名前を変えても安心</h3><p>デバイスには変わらない <code>id</code> があるので、名前はただのラベルです。いつでも変更できます。</p></li><li><h3>設定ミスで環境を失わない</h3><p>設定に誤りのあるデバイスも、直すまで HomeKit 上の場所を保ち、部屋やオートメーションもそのまま残ります。誤りは起動時にログへ出力されます。</p></li><li><h3>準備ができたら移行</h3><p>設定画面がアクセサリをプラットフォームモードへ移し、HomeKit 上の識別情報も引き継ぎます。アクセサリモードも引き続き完全にサポートされます。</p></li></ul>
+  </section>
+
+  <section class="band" aria-labelledby="h-feat">
+    <div class="intro">
+      <h2 id="h-feat">できること</h2>
+      <p>homebridge-mqttthing の機能はすべてそのまま。TypeScript で Homebridge 2 向けに作り直し、長年の不具合も修正しました。</p>
+    </div>
+    <ul class="feats"><li><h3>大規模な環境向けの設定画面</h3><p>検索できるデバイス一覧、タイプごとのトピックを知っているエディタ、安全に編集できる <code>apply</code> 関数、接続テスト、トピックのライブ確認。</p></li><li><h3>小さなデバイスにやさしく</h3><p>オプションのパブリッシュキューが送信の間隔を整え、トピックごとに最新の値だけを送るので、シーンやスライダー操作で低消費電力のデバイスがあふれません。</p></li><li><h3>ペイロードは自由に</h3><p>コーデックファイル、<code>apply</code> 式、JSONPath（<code>topic$.path</code>）がそのまま使えるので、独特なペイロードのデバイスも専用ブリッジなしで取り込めます。</p></li><li><h3>Eve App の履歴</h3><p>温度、湿度、気圧、消費電力などを記録し、Eve App の履歴グラフに表示します。</p></li><li><h3>上流の不具合を修正</h3><p>起動時の余計な色メッセージ、アダプティブライティングで照明が点く問題、ワイルドカード購読、空のペイロードでのクラッシュなど。</p></li><li><h3>Homebridge 2 に対応</h3><p>新しい HomeKit API と ES モジュールを採用。Homebridge 1.8 以降と 2.x で動作し、npm audit の脆弱性はゼロです。</p></li></ul>
+  </section>
+
+  <section class="band" aria-labelledby="h-types">
+    <div class="intro">
+      <h2 id="h-types">HomeKit にあるものは、ほぼ何でも</h2>
+      <p>37 種類のアクセサリタイプ。シンプルなスイッチから、複数のサービスをまとめたカスタムアクセサリまで。</p>
+    </div>
+    <dl class="types"><div><dt>照明</dt><dd><span>電球（明るさ、カラー、白色と色温度、アダプティブライティング）</span></dd></div><div><dt>スイッチとコンセント</dt><dd><span>スイッチ</span><span>コンセント</span><span>ステートレスプログラマブルスイッチ</span></dd></div><div><dt>センサー</dt><dd><span>人感</span><span>在室</span><span>照度</span><span>温度</span><span>湿度</span><span>気圧</span><span>気象ステーション</span><span>開閉</span><span>煙</span><span>水漏れ</span><span>空気質</span><span>二酸化炭素</span><span>一酸化炭素</span></dd></div><div><dt>空調</dt><dd><span>サーモスタット</span><span>冷暖房機</span><span>除湿機</span><span>ファン</span><span>ファン v2</span><span>空気清浄機</span></dd></div><div><dt>セキュリティと出入り</dt><dd><span>セキュリティシステム</span><span>ドアベル</span><span>ガレージドア</span><span>ドアロック</span><span>ブラインド</span><span>窓</span><span>ドア</span></dd></div><div><dt>水まわり</dt><dd><span>バルブ</span><span>散水システム</span></dd></div><div><dt>メディアほか</dt><dd><span>テレビ</span><span>マイク</span><span>スピーカー</span><span>バッテリー</span><span>カスタム（複数サービスをひとつのアクセサリに）</span></dd></div></dl>
+    <p class="fine">各タイプのトピックとオプションはドキュメントに載っています。 <a href="https://github.com/tasict/homebridge-mqttthing-ex/blob/master/docs/Accessories.md">すべてのアクセサリタイプ（英語）</a></p>
+  </section>
+
+  <section class="band" id="start" aria-labelledby="h-start">
+    <h2 id="h-start">数分でセットアップ</h2>
+    <ol class="steps"><li><h3>プラグインをインストール</h3><p>Homebridge UI のプラグイン画面で MQTT Thing EX を検索してインストールします。</p></li><li><h3>デバイスを追加</h3><p>プラグイン設定を開いて追加を選び、デバイスのタイプを選んでブローカーとトピックを入力します。接続テストもその場でできます。</p></li><li><h3>Homebridge を再起動</h3><p>デバイスが「ホーム」App に現れ、部屋やシーン、Siri で使えるようになります。</p></li></ol>
+    <p class="fine">Homebridge 1.8 以降（2.x 対応）と Node.js 18.17 以降が必要です。 <a href="https://github.com/tasict/homebridge-mqttthing-ex/blob/master/docs/Configuration.md">設定項目の詳しい説明（英語）</a></p>
+  </section>
+
+  <section class="band" aria-labelledby="h-support">
+    <div class="tipjar">
+      <img src="../assets/boba.png" alt="" width="120" height="120">
+      <div>
+        <h2 id="h-support">無料のままで続けるために</h2>
+        <p>このプラグインには広告も有料版もありません。デバイスが Apple「ホーム」とうまくつながっていたら、タピオカ 1 杯や少しのご支援が、Homebridge の新バージョンへの対応や不具合報告への対応を続ける力になります。</p>
+        <div class="actions">
+          <a class="btn" href="https://tasict.bobaboba.me"><img src="../assets/boba.png" alt="" width="22" height="22">タピオカをおごる</a>
+          <a class="tip" href="https://paypal.me/tasict">PayPal で支援</a>
+        </div>
+        <p class="fine">タピオカはクレジットカードで支払えます。PayPal アカウントは不要です。</p>
+      </div>
+    </div>
+  </section>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot">
+      <div>
+        <p>tasict 作。Apache-2.0 ライセンスで公開しています。元になったのは <a href="https://github.com/arachnetech/homebridge-mqttthing">David Miller とコントリビューターによる homebridge-mqttthing です。</a></p>
+        <ul>
+          <li><a href="https://github.com/tasict/homebridge-mqttthing-ex">ソースコード</a></li>
+          <li><a href="https://www.npmjs.com/package/homebridge-mqttthing-ex">npm パッケージ</a></li>
+          <li><a href="https://github.com/tasict/homebridge-mqttthing-ex/blob/master/CHANGELOG.md">変更履歴</a></li>
+          <li><a href="https://github.com/tasict/homebridge-mqttthing-ex/issues">問題を報告</a></li>
+        </ul>
+      </div>
+      <ul class="langs"><li><a href="../" hreflang="en" lang="en">English</a></li><li><a href="../zh-TW/" hreflang="zh-TW" lang="zh-Hant-TW">繁體中文</a></li><li><a href="../ja/" hreflang="ja" lang="ja" aria-current="page">日本語</a></li></ul>
+    </div>
+    <p class="tm">Apple Home（ホーム）と HomeKit は Apple Inc. の商標です。MQTT は OASIS の標準規格、Eve は Eve Systems GmbH の商標です。本プラグインは非公式で、これらの組織とは関係がなく、承認も受けていません。</p>
+  </div>
+</footer>
+<script src="../assets/site.js"></script>
+</body>
+</html>

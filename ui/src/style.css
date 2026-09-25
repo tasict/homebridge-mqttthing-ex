@@ -166,3 +166,54 @@
   border-radius: 0.6rem;
   background-color: rgba(128, 128, 128, 0.14);
 }
+
+/* Support footer: quiet by design - inherited colours and opacity only */
+#mqttthing-ui .mqx-support {
+  margin: 1.75rem 0 0.5rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid rgba(128, 128, 128, 0.25);
+  font-size: 0.8rem;
+}
+
+#mqttthing-ui .mqx-support-text {
+  opacity: 0.7;
+  margin: 0 0 0.5rem;
+  line-height: 1.5;
+}
+
+#mqttthing-ui .mqx-tip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 1.9rem;
+  padding: 0.2rem 0.75rem;
+  border: 1px solid rgba(128, 128, 128, 0.35);
+  border-radius: 0.5rem;
+  color: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+#mqttthing-ui .mqx-tip:hover,
+#mqttthing-ui .mqx-tip:focus {
+  color: inherit;
+  border-color: rgba(128, 128, 128, 0.7);
+}
+
+#mqttthing-ui .mqx-tip img {
+  width: 20px;
+  height: 20px;
+  margin-left: -0.3rem;
+  border-radius: 5px;
+}
+
+#mqttthing-ui .mqx-support-note {
+  opacity: 0.6;
+  font-size: 0.72rem;
+  margin: 0.5rem 0 0;
+}
+
+#mqttthing-ui .mqx-support-note a {
+  color: inherit;
+}

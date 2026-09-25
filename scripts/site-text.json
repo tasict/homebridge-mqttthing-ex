@@ -1,0 +1,254 @@
+{
+  "en": {
+    "title": "MQTT Thing EX: MQTT devices in Apple Home, via Homebridge",
+    "desc": "A free Homebridge plugin that brings MQTT devices into Apple Home. A drop-in successor to homebridge-mqttthing: your configuration works as is, with nothing to pair again.",
+    "lang_menu": "Language",
+    "source": "Source code",
+    "boba": "Buy me a boba",
+    "paypal": "Tip with PayPal",
+    "h1": "Your MQTT devices,\nin Apple Home.",
+    "lede": "A Homebridge plugin that turns MQTT topics into HomeKit accessories: lights, sensors, locks, thermostats and more. It is the actively maintained successor to homebridge-mqttthing, and your existing configuration works unchanged.",
+    "cta": "Install in Homebridge",
+    "github": "View on GitHub",
+    "fine": "Free and open source. Works with Homebridge 1.8 or later, including 2.x.",
+    "demo": {
+      "name": "Living Room Lamp",
+      "power": "Power",
+      "brightness": "Brightness",
+      "on": "On, {b}%",
+      "off": "Off",
+      "log": "MQTT messages",
+      "out": "to the device",
+      "in": "from the device",
+      "tally": "{changes} changes in the Home app, {sent} messages to the device",
+      "hint": "Try it. Drag the slider with the publish queue on and off."
+    },
+    "same_h2": "Switch over without starting again",
+    "same_p": "Coming from homebridge-mqttthing? Your `config.json` stays exactly as it is. Accessory blocks keep `\"accessory\": \"mqttthing\"`, and codec files and `apply` expressions keep working.",
+    "moves": [
+      ["Uninstall homebridge-mqttthing", "Both plugins answer to the name mqttthing, so only one can be installed at a time."],
+      ["Install MQTT Thing EX", "From the Homebridge UI, or with npm."],
+      ["Restart Homebridge once", "Do it all in one go, with a single restart. Accessories keep their identity, so rooms, scenes and automations stay as they are."]
+    ],
+    "same_note": "No re-pairing is needed. Homebridge identifies each accessory by its name, not by the plugin, and the names stay the same.",
+    "platform_h2": "One connection per broker, not per device",
+    "platform_p": "The original plugin opens an MQTT connection for every accessory. Optional platform mode puts all your devices in one block and gives them a shared connection, so twenty-four lights on one broker need one connection instead of twenty-four.",
+    "modes": [
+      ["Accessory mode", { "count": "12 devices, 12 connections", "alt": "Twelve devices, each with its own connection to the MQTT broker." }],
+      ["Platform mode", { "count": "12 devices, 1 connection", "alt": "Twelve devices sharing a single connection to the MQTT broker." }]
+    ],
+    "platform_points": [
+      ["Renaming is safe", "Devices carry a stable `id`, so the name is just a label. Change it whenever you like."],
+      ["Mistakes don't cost you the setup", "A device with a broken configuration keeps its place in HomeKit, room and automations included, while you fix it. Mistakes are reported in the log at start-up."],
+      ["Move when you are ready", "The settings screen moves accessories into platform mode for you and keeps their HomeKit identity. Accessory mode stays fully supported."]
+    ],
+    "feat_h2": "What you get",
+    "feat_p": "Everything homebridge-mqttthing did, rebuilt in TypeScript for Homebridge 2, with the long-standing problems fixed.",
+    "feats": [
+      ["Settings built for big setups", "A searchable device list, an editor that knows each type's topics, `apply` functions you can edit safely, a connection test and live topic probing."],
+      ["Gentle on small devices", "An optional publish queue paces messages and keeps only the latest value per topic, so scenes and slider drags don't flood a low-power device."],
+      ["Your payloads, your way", "Codec files, `apply` expressions and JSONPath (`topic$.path`) all keep working, so devices with unusual payloads fit in without a custom bridge."],
+      ["History in the Eve app", "Temperature, humidity, air pressure, power and more are recorded for the Eve app's history charts."],
+      ["Upstream bugs fixed", "Spurious colour publishes at start-up, adaptive lighting turning lights on, wildcard subscriptions, crashes on empty payloads and more."],
+      ["Ready for Homebridge 2", "Modern HomeKit APIs and ES modules. Runs on Homebridge 1.8 and later and on 2.x, with a clean npm audit."]
+    ],
+    "types_h2": "Almost anything HomeKit has",
+    "types_p": "37 accessory types, from a single switch to a custom accessory that groups several services together.",
+    "types": [
+      ["Lights", ["Light bulb, with brightness, colour, white and colour temperature, and adaptive lighting"]],
+      ["Switches and outlets", ["Switch", "Outlet", "Stateless programmable switch"]],
+      ["Sensors", ["Motion", "Occupancy", "Light", "Temperature", "Humidity", "Air pressure", "Weather station", "Contact", "Smoke", "Leak", "Air quality", "Carbon dioxide", "Carbon monoxide"]],
+      ["Climate", ["Thermostat", "Heater cooler", "Dehumidifier", "Fan", "Fan v2", "Air purifier"]],
+      ["Security and access", ["Security system", "Doorbell", "Garage door", "Lock", "Window covering", "Window", "Door"]],
+      ["Water", ["Valve", "Irrigation system"]],
+      ["Media and more", ["Television", "Microphone", "Speaker", "Battery", "Custom, several services in one accessory"]]
+    ],
+    "types_note": "Each type lists its topics and options in the documentation.",
+    "types_link": "All accessory types",
+    "start_h2": "Set it up in a few minutes",
+    "steps": [
+      ["Install the plugin", "In the Homebridge UI, open Plugins, search for MQTT Thing EX and install it."],
+      ["Add a device", "Open the plugin settings, choose Add, pick the device type and enter your broker and topics. Test the connection right there."],
+      ["Restart Homebridge", "The device appears in the Home app, ready for rooms, scenes and Siri."]
+    ],
+    "start_note": "Requires Homebridge 1.8 or later (2.x supported) and Node.js 18.17 or later.",
+    "docs": "Full configuration reference",
+    "support_h2": "Keep it free",
+    "support_p": "The plugin has no ads and no paid version. If it keeps your devices talking to Apple Home, a boba or a small tip helps me keep up with new Homebridge releases and your bug reports.",
+    "support_card": "Boba is paid by card. No PayPal account needed.",
+    "made": "Made by tasict. Released under the Apache-2.0 license. A rewrite of",
+    "upstream": "homebridge-mqttthing by David Miller and contributors.",
+    "npm": "npm package",
+    "changelog": "Changelog",
+    "issues": "Report a problem",
+    "tm": "Apple Home and HomeKit are trademarks of Apple Inc. MQTT is an OASIS standard. Eve is a trademark of Eve Systems GmbH. This plugin is unofficial and not affiliated with or endorsed by any of them."
+  },
+  "zh-TW": {
+    "title": "MQTT Thing EX：透過 Homebridge 把 MQTT 裝置接上 Apple「家庭」",
+    "desc": "免費的 Homebridge 外掛，把 MQTT 裝置帶進 Apple「家庭」。可直接取代 homebridge-mqttthing：現有設定照用，不必重新配對。",
+    "lang_menu": "語言",
+    "source": "原始碼",
+    "boba": "請我喝珍奶",
+    "paypal": "用 PayPal 贊助",
+    "h1": "你的 MQTT 裝置，\n直接進「家庭」App。",
+    "lede": "一個 Homebridge 外掛，把 MQTT 主題變成 HomeKit 配件：燈、感應器、門鎖、恆溫器等等。它是 homebridge-mqttthing 持續維護的後繼版本，現有設定不用改就能用。",
+    "cta": "在 Homebridge 安裝",
+    "github": "在 GitHub 查看",
+    "fine": "免費、開放原始碼。支援 Homebridge 1.8 以上，包括 2.x。",
+    "demo": {
+      "name": "客廳檯燈",
+      "power": "電源",
+      "brightness": "亮度",
+      "on": "開啟，{b}%",
+      "off": "關閉",
+      "log": "MQTT 訊息",
+      "out": "送往裝置",
+      "in": "來自裝置",
+      "tally": "「家庭」App 變更 {changes} 次，送往裝置 {sent} 則訊息",
+      "hint": "試試看：分別開啟和關閉發布佇列，再拖動亮度滑桿。"
+    },
+    "same_h2": "直接換過來，不必從頭再來",
+    "same_p": "從 homebridge-mqttthing 轉過來嗎？`config.json` 完全不用動。配件區塊照樣寫 `\"accessory\": \"mqttthing\"`，codec 檔案和 `apply` 運算式也都照常運作。",
+    "moves": [
+      ["移除 homebridge-mqttthing", "兩個外掛都使用 mqttthing 這個名稱，同時只能安裝其中一個。"],
+      ["安裝 MQTT Thing EX", "從 Homebridge UI 安裝，或使用 npm。"],
+      ["重新啟動 Homebridge 一次", "一次做完，只重新啟動一次。配件的身分不變，房間、場景和自動化都會保留。"]
+    ],
+    "same_note": "不需要重新配對。Homebridge 是以配件名稱來辨識配件，而不是外掛，名稱沒變，配件就還是同一個。",
+    "platform_h2": "每個 broker 一條連線，而不是每個裝置一條",
+    "platform_p": "原本的外掛會替每個配件各開一條 MQTT 連線。選用的平台模式把所有裝置放進同一個區塊，共用一條連線：同一個 broker 上的二十四盞燈，只要一條連線，而不是二十四條。",
+    "modes": [
+      ["配件模式", { "count": "12 個裝置，12 條連線", "alt": "十二個裝置，各自有一條連到 MQTT broker 的連線。" }],
+      ["平台模式", { "count": "12 個裝置，1 條連線", "alt": "十二個裝置共用一條連到 MQTT broker 的連線。" }]
+    ],
+    "platform_points": [
+      ["放心改名", "每個裝置都有固定的 `id`，名稱只是標籤，想改就改。"],
+      ["設定出錯也不會弄丟配置", "設定有誤的裝置，會在 HomeKit 中保留原本的位置，房間和自動化都在，等你修好。錯誤會在啟動時寫進日誌。"],
+      ["準備好再搬", "設定頁面會替你把配件搬到平台模式，並保留它們在 HomeKit 中的身分。配件模式也會持續完整支援。"]
+    ],
+    "feat_h2": "你會得到什麼",
+    "feat_p": "homebridge-mqttthing 能做的都在，用 TypeScript 為 Homebridge 2 重新打造，並修好長久以來的問題。",
+    "feats": [
+      ["為大量裝置設計的設定頁面", "可搜尋的裝置清單、懂得每種類型有哪些主題的編輯器、可以安全編輯的 `apply` 函式、連線測試，以及即時主題探測。"],
+      ["對小型裝置更溫和", "選用的發布佇列會控制訊息節奏，每個主題只保留最新的值，場景切換或拖動滑桿時，不會把低功耗裝置淹沒。"],
+      ["訊息格式隨你", "codec 檔案、`apply` 運算式和 JSONPath（`topic$.path`）都照常運作，格式特殊的裝置也不必另外寫橋接程式。"],
+      ["Eve App 歷史紀錄", "溫度、濕度、氣壓、用電量等數據會記錄下來，顯示在 Eve App 的歷史圖表中。"],
+      ["修好上游的問題", "啟動時多送的顏色訊息、自適應照明把燈打開、萬用字元訂閱、空訊息造成當機等等。"],
+      ["為 Homebridge 2 準備好了", "採用新版 HomeKit API 與 ES 模組。可在 Homebridge 1.8 以上與 2.x 執行，npm audit 零弱點。"]
+    ],
+    "types_h2": "HomeKit 有的，幾乎都能接",
+    "types_p": "37 種配件類型，從單一開關，到把多個服務組合在一起的自訂配件。",
+    "types": [
+      ["燈光", ["燈泡，支援亮度、彩色、白光與色溫，以及自適應照明"]],
+      ["開關與插座", ["開關", "插座", "無狀態可程式化開關"]],
+      ["感應器", ["動作", "有人偵測", "光線", "溫度", "濕度", "氣壓", "氣象站", "接觸", "煙霧", "漏水", "空氣品質", "二氧化碳", "一氧化碳"]],
+      ["空調", ["恆溫器", "冷暖氣機", "除濕機", "風扇", "風扇 v2", "空氣清淨機"]],
+      ["安全與門禁", ["保全系統", "門鈴", "車庫門", "門鎖", "窗簾", "窗戶", "門"]],
+      ["用水", ["閥門", "灑水系統"]],
+      ["影音與其他", ["電視", "麥克風", "揚聲器", "電池", "自訂：一個配件包含多個服務"]]
+    ],
+    "types_note": "每種類型的主題與選項都列在說明文件中。",
+    "types_link": "所有配件類型（英文）",
+    "start_h2": "幾分鐘就能設定好",
+    "steps": [
+      ["安裝外掛", "在 Homebridge UI 開啟外掛頁面，搜尋 MQTT Thing EX 並安裝。"],
+      ["加入裝置", "開啟外掛設定，選擇新增，挑選裝置類型，填入 broker 和主題，當場就能測試連線。"],
+      ["重新啟動 Homebridge", "裝置會出現在「家庭」App 中，可以分配房間、加入場景，也能用 Siri 控制。"]
+    ],
+    "start_note": "需要 Homebridge 1.8 以上（支援 2.x）與 Node.js 18.17 以上。",
+    "docs": "完整設定說明（英文）",
+    "support_h2": "讓它維持免費",
+    "support_p": "這個外掛沒有廣告，也沒有付費版。如果它讓你的裝置順利接上 Apple「家庭」，一杯珍奶或一點贊助，能幫我持續跟上 Homebridge 的新版本，也更快處理大家回報的問題。",
+    "support_card": "珍奶贊助直接刷卡，不需要 PayPal 帳號。",
+    "made": "由 tasict 製作，以 Apache-2.0 授權釋出。改寫自",
+    "upstream": "David Miller 與貢獻者的 homebridge-mqttthing。",
+    "npm": "npm 套件",
+    "changelog": "更新紀錄",
+    "issues": "回報問題",
+    "tm": "Apple Home（家庭）與 HomeKit 是 Apple Inc. 的商標；MQTT 是 OASIS 標準；Eve 是 Eve Systems GmbH 的商標。本外掛為非官方專案，與上述組織無關，也未獲其背書。"
+  },
+  "ja": {
+    "title": "MQTT Thing EX：Homebridge で MQTT デバイスを Apple「ホーム」に",
+    "desc": "MQTT デバイスを Apple「ホーム」に取り込む無料の Homebridge プラグイン。homebridge-mqttthing の後継として置き換えるだけで、設定はそのまま、ペアリングのやり直しも不要です。",
+    "lang_menu": "言語",
+    "source": "ソースコード",
+    "boba": "タピオカをおごる",
+    "paypal": "PayPal で支援",
+    "h1": "MQTT デバイスを、\nそのまま「ホーム」App へ。",
+    "lede": "MQTT のトピックを HomeKit のアクセサリにする Homebridge プラグインです。照明、センサー、ドアロック、サーモスタットなどに対応。homebridge-mqttthing の後継として開発が続いており、今の設定を変えずに使えます。",
+    "cta": "Homebridge にインストール",
+    "github": "GitHub で見る",
+    "fine": "無料のオープンソース。Homebridge 1.8 以降（2.x を含む）で動作します。",
+    "demo": {
+      "name": "リビングのランプ",
+      "power": "電源",
+      "brightness": "明るさ",
+      "on": "オン、{b}%",
+      "off": "オフ",
+      "log": "MQTT メッセージ",
+      "out": "デバイスへ",
+      "in": "デバイスから",
+      "tally": "「ホーム」App での変更 {changes} 回、デバイスへのメッセージ {sent} 件",
+      "hint": "試してみてください。パブリッシュキューのオンとオフで、スライダーを動かしてみましょう。"
+    },
+    "same_h2": "最初からやり直さずに乗り換え",
+    "same_p": "homebridge-mqttthing から移行しますか？ `config.json` はそのままで大丈夫です。アクセサリブロックは `\"accessory\": \"mqttthing\"` のまま、コーデックファイルや `apply` 式もそのまま動きます。",
+    "moves": [
+      ["homebridge-mqttthing をアンインストール", "どちらのプラグインも mqttthing という名前を使うため、同時にはひとつしかインストールできません。"],
+      ["MQTT Thing EX をインストール", "Homebridge UI から、または npm でインストールします。"],
+      ["Homebridge を 1 回だけ再起動", "再起動 1 回でまとめて行ってください。アクセサリの識別情報は変わらないので、部屋・シーン・オートメーションもそのまま残ります。"]
+    ],
+    "same_note": "ペアリングのやり直しは不要です。Homebridge はアクセサリをプラグインではなく名前で識別するので、名前が同じなら同じアクセサリのままです。",
+    "platform_h2": "接続はデバイスごとではなく、ブローカーごとに 1 本",
+    "platform_p": "元のプラグインはアクセサリごとに MQTT 接続を開きます。オプションのプラットフォームモードでは、すべてのデバイスをひとつのブロックにまとめて接続を共有するので、同じブローカーにつながる 24 個の照明も接続 1 本で済みます。",
+    "modes": [
+      ["アクセサリモード", { "count": "デバイス 12 台、接続 12 本", "alt": "12 台のデバイスが、それぞれ MQTT ブローカーへの接続を持っている図。" }],
+      ["プラットフォームモード", { "count": "デバイス 12 台、接続 1 本", "alt": "12 台のデバイスが、MQTT ブローカーへの接続 1 本を共有している図。" }]
+    ],
+    "platform_points": [
+      ["名前を変えても安心", "デバイスには変わらない `id` があるので、名前はただのラベルです。いつでも変更できます。"],
+      ["設定ミスで環境を失わない", "設定に誤りのあるデバイスも、直すまで HomeKit 上の場所を保ち、部屋やオートメーションもそのまま残ります。誤りは起動時にログへ出力されます。"],
+      ["準備ができたら移行", "設定画面がアクセサリをプラットフォームモードへ移し、HomeKit 上の識別情報も引き継ぎます。アクセサリモードも引き続き完全にサポートされます。"]
+    ],
+    "feat_h2": "できること",
+    "feat_p": "homebridge-mqttthing の機能はすべてそのまま。TypeScript で Homebridge 2 向けに作り直し、長年の不具合も修正しました。",
+    "feats": [
+      ["大規模な環境向けの設定画面", "検索できるデバイス一覧、タイプごとのトピックを知っているエディタ、安全に編集できる `apply` 関数、接続テスト、トピックのライブ確認。"],
+      ["小さなデバイスにやさしく", "オプションのパブリッシュキューが送信の間隔を整え、トピックごとに最新の値だけを送るので、シーンやスライダー操作で低消費電力のデバイスがあふれません。"],
+      ["ペイロードは自由に", "コーデックファイル、`apply` 式、JSONPath（`topic$.path`）がそのまま使えるので、独特なペイロードのデバイスも専用ブリッジなしで取り込めます。"],
+      ["Eve App の履歴", "温度、湿度、気圧、消費電力などを記録し、Eve App の履歴グラフに表示します。"],
+      ["上流の不具合を修正", "起動時の余計な色メッセージ、アダプティブライティングで照明が点く問題、ワイルドカード購読、空のペイロードでのクラッシュなど。"],
+      ["Homebridge 2 に対応", "新しい HomeKit API と ES モジュールを採用。Homebridge 1.8 以降と 2.x で動作し、npm audit の脆弱性はゼロです。"]
+    ],
+    "types_h2": "HomeKit にあるものは、ほぼ何でも",
+    "types_p": "37 種類のアクセサリタイプ。シンプルなスイッチから、複数のサービスをまとめたカスタムアクセサリまで。",
+    "types": [
+      ["照明", ["電球（明るさ、カラー、白色と色温度、アダプティブライティング）"]],
+      ["スイッチとコンセント", ["スイッチ", "コンセント", "ステートレスプログラマブルスイッチ"]],
+      ["センサー", ["人感", "在室", "照度", "温度", "湿度", "気圧", "気象ステーション", "開閉", "煙", "水漏れ", "空気質", "二酸化炭素", "一酸化炭素"]],
+      ["空調", ["サーモスタット", "冷暖房機", "除湿機", "ファン", "ファン v2", "空気清浄機"]],
+      ["セキュリティと出入り", ["セキュリティシステム", "ドアベル", "ガレージドア", "ドアロック", "ブラインド", "窓", "ドア"]],
+      ["水まわり", ["バルブ", "散水システム"]],
+      ["メディアほか", ["テレビ", "マイク", "スピーカー", "バッテリー", "カスタム（複数サービスをひとつのアクセサリに）"]]
+    ],
+    "types_note": "各タイプのトピックとオプションはドキュメントに載っています。",
+    "types_link": "すべてのアクセサリタイプ（英語）",
+    "start_h2": "数分でセットアップ",
+    "steps": [
+      ["プラグインをインストール", "Homebridge UI のプラグイン画面で MQTT Thing EX を検索してインストールします。"],
+      ["デバイスを追加", "プラグイン設定を開いて追加を選び、デバイスのタイプを選んでブローカーとトピックを入力します。接続テストもその場でできます。"],
+      ["Homebridge を再起動", "デバイスが「ホーム」App に現れ、部屋やシーン、Siri で使えるようになります。"]
+    ],
+    "start_note": "Homebridge 1.8 以降（2.x 対応）と Node.js 18.17 以降が必要です。",
+    "docs": "設定項目の詳しい説明（英語）",
+    "support_h2": "無料のままで続けるために",
+    "support_p": "このプラグインには広告も有料版もありません。デバイスが Apple「ホーム」とうまくつながっていたら、タピオカ 1 杯や少しのご支援が、Homebridge の新バージョンへの対応や不具合報告への対応を続ける力になります。",
+    "support_card": "タピオカはクレジットカードで支払えます。PayPal アカウントは不要です。",
+    "made": "tasict 作。Apache-2.0 ライセンスで公開しています。元になったのは",
+    "upstream": "David Miller とコントリビューターによる homebridge-mqttthing です。",
+    "npm": "npm パッケージ",
+    "changelog": "変更履歴",
+    "issues": "問題を報告",
+    "tm": "Apple Home（ホーム）と HomeKit は Apple Inc. の商標です。MQTT は OASIS の標準規格、Eve は Eve Systems GmbH の商標です。本プラグインは非公式で、これらの組織とは関係がなく、承認も受けていません。"
+  }
+}

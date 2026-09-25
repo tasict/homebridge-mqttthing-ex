@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MQTT Thing EX: MQTT devices in Apple Home, via Homebridge</title>
+<meta name="description" content="A free Homebridge plugin that brings MQTT devices into Apple Home. A drop-in successor to homebridge-mqttthing: your configuration works as is, with nothing to pair again.">
+<link rel="canonical" href="https://tasict.github.io/homebridge-mqttthing-ex/">
+<link rel="alternate" hreflang="en" href="https://tasict.github.io/homebridge-mqttthing-ex/">
+<link rel="alternate" hreflang="zh-TW" href="https://tasict.github.io/homebridge-mqttthing-ex/zh-TW/">
+<link rel="alternate" hreflang="ja" href="https://tasict.github.io/homebridge-mqttthing-ex/ja/">
+<link rel="alternate" hreflang="x-default" href="https://tasict.github.io/homebridge-mqttthing-ex/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="MQTT Thing EX: MQTT devices in Apple Home, via Homebridge">
+<meta property="og:description" content="A free Homebridge plugin that brings MQTT devices into Apple Home. A drop-in successor to homebridge-mqttthing: your configuration works as is, with nothing to pair again.">
+<meta property="og:url" content="https://tasict.github.io/homebridge-mqttthing-ex/">
+<meta property="og:image" content="https://tasict.github.io/homebridge-mqttthing-ex/assets/og.png">
+<meta property="og:locale" content="en_US">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#f8f5f9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#150d17" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/icon.png">
+<link rel="stylesheet" href="assets/site.css">
+<script>
+try {
+  if (!localStorage.getItem('lang')) {
+    const pick = tag => {
+      const t = tag.toLowerCase();
+      if (t.startsWith('zh')) return 'zh-TW';
+      return ['ja', 'en'].find(l => t.startsWith(l));
+    };
+    const lang = (navigator.languages || [navigator.language]).map(pick).find(Boolean);
+    if (lang && lang !== 'en') location.replace(lang + '/' + location.search + location.hash);
+  }
+} catch { /* storage blocked: stay on English */ }
+</script>
+</head>
+<body>
+<header class="wrap masthead">
+  <a class="wordmark" href="./"><img src="assets/icon.svg" alt="" width="30" height="30">MQTT Thing EX</a>
+  <a href="https://github.com/tasict/homebridge-mqttthing-ex">Source code</a>
+  <a class="tip head-tip" href="https://tasict.bobaboba.me" aria-label="Buy me a boba"><img src="assets/boba.png" alt="" width="24" height="24"><span>Buy me a boba</span></a>
+  <details class="lang">
+    <summary aria-label="Language"><svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="7.5"/><path d="M2.5 10h15M10 2.5c2.2 2.3 3.2 4.8 3.2 7.5s-1 5.2-3.2 7.5c-2.2-2.3-3.2-4.8-3.2-7.5s1-5.2 3.2-7.5z"/></svg><span>English</span></summary>
+    <ul><li><a href="./" hreflang="en" lang="en" aria-current="page">English</a></li><li><a href="zh-TW/" hreflang="zh-TW" lang="zh-Hant-TW">繁體中文</a></li><li><a href="ja/" hreflang="ja" lang="ja">日本語</a></li></ul>
+  </details>
+</header>
+
+<main>
+<div class="wrap">
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="hero-copy">
+      <h1 id="hero-title">Your MQTT devices,<br>in Apple Home.</h1>
+      <p class="lede">A Homebridge plugin that turns MQTT topics into HomeKit accessories: lights, sensors, locks, thermostats and more. It is the actively maintained successor to homebridge-mqttthing, and your existing configuration works unchanged.</p>
+      <div class="actions">
+        <a class="btn" href="#start">Install in Homebridge</a>
+        <a href="https://github.com/tasict/homebridge-mqttthing-ex">View on GitHub</a>
+      </div>
+      <p class="fine">Free and open source. Works with Homebridge 1.8 or later, including 2.x.</p>
+    </div>
+    <div class="stage" data-demo data-t='{&quot;name&quot;:&quot;Living Room Lamp&quot;,&quot;power&quot;:&quot;Power&quot;,&quot;brightness&quot;:&quot;Brightness&quot;,&quot;on&quot;:&quot;On, {b}%&quot;,&quot;off&quot;:&quot;Off&quot;,&quot;log&quot;:&quot;MQTT messages&quot;,&quot;out&quot;:&quot;to the device&quot;,&quot;in&quot;:&quot;from the device&quot;,&quot;tally&quot;:&quot;{changes} changes in the Home app, {sent} messages to the device&quot;,&quot;hint&quot;:&quot;Try it. Drag the slider with the publish queue on and off.&quot;,&quot;topics&quot;:{&quot;setOn&quot;:&quot;living/lamp/setOn&quot;,&quot;getOn&quot;:&quot;living/lamp/getOn&quot;,&quot;setBrightness&quot;:&quot;living/lamp/setBrightness&quot;,&quot;getBrightness&quot;:&quot;living/lamp/getBrightness&quot;},&quot;queueMs&quot;:300}'>
+      <div class="tile" data-on>
+        <div class="tile-head">
+          <span class="tile-icon"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21.5h4M12 2.5a6.5 6.5 0 0 0-4 11.6c.7.6 1 1.3 1 2.1V17h6v-.8c0-.8.4-1.5 1-2.1a6.5 6.5 0 0 0-4-11.6z"/></svg></span>
+          <div class="tile-name"><strong>Living Room Lamp</strong><span data-status aria-live="polite"></span></div>
+          <button type="button" class="power" role="switch" aria-checked="true" aria-label="Power" data-power><span></span></button>
+        </div>
+        <label class="bright">
+          <span class="bright-label">Brightness</span>
+          <input type="range" min="1" max="100" value="70" data-bright>
+        </label>
+      </div>
+      <div class="wire-log">
+        <div class="log-head">
+          <span>MQTT messages</span>
+          <label class="queue"><input type="checkbox" data-queue checked><span class="mini-switch" aria-hidden="true"></span><code>publishMinIntervalms: 300</code></label>
+        </div>
+        <ol class="log" data-log aria-live="off"></ol>
+        <p class="tally" data-tally aria-live="polite"></p>
+      </div>
+      <p class="hint">Try it. Drag the slider with the publish queue on and off.</p>
+    </div>
+  </section>
+
+  <section class="band" aria-labelledby="h-same">
+    <div class="split">
+      <div class="intro">
+        <h2 id="h-same">Switch over without starting again</h2>
+        <p>Coming from homebridge-mqttthing? Your <code>config.json</code> stays exactly as it is. Accessory blocks keep <code>&quot;accessory&quot;: &quot;mqttthing&quot;</code>, and codec files and <code>apply</code> expressions keep working.</p>
+        <ol class="moves"><li><h3>Uninstall homebridge-mqttthing</h3><p>Both plugins answer to the name mqttthing, so only one can be installed at a time.</p></li><li><h3>Install MQTT Thing EX</h3><p>From the Homebridge UI, or with npm.</p></li><li><h3>Restart Homebridge once</h3><p>Do it all in one go, with a single restart. Accessories keep their identity, so rooms, scenes and automations stay as they are.</p></li></ol>
+        <p class="back">No re-pairing is needed. Homebridge identifies each accessory by its name, not by the plugin, and the names stay the same.</p>
+      </div>
+      <figure class="code">
+        <figcaption>config.json</figcaption>
+        <pre><code>{
+  <span class="k">"accessory"</span>: <span class="s">"mqttthing"</span>,
+  <span class="k">"type"</span>: <span class="s">"lightbulb"</span>,
+  <span class="k">"name"</span>: <span class="s">"Living Room Lamp"</span>,
+  <span class="k">"url"</span>: <span class="s">"mqtt://broker.local:1883"</span>,
+  <span class="k">"topics"</span>: {
+    <span class="k">"setOn"</span>: <span class="s">"living/lamp/setOn"</span>,
+    <span class="k">"getOn"</span>: <span class="s">"living/lamp/getOn"</span>,
+    <span class="k">"setBrightness"</span>: <span class="s">"living/lamp/setBrightness"</span>,
+    <span class="k">"getBrightness"</span>: <span class="s">"living/lamp/getBrightness"</span>
+  }
+}</code></pre>
+      </figure>
+    </div>
+  </section>
+
+  <section class="band" aria-labelledby="h-platform">
+    <div class="intro">
+      <h2 id="h-platform">One connection per broker, not per device</h2>
+      <p>The original plugin opens an MQTT connection for every accessory. Optional platform mode puts all your devices in one block and gives them a shared connection, so twenty-four lights on one broker need one connection instead of twenty-four.</p>
+    </div>
+    <div class="modes">
+      <figure class="mode">
+        <figcaption><h3>Accessory mode</h3><p class="count">12 devices, 12 connections</p></figcaption>
+        <svg class="conns" viewBox="0 0 360 310" role="img" aria-label="Twelve devices, each with its own connection to the MQTT broker."><path class="conn" d="M40 22C180 22 210 154 290 154"/><path class="conn" d="M40 46C180 46 210 154 290 154"/><path class="conn" d="M40 70C180 70 210 154 290 154"/><path class="conn" d="M40 94C180 94 210 154 290 154"/><path class="conn" d="M40 118C180 118 210 154 290 154"/><path class="conn" d="M40 142C180 142 210 154 290 154"/><path class="conn" d="M40 166C180 166 210 154 290 154"/><path class="conn" d="M40 190C180 190 210 154 290 154"/><path class="conn" d="M40 214C180 214 210 154 290 154"/><path class="conn" d="M40 238C180 238 210 154 290 154"/><path class="conn" d="M40 262C180 262 210 154 290 154"/><path class="conn" d="M40 286C180 286 210 154 290 154"/><rect class="dev" x="14" y="15" width="26" height="14" rx="4"/><rect class="dev" x="14" y="39" width="26" height="14" rx="4"/><rect class="dev" x="14" y="63" width="26" height="14" rx="4"/><rect class="dev" x="14" y="87" width="26" height="14" rx="4"/><rect class="dev" x="14" y="111" width="26" height="14" rx="4"/><rect class="dev" x="14" y="135" width="26" height="14" rx="4"/><rect class="dev" x="14" y="159" width="26" height="14" rx="4"/><rect class="dev" x="14" y="183" width="26" height="14" rx="4"/><rect class="dev" x="14" y="207" width="26" height="14" rx="4"/><rect class="dev" x="14" y="231" width="26" height="14" rx="4"/><rect class="dev" x="14" y="255" width="26" height="14" rx="4"/><rect class="dev" x="14" y="279" width="26" height="14" rx="4"/><circle class="broker" cx="316" cy="154" r="26"/><text x="316" y="159" text-anchor="middle">MQTT</text></svg>
+      </figure>
+      <figure class="mode is-platform">
+        <figcaption><h3>Platform mode</h3><p class="count">12 devices, 1 connection</p></figcaption>
+        <svg class="conns" viewBox="0 0 360 310" role="img" aria-label="Twelve devices sharing a single connection to the MQTT broker."><path class="wire" d="M40 22C105 22 110 154 156 154"/><path class="wire" d="M40 46C105 46 110 154 156 154"/><path class="wire" d="M40 70C105 70 110 154 156 154"/><path class="wire" d="M40 94C105 94 110 154 156 154"/><path class="wire" d="M40 118C105 118 110 154 156 154"/><path class="wire" d="M40 142C105 142 110 154 156 154"/><path class="wire" d="M40 166C105 166 110 154 156 154"/><path class="wire" d="M40 190C105 190 110 154 156 154"/><path class="wire" d="M40 214C105 214 110 154 156 154"/><path class="wire" d="M40 238C105 238 110 154 156 154"/><path class="wire" d="M40 262C105 262 110 154 156 154"/><path class="wire" d="M40 286C105 286 110 154 156 154"/><path class="conn" d="M184 154H290"/><circle class="hub" cx="170" cy="154" r="14"/><rect class="dev" x="14" y="15" width="26" height="14" rx="4"/><rect class="dev" x="14" y="39" width="26" height="14" rx="4"/><rect class="dev" x="14" y="63" width="26" height="14" rx="4"/><rect class="dev" x="14" y="87" width="26" height="14" rx="4"/><rect class="dev" x="14" y="111" width="26" height="14" rx="4"/><rect class="dev" x="14" y="135" width="26" height="14" rx="4"/><rect class="dev" x="14" y="159" width="26" height="14" rx="4"/><rect class="dev" x="14" y="183" width="26" height="14" rx="4"/><rect class="dev" x="14" y="207" width="26" height="14" rx="4"/><rect class="dev" x="14" y="231" width="26" height="14" rx="4"/><rect class="dev" x="14" y="255" width="26" height="14" rx="4"/><rect class="dev" x="14" y="279" width="26" height="14" rx="4"/><circle class="broker" cx="316" cy="154" r="26"/><text x="316" y="159" text-anchor="middle">MQTT</text></svg>
+      </figure>
+    </div>
+    <ul class="feats compact"><li><h3>Renaming is safe</h3><p>Devices carry a stable <code>id</code>, so the name is just a label. Change it whenever you like.</p></li><li><h3>Mistakes don&#x27;t cost you the setup</h3><p>A device with a broken configuration keeps its place in HomeKit, room and automations included, while you fix it. Mistakes are reported in the log at start-up.</p></li><li><h3>Move when you are ready</h3><p>The settings screen moves accessories into platform mode for you and keeps their HomeKit identity. Accessory mode stays fully supported.</p></li></ul>
+  </section>
+
+  <section class="band" aria-labelledby="h-feat">
+    <div class="intro">
+      <h2 id="h-feat">What you get</h2>
+      <p>Everything homebridge-mqttthing did, rebuilt in TypeScript for Homebridge 2, with the long-standing problems fixed.</p>
+    </div>
+    <ul class="feats"><li><h3>Settings built for big setups</h3><p>A searchable device list, an editor that knows each type&#x27;s topics, <code>apply</code> functions you can edit safely, a connection test and live topic probing.</p></li><li><h3>Gentle on small devices</h3><p>An optional publish queue paces messages and keeps only the latest value per topic, so scenes and slider drags don&#x27;t flood a low-power device.</p></li><li><h3>Your payloads, your way</h3><p>Codec files, <code>apply</code> expressions and JSONPath (<code>topic$.path</code>) all keep working, so devices with unusual payloads fit in without a custom bridge.</p></li><li><h3>History in the Eve app</h3><p>Temperature, humidity, air pressure, power and more are recorded for the Eve app&#x27;s history charts.</p></li><li><h3>Upstream bugs fixed</h3><p>Spurious colour publishes at start-up, adaptive lighting turning lights on, wildcard subscriptions, crashes on empty payloads and more.</p></li><li><h3>Ready for Homebridge 2</h3><p>Modern HomeKit APIs and ES modules. Runs on Homebridge 1.8 and later and on 2.x, with a clean npm audit.</p></li></ul>
+  </section>
+
+  <section class="band" aria-labelledby="h-types">
+    <div class="intro">
+      <h2 id="h-types">Almost anything HomeKit has</h2>
+      <p>37 accessory types, from a single switch to a custom accessory that groups several services together.</p>
+    </div>
+    <dl class="types"><div><dt>Lights</dt><dd><span>Light bulb, with brightness, colour, white and colour temperature, and adaptive lighting</span></dd></div><div><dt>Switches and outlets</dt><dd><span>Switch</span><span>Outlet</span><span>Stateless programmable switch</span></dd></div><div><dt>Sensors</dt><dd><span>Motion</span><span>Occupancy</span><span>Light</span><span>Temperature</span><span>Humidity</span><span>Air pressure</span><span>Weather station</span><span>Contact</span><span>Smoke</span><span>Leak</span><span>Air quality</span><span>Carbon dioxide</span><span>Carbon monoxide</span></dd></div><div><dt>Climate</dt><dd><span>Thermostat</span><span>Heater cooler</span><span>Dehumidifier</span><span>Fan</span><span>Fan v2</span><span>Air purifier</span></dd></div><div><dt>Security and access</dt><dd><span>Security system</span><span>Doorbell</span><span>Garage door</span><span>Lock</span><span>Window covering</span><span>Window</span><span>Door</span></dd></div><div><dt>Water</dt><dd><span>Valve</span><span>Irrigation system</span></dd></div><div><dt>Media and more</dt><dd><span>Television</span><span>Microphone</span><span>Speaker</span><span>Battery</span><span>Custom, several services in one accessory</span></dd></div></dl>
+    <p class="fine">Each type lists its topics and options in the documentation. <a href="https://github.com/tasict/homebridge-mqttthing-ex/blob/master/docs/Accessories.md">All accessory types</a></p>
+  </section>
+
+  <section class="band" id="start" aria-labelledby="h-start">
+    <h2 id="h-start">Set it up in a few minutes</h2>
+    <ol class="steps"><li><h3>Install the plugin</h3><p>In the Homebridge UI, open Plugins, search for MQTT Thing EX and install it.</p></li><li><h3>Add a device</h3><p>Open the plugin settings, choose Add, pick the device type and enter your broker and topics. Test the connection right there.</p></li><li><h3>Restart Homebridge</h3><p>The device appears in the Home app, ready for rooms, scenes and Siri.</p></li></ol>
+    <p class="fine">Requires Homebridge 1.8 or later (2.x supported) and Node.js 18.17 or later. <a href="https://github.com/tasict/homebridge-mqttthing-ex/blob/master/docs/Configuration.md">Full configuration reference</a></p>
+  </section>
+
+  <section class="band" aria-labelledby="h-support">
+    <div class="tipjar">
+      <img src="assets/boba.png" alt="" width="120" height="120">
+      <div>
+        <h2 id="h-support">Keep it free</h2>
+        <p>The plugin has no ads and no paid version. If it keeps your devices talking to Apple Home, a boba or a small tip helps me keep up with new Homebridge releases and your bug reports.</p>
+        <div class="actions">
+          <a class="btn" href="https://tasict.bobaboba.me"><img src="assets/boba.png" alt="" width="22" height="22">Buy me a boba</a>
+          <a class="tip" href="https://paypal.me/tasict">Tip with PayPal</a>
+        </div>
+        <p class="fine">Boba is paid by card. No PayPal account needed.</p>
+      </div>
+    </div>
+  </section>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot">
+      <div>
+        <p>Made by tasict. Released under the Apache-2.0 license. A rewrite of <a href="https://github.com/arachnetech/homebridge-mqttthing">homebridge-mqttthing by David Miller and contributors.</a></p>
+        <ul>
+          <li><a href="https://github.com/tasict/homebridge-mqttthing-ex">Source code</a></li>
+          <li><a href="https://www.npmjs.com/package/homebridge-mqttthing-ex">npm package</a></li>
+          <li><a href="https://github.com/tasict/homebridge-mqttthing-ex/blob/master/CHANGELOG.md">Changelog</a></li>
+          <li><a href="https://github.com/tasict/homebridge-mqttthing-ex/issues">Report a problem</a></li>
+        </ul>
+      </div>
+      <ul class="langs"><li><a href="./" hreflang="en" lang="en" aria-current="page">English</a></li><li><a href="zh-TW/" hreflang="zh-TW" lang="zh-Hant-TW">繁體中文</a></li><li><a href="ja/" hreflang="ja" lang="ja">日本語</a></li></ul>
+    </div>
+    <p class="tm">Apple Home and HomeKit are trademarks of Apple Inc. MQTT is an OASIS standard. Eve is a trademark of Eve Systems GmbH. This plugin is unofficial and not affiliated with or endorsed by any of them.</p>
+  </div>
+</footer>
+<script src="assets/site.js"></script>
+</body>
+</html>

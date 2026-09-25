@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- MQTT-brand purple background; the oversized top-right corner echoes
+       the distinctive swoosh corner of the mqtt.org logo mark -->
+  <path d="M22 0 H55 A45 45 0 0 1 100 45 V78 A22 22 0 0 1 78 100 H22 A22 22 0 0 1 0 78 V22 A22 22 0 0 1 22 0 Z" fill="#660066"/>
+  <!-- signal arcs radiating from the home, like the MQTT logo mark -->
+  <path d="M30 46 A24 24 0 0 1 54 70" fill="none" stroke="#FFFFFF" stroke-width="9" stroke-linecap="round"/>
+  <path d="M30 30 A40 40 0 0 1 70 70" fill="none" stroke="#FFFFFF" stroke-width="9" stroke-linecap="round"/>
+  <!-- the signal source: a small home -->
+  <path d="M19 70 L30 59 L41 70 V79 A2.5 2.5 0 0 1 38.5 81.5 H21.5 A2.5 2.5 0 0 1 19 79 Z" fill="#FFFFFF"/>
+  <!-- EX badge (monochrome to keep the two-tone palette) -->
+  <rect x="62" y="76" width="30" height="17" rx="8.5" fill="#FFFFFF"/>
+  <path d="M69 80 V89 M69 80 H74.5 M69 84.5 H73.5 M69 89 H74.5" fill="none" stroke="#660066" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M79.5 80 L86 89 M86 80 L79.5 89" fill="none" stroke="#660066" stroke-width="2.6" stroke-linecap="round"/>
+</svg>

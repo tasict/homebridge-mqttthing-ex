@@ -36,6 +36,7 @@ import { MigrationView } from './components/MigrationView.js';
 import { PlatformIntroView } from './components/PlatformIntroView.js';
 import { PlatformSettingsView } from './components/PlatformSettingsView.js';
 import { SaveBadge, SaveError, type SaveState } from './components/SaveBar.js';
+import { SupportFooter } from './components/SupportFooter.js';
 
 export type View =
   | { name: 'list' }
@@ -326,6 +327,7 @@ export function App() {
           onMigrate={() => setView({ name: 'migrate' })}
         />
       )}
+      {view.name === 'list' && <SupportFooter />}
       {view.name === 'edit' && containsDevice(store, view.device) && (
         <EditorView
           config={view.device}

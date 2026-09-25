@@ -24,4 +24,7 @@ jobs:
       # config.schema.json is generated but committed, so drift is a build
       # failure rather than something discovered at publish time
       - run: git diff --exit-code config.schema.json
+      # the site pages are generated from scripts/site-text.json the same way
+      - run: npm run build:site
+      - run: git diff --exit-code site
       - run: npm test

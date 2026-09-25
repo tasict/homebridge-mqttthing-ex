@@ -4,12 +4,18 @@
 
 # homebridge-mqttthing-ex
 
+**Website: [tasict.github.io/homebridge-mqttthing-ex](https://tasict.github.io/homebridge-mqttthing-ex/)** (English, 繁體中文, 日本語)
+
 [![GitHub version](https://img.shields.io/github/package-json/v/tasict/homebridge-mqttthing-ex?label=GitHub)](https://github.com/tasict/homebridge-mqttthing-ex)
 [![npm version](https://img.shields.io/npm/v/homebridge-mqttthing-ex?color=%23cb3837&label=npm)](https://www.npmjs.com/package/homebridge-mqttthing-ex)
 
 A [Homebridge](https://homebridge.io) plugin supporting a wide range of HomeKit
 services over MQTT — a modern, actively maintained successor to
 [homebridge-mqttthing](https://github.com/arachnetech/homebridge-mqttthing).
+
+Free and open source. If it keeps your devices talking to Apple Home, you can
+[buy me a boba](https://tasict.bobaboba.me) (by card, no PayPal account
+needed) or [tip with PayPal](https://paypal.me/tasict).
 
 ## Highlights
 
@@ -216,6 +222,13 @@ Notes:
 
 Actively maintained. See the [release notes](ReleaseNotes.md) for what is new
 in each version.
+
+## Support
+
+If this plugin is useful to you, I'd love it if you bought me a boba:
+
+- **[Buy me a boba](https://tasict.bobaboba.me)**: pay by card, no PayPal account needed
+- **[Tip with PayPal](https://paypal.me/tasict)**
 
 ## License
 

@@ -13,6 +13,7 @@
     "build": "rimraf dist && tsc",
     "build:ui": "tsc -p ui --noEmit && vite build --config ui/vite.config.ts",
     "generate:schema": "node scripts/generate-schema.mjs",
+    "build:site": "node scripts/build-site.mjs",
     "lint": "eslint src test ui/src scripts homebridge-ui/server.js homebridge-ui/server-lib.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -23,10 +24,16 @@
     "type": "git",
     "url": "git+https://github.com/tasict/homebridge-mqttthing-ex.git"
   },
-  "funding": {
-    "type": "github",
-    "url": "https://PayPal.Me/tasict"
-  },
+  "funding": [
+    {
+      "type": "individual",
+      "url": "https://tasict.bobaboba.me"
+    },
+    {
+      "type": "paypal",
+      "url": "https://paypal.me/tasict"
+    }
+  ],
   "keywords": [
     "homebridge-plugin",
     "supports-hap",
@@ -81,7 +88,7 @@
   "bugs": {
     "url": "https://github.com/tasict/homebridge-mqttthing-ex/issues"
   },
-  "homepage": "https://github.com/tasict/homebridge-mqttthing-ex#readme",
+  "homepage": "https://tasict.github.io/homebridge-mqttthing-ex/",
   "files": [
     "CHANGELOG.md",
     "dist",
