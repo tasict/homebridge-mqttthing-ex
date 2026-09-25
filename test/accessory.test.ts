@@ -110,6 +110,34 @@ describe('MqttThingAccessory', () => {
     await waitFor(() => charac.value === false);
   });
 
+  it('updates valve Active/InUse from an apply() that decodes to 1/0', async () => {
+    // issue #1: Zigbee2MQTT publishes JSON state and apply() returns the
+    // HomeKit value 1/0, which used to be ignored without integerValue
+    const sub = waitForSubscription('t/valve1/state');
+    const decode = "return JSON.parse(message).state_1 === 'ON' ? 1 : 0;";
+    const { accessory } = makeAccessory(
+      {
+        type: 'valve',
+        name: 'Valve1',
+        url,
+        topics: {
+          getActive: { topic: 't/valve1/state', apply: decode },
+          setActive: { topic: 't/valve1/set', apply: "return JSON.stringify({state_1: message ? 'ON' : 'OFF'});" },
+          getInUse: { topic: 't/valve1/state', apply: decode },
+        },
+      },
+      api,
+    );
+    const svc = accessory.getServices().find((s) => s instanceof Service.Valve)!;
+    const active = svc.getCharacteristic(Characteristic.Active);
+    const inUse = svc.getCharacteristic(Characteristic.InUse);
+    await sub;
+    await brokerPublish('t/valve1/state', JSON.stringify({ state_1: 'ON', state_2: 'OFF' }));
+    await waitFor(() => active.value === Characteristic.Active.ACTIVE && inUse.value === Characteristic.InUse.IN_USE);
+    await brokerPublish('t/valve1/state', JSON.stringify({ state_1: 'OFF', state_2: 'OFF' }));
+    await waitFor(() => active.value === Characteristic.Active.INACTIVE && inUse.value === Characteristic.InUse.NOT_IN_USE);
+  });
+
   it('builds a temperature sensor with extended range and updates from MQTT', async () => {
     const sub = waitForSubscription('t/temp/get');
     const { accessory } = makeAccessory({ type: 'temperatureSensor', name: 'Temp1', url, topics: { getCurrentTemperature: 't/temp/get' } }, api);

@@ -59,6 +59,25 @@ describe('on/off value mapping', () => {
     expect(isRecvValueOff(other, 'ON')).toBe(false);
   });
 
+  it('matches the numbers 1/0 against Boolean on/off values', () => {
+    // apply() decoding to the HomeKit value of Active/InUse (issue #1)
+    expect(isRecvValueOn(cfg(), 1)).toBe(true);
+    expect(isRecvValueOff(cfg(), 0)).toBe(true);
+    expect(isRecvValueOn(cfg(), 0)).toBe(false);
+    expect(isRecvValueOff(cfg(), 1)).toBe(false);
+    expect(isRecvValueOn(cfg(), 2)).toBe(false);
+    expect(isRecvValueOff(cfg(), 2)).toBe(false);
+    // received strings keep upstream semantics
+    expect(isRecvValueOn(cfg(), '1')).toBe(false);
+    expect(isRecvValueOff(cfg(), '0')).toBe(false);
+    // configured onValue/offValue are not widened
+    const c = cfg({ onValue: 'ON', offValue: 'OFF' });
+    expect(isRecvValueOn(c, 1)).toBe(false);
+    expect(isRecvValueOff(c, 0)).toBe(false);
+    // otherValueOff no longer turns a numeric 1 into off
+    expect(isRecvValueOff(cfg({ otherValueOff: true }), 1)).toBe(false);
+  });
+
   it('online/offline values default to on/off values', () => {
     expect(getOnlineOfflinePubValue(cfg(), true)).toBe(true);
     const c = cfg({ onlineValue: 'UP', offlineValue: 'DOWN' });

@@ -26,10 +26,22 @@ export function getOnOffPubValue(config: ThingConfig, value: boolean): unknown {
   return mqttval;
 }
 
+/**
+ * Loose match of a received value against an on/off (or online/offline)
+ * value. A Boolean value also matches the number 1 or 0, which is what an
+ * apply() function or codec returns when it decodes to the HomeKit value of
+ * an integer-format characteristic such as Active or InUse.
+ */
+function matchesValue(mqttval: unknown, val: unknown): boolean {
+  if (mqttval === val || mqttval == val + '') {
+    return true;
+  }
+  return typeof val === 'boolean' && typeof mqttval === 'number' && mqttval === (val ? 1 : 0);
+}
+
 /** Test whether a received value represents 'on'. */
 export function isRecvValueOn(config: ThingConfig, mqttval: unknown): boolean {
-  const onval = getOnOffPubValue(config, true);
-  return mqttval === onval || mqttval == onval + '';
+  return matchesValue(mqttval, getOnOffPubValue(config, true));
 }
 
 /**
@@ -52,7 +64,7 @@ export function isRecvValueOff(config: ThingConfig, mqttval: unknown): boolean {
     return false;
   }
 
-  if (mqttval === offval || mqttval == offval + '') {
+  if (matchesValue(mqttval, offval)) {
     // off value match - it's definitely off
     return true;
   }
@@ -70,13 +82,11 @@ export function getOnlineOfflinePubValue(config: ThingConfig, value: boolean): u
 }
 
 export function isRecvValueOnline(config: ThingConfig, mqttval: unknown): boolean {
-  const onval = getOnlineOfflinePubValue(config, true);
-  return mqttval === onval || mqttval == onval + '';
+  return matchesValue(mqttval, getOnlineOfflinePubValue(config, true));
 }
 
 export function isRecvValueOffline(config: ThingConfig, mqttval: unknown): boolean {
-  const offval = getOnlineOfflinePubValue(config, false);
-  return mqttval === offval || mqttval == offval + '';
+  return matchesValue(mqttval, getOnlineOfflinePubValue(config, false));
 }
 
 export type MapValueFunc = (value: boolean) => unknown;

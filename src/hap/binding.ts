@@ -329,6 +329,12 @@ export function booleanCharacteristic(
         newState = true; // received on value so on
       } else if (!isRecvValueOff(config, message)) {
         // received value NOT acceptable as 'off' so ignore message
+        if (config.logMqtt) {
+          thing.log(
+            `Warning: ${property} received [${message}] which is neither the on value ` +
+              `[${getOnOffPubValue(config, true)}] nor the off value [${getOnOffPubValue(config, false)}] - ignored`,
+          );
+        }
         return;
       }
       // if it changed, set characteristic

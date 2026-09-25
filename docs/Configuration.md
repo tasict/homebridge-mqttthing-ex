@@ -210,7 +210,9 @@ Homekit Boolean types like on/off use strings "true" and "false" in MQTT message
 
 `offValue` - configure a specific Boolean false or *off* value (optional)
 
-When `onValue` and `offValue` are configured, by default any other value received on the _get_ topic will be ignored. To treat unrecognized received values as off, set `otherValueOff: true`.
+When `onValue` and `offValue` are configured, by default any other value received on the _get_ topic will be ignored. To treat unrecognized received values as off, set `otherValueOff: true`. With `logMqtt: true`, each ignored value is logged together with the on and off values it was compared against.
+
+Without `onValue`/`offValue`, an `apply()` function or codec may also decode a received message to the number **1** or **0** instead of **true** or **false**. This is convenient for characteristics like `Active` and `InUse` whose HomeKit values are 1 and 0. This applies only to numbers returned from code: a received MQTT payload of "1" or "0" still requires `integerValue: true`.
 
 `onlineValue`, `offlineValue` - configure specific values representing that an accessory is online or offline (received through `getOnline`). If not specified, the configured *on* and *off* values will be used to represent online and offline states (i.e. `onValue`/`offValue` if configured, otherwise **1** / **0** with `integerValue: true` or **true** / **false** with `integerValue: false`).
 
