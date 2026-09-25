@@ -4,6 +4,27 @@ What each release means for you, in prose. For the terse per-version list —
 which is also what the Homebridge UI shows under the plugin's changelog — see
 [CHANGELOG.md](CHANGELOG.md).
 
+### Version 1.2.4
+
+A fix for valves, and for anything else with an on/off state whose `apply()`
+function returns `1` or `0` (#1). Nothing in your `config.json` needs to
+change.
+
+Until now, an on/off state decoded by `apply()` or a codec had to come out as
+`true` or `false`, unless `integerValue` was set. Returning `1` or `0` — the
+natural thing to write for a valve's Active and In Use, since those are
+their HomeKit values — made the plugin ignore the message without a word. The
+valve still worked from the Home app, but switching it anywhere else, such
+as in the Zigbee2MQTT frontend, never showed up in HomeKit. The numbers `1`
+and `0` now count as on and off. A payload that arrives as the text `"1"` or
+`"0"` still needs `integerValue`, as before.
+
+If a value is ever ignored like that again, `logMqtt` now says so, and shows
+the on and off values it expected.
+
+Valves also accept `"valveType": "irrigation"` now, which gives the same
+sprinkler valve as `"sprinkler"`; before, it gave a generic valve.
+
 ### Version 1.2.3
 
 The project has a website now:

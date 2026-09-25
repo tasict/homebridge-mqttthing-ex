@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.2.4
+
+### Fixed
+
+- **A Boolean characteristic ignored an `apply()` or codec that decoded to
+  `1` or `0`** unless `integerValue` was set, so, for example, a valve whose
+  `getActive`/`getInUse` returned `1`/`0` never showed state changes made
+  outside HomeKit (#1). The numbers `1` and `0` returned from code now count
+  as on and off. A received `"1"` or `"0"` payload still needs `integerValue`,
+  and configured `onValue`/`offValue` are unchanged.
+- With `logMqtt`, a value that is neither the on nor the off value is now
+  logged together with the values it was compared against, instead of being
+  dropped silently.
+
+### Added
+
+- `valveType: "irrigation"`, a synonym for `"sprinkler"`, which the settings
+  screen now also offers.
+
 ## 1.2.3
 
 ### Added
