@@ -1,5 +1,40 @@
 # Changelog
 
+## 1.2.3
+
+### Added
+
+- **Project website** at
+  [tasict.github.io/homebridge-mqttthing-ex](https://tasict.github.io/homebridge-mqttthing-ex/)
+  in English, Traditional Chinese and Japanese. It is now the package
+  homepage.
+- **BobaMe as a way to support the project**, alongside PayPal: a quiet note
+  below the device list in the settings screen (never on the editing
+  screens), the README's new *Support* section, and the Homebridge UI's
+  donate link. Boba is paid by card, with no PayPal account needed.
+
+### Changed
+
+- The npm package no longer ships source maps, whose TypeScript sources were
+  never part of it.
+
+### Fixed
+
+- Settings screen wording: a device card with one grouped service said
+  "1 services", some messages called accessory mode "legacy", the platform
+  settings suggested a default name that is not the one Homebridge uses, and
+  the back link of the move screen always said "All accessories".
+- A typo in the log line listing codec notification properties.
+
+### Documentation
+
+- `docs/Accessories.md`, `docs/Codecs.md` and `docs/Configuration.md` were
+  checked against the implementation: topic and option names that the code
+  spells differently (Fan v2 state values, Carbon Monoxide levels, codec
+  keep-alive settings, and others) are corrected, the Battery type and
+  undocumented topics and options are added, and badges and links that
+  pointed at the original project now point here.
+
 ## 1.2.2
 
 ### Changed

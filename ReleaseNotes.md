@@ -4,6 +4,26 @@ What each release means for you, in prose. For the terse per-version list —
 which is also what the Homebridge UI shows under the plugin's changelog — see
 [CHANGELOG.md](CHANGELOG.md).
 
+### Version 1.2.3
+
+The project has a website now:
+[tasict.github.io/homebridge-mqttthing-ex](https://tasict.github.io/homebridge-mqttthing-ex/),
+in English, Traditional Chinese and Japanese. Nothing in your `config.json`
+needs to change, and nothing behaves differently.
+
+If the plugin is useful to you, you can now also support it with a boba
+through [BobaMe](https://tasict.bobaboba.me), paid by card with no PayPal
+account needed; PayPal is still there too. The settings screen mentions both
+in a short note below the device list, and nowhere else.
+
+The documentation was checked against the code, and wherever the two
+disagreed, the documentation now says what the plugin does. If an option
+from the docs never seemed to work, this may be why: Fan v2 reads
+`currentFanValues`, not `currentFanStateValues`, and the Carbon Monoxide
+Sensor's level topic is `getcarbonMonoxideLevel`, with a lower-case c. A few settings-screen
+messages were also corrected, and the npm package is smaller: it no longer
+carries source maps.
+
 ### Version 1.2.2
 
 A dependency cleanup: `npm audit` now reports **zero known vulnerabilities**
