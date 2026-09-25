@@ -131,7 +131,7 @@ describe('model topic coverage against service sources', () => {
     expect(thermostat.options.find((o) => o.key === 'maxTemperature')?.default).toBe(38);
 
     const valve = getTypeModel('valve')!;
-    expect(valve.options.find((o) => o.key === 'valveType')?.enumValues).toEqual(['sprinkler', 'shower', 'faucet']);
+    expect(valve.options.find((o) => o.key === 'valveType')?.enumValues).toEqual(['sprinkler', 'irrigation', 'shower', 'faucet']);
 
     const garage = getTypeModel('garageDoorOpener')!;
     expect(garage.options.find((o) => o.key === 'doorCurrentValues')?.default).toEqual(['O', 'C', 'o', 'c', 'S']);

@@ -781,8 +781,8 @@ export const ACCESSORY_TYPES: AccessoryTypeModel[] = [
     ],
     options: [
       opt('valveType', 'enum', 'Valve Type', {
-        enumValues: ['sprinkler', 'shower', 'faucet'],
-        description: 'Valve type shown in HomeKit; any other value gives a generic valve.',
+        enumValues: ['sprinkler', 'irrigation', 'shower', 'faucet'],
+        description: 'Valve type shown in HomeKit; irrigation is the same as sprinkler, any other value gives a generic valve.',
       }),
       ...durationOptions(),
       opt('turnOffAfterms', 'integer', 'Turn Off After [ms]', {

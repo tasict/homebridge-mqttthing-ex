@@ -522,6 +522,10 @@ describe('valve', () => {
     const sprinklerSvc = sprinklerAcc.getServices().find((s) => s instanceof Service.Valve)!;
     expect(sprinklerSvc.getCharacteristic(Characteristic.ValveType).value).toBe(Characteristic.ValveType.IRRIGATION);
 
+    const irrigationAcc = makeAccessory({ type: 'valve', name: 'VIrrigation', url, valveType: 'irrigation', topics: {} }, api).accessory;
+    const irrigationSvc = irrigationAcc.getServices().find((s) => s instanceof Service.Valve)!;
+    expect(irrigationSvc.getCharacteristic(Characteristic.ValveType).value).toBe(Characteristic.ValveType.IRRIGATION);
+
     const faucetAcc = makeAccessory({ type: 'valve', name: 'VFaucet', url, valveType: 'faucet', topics: {} }, api).accessory;
     const faucetSvc = faucetAcc.getServices().find((s) => s instanceof Service.Valve)!;
     expect(faucetSvc.getCharacteristic(Characteristic.ValveType).value).toBe(Characteristic.ValveType.WATER_FAUCET);

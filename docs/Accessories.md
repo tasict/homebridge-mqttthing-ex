@@ -1265,7 +1265,7 @@ Configure `restrictHeatingCoolingState` to an array of integers to restrict the 
 
 ## Valve
 
-Single valve accessory. `valveType` can be `"sprinkler"`, `"shower"` or `"faucet"`. See also [Irrigation System](#irrigation-system) for multi-zone sprinkler accessories.
+Single valve accessory. `valveType` can be `"sprinkler"` (or its synonym `"irrigation"`), `"shower"` or `"faucet"`; any other value gives a generic valve. See also [Irrigation System](#irrigation-system) for multi-zone sprinkler accessories.
 
 If `durationTimer` is set to **true**, this plugin will provide additional characteristics to set the standard duration for the valve and will stop the water flow after this time.
 

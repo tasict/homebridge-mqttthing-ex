@@ -220,7 +220,7 @@ export function characteristic_ValveType(thing: ThingContext, service: Service, 
   const { config, hap } = thing;
   if (valveType === undefined || valveType === null) {
     // if not specified by argument, use specification from config file
-    if (config.valveType === 'sprinkler') {
+    if (config.valveType === 'sprinkler' || config.valveType === 'irrigation') {
       valveType = hap.Characteristic.ValveType.IRRIGATION;
     } else if (config.valveType === 'shower') {
       valveType = hap.Characteristic.ValveType.SHOWER_HEAD;
