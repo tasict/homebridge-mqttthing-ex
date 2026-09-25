@@ -92,6 +92,7 @@
   "files": [
     "CHANGELOG.md",
     "dist",
+    "!dist/**/*.map",
     "codecs",
     "homebridge-ui",
     "config.schema.json",
